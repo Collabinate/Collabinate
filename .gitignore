@@ -1,0 +1,6 @@
+.DS_Store*
+Thumbs.db
+.classpath
+.project
+.settings/
+target/
