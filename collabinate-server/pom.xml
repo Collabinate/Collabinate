@@ -30,6 +30,11 @@
     	<version>2.0.0</version>
     	<scope>compile</scope>
     </dependency>
+	<dependency>
+		<groupId>org.neo4j</groupId>
+		<artifactId>neo4j</artifactId>
+		<version>1.8.M03</version>
+	</dependency>
   </dependencies>
   <build>
     <plugins>
