@@ -2,8 +2,6 @@ package com.collabinate.server;
 
 import static org.junit.Assert.*;
 
-import java.awt.Graphics2D;
-
 import org.junit.Test;
 
 import com.tinkerpop.blueprints.Graph;
