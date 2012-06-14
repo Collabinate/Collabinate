@@ -4,14 +4,14 @@ import com.tinkerpop.blueprints.Graph;
 
 public class GraphDb
 {
-	private static Graph _graph;
+	private Graph _graph;
 
-	public static void attach(Graph graph)
+	public void attach(Graph graph)
 	{
 		_graph = graph;
 	}
 
-	public static Graph getGraph()
+	public Graph getGraph()
 	{
 		return _graph;
 	}

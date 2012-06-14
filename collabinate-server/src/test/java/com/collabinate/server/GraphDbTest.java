@@ -13,10 +13,11 @@ public class GraphDbTest
 	@Test
 	public void shouldAttachToExistingDatabase()
 	{
+		GraphDb db = new GraphDb();
 		Graph g = new TinkerGraph();
 		Vertex v = g.addVertex(null);
-		GraphDb.attach(g);
-		Graph graph = GraphDb.getGraph();
+		db.attach(g);
+		Graph graph = db.getGraph();
 		assertTrue(graph.getVertices().iterator().hasNext());
 		assertEquals(v, graph.getVertices().iterator().next());
 	}
