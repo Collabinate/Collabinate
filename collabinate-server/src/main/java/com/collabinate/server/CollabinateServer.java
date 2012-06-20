@@ -2,7 +2,6 @@ package com.collabinate.server;
 
 public class CollabinateServer
 {
-
 	public User CreateUser(final String userId)
 	{
 		return new User()
@@ -14,5 +13,4 @@ public class CollabinateServer
 			}
 		};
 	}
-
 }
