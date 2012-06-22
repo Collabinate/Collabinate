@@ -2,15 +2,11 @@ package com.collabinate.server;
 
 public class CollabinateServer
 {
-	public User CreateUser(final String userId)
+	public void CreateUser(final String userId)
+		throws IllegalArgumentException
 	{
-		return new User()
-		{
-			@Override
-			public String getId()
-			{
-				return userId;
-			}
-		};
+		if (null == userId) {
+			throw new IllegalArgumentException("userId must not be null");
+		}
 	}
 }
