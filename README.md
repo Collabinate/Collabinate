@@ -26,4 +26,4 @@ In order to keep the functionality of the server simple, the Collabinate Server 
 
 ## Architecture
 
-![Collabinate Architecture](https://github.com/mafuba/Collabinate/raw/master/documentation/CollabinateArchitecture.png)
+![Collabinate Architecture](https://github.com/Collabinate/Collabinate/raw/master/documentation/CollabinateArchitecture.png)
