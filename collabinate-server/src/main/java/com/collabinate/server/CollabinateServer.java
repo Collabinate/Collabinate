@@ -1,12 +1,8 @@
 package com.collabinate.server;
 
-public class CollabinateServer
+public interface CollabinateServer
 {
-	public void CreateUser(final String userId)
-		throws IllegalArgumentException
-	{
-		if (null == userId) {
-			throw new IllegalArgumentException("userId must not be null");
-		}
-	}
+	public void createUser(String userId);
+	
+	public void createEntity(String entityId);
 }
