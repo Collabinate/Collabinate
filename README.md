@@ -22,7 +22,7 @@ Collabinate uses a concrete set of terminology to describe the data it works wit
 * **Feed**: The collection of stream items created on or by all entities that a user follows. Cover Stories in Flipboard are a feed, as are the list of changes to all insurance policies sold by an agent.
 
 ## Server Operations
-In order to keep the functionality of the server simple, the Collabinate Server supports a minimal set of operations.  It allows modification (creation, editing, deletion) of entities (which includes users), following of entities by users, creation of stream items for an entity by itself or another entity, and commenting on stream items by users. It also allows the retrieval of streams for entities, and the retrieval of feeds for users.
+In order to keep the functionality of the server simple, the Collabinate Server supports a minimal set of operations.  It allows following of entities by users, creation of stream items by an entity on itself or another entity, and commenting on stream items by users. It also allows the retrieval of streams for entities, and the retrieval of feeds for users.
 
 ## Architecture
 

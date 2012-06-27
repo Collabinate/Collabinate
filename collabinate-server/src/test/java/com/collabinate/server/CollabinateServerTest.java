@@ -22,20 +22,20 @@ public abstract class CollabinateServerTest
 	}
 
 	@Test
-	public void create_user_should_not_allow_null_ID()
+	public void add_stream_item_should_not_allow_null_entity_ID()
 	{
 		CollabinateServer server =
 				createServer();
 		exception.expect(IllegalArgumentException.class);
-		server.createUser(null);
+		server.addStreamItem(null, null);
 	}
 	
 	@Test
-	public void create_entity_should_not_allow_null_ID()
+	public void follow_entity_should_not_allow_null_user_ID()
 	{
 		CollabinateServer server =
 				createServer();
 		exception.expect(IllegalArgumentException.class);
-		server.createEntity(null);
+		server.followEntity(null, null);
 	}
 }
