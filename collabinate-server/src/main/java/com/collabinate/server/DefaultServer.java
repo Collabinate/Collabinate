@@ -1,6 +1,6 @@
 package com.collabinate.server;
 
-public class MemoryCollabinateServer implements CollabinateServer
+public class DefaultServer implements CollabinateServer
 {
 	@Override
 	public void addStreamItem(String entityId, StreamItemData streamItem)

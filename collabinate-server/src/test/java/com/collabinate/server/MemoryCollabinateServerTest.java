@@ -5,6 +5,6 @@ public class MemoryCollabinateServerTest extends CollabinateServerTest
 	@Override
 	CollabinateServer createServer()
 	{
-		return new MemoryCollabinateServer();
+		return new DefaultServer();
 	}
 }
