@@ -1,6 +1,6 @@
 package com.collabinate.server;
 
-public class MemoryCollabinateServerTest extends CollabinateServerTest
+public class DefaultServerTest extends CollabinateServerTest
 {
 	@Override
 	CollabinateServer createServer()
