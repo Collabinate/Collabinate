@@ -2,7 +2,7 @@ package com.collabinate.server;
 
 import org.junit.Test;
 
-import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 public class DefaultServerTest extends CollabinateServerTest
@@ -10,7 +10,7 @@ public class DefaultServerTest extends CollabinateServerTest
 	@Override
 	CollabinateServer createServer()
 	{
-		Graph graph = new TinkerGraph();
+		KeyIndexableGraph graph = new TinkerGraph();
 		return new DefaultServer(graph);
 	}
 	
@@ -18,6 +18,6 @@ public class DefaultServerTest extends CollabinateServerTest
 	public void shouldNotAllowNullGraph()
 	{
 		exception.expect(IllegalArgumentException.class);
-		CollabinateServer server = new DefaultServer(null);
+		new DefaultServer(null);
 	}
 }
