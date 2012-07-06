@@ -2,7 +2,6 @@ package com.collabinate.server;
 
 import java.util.ArrayList;
 import java.util.Collection;
-import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
 
@@ -18,16 +17,11 @@ public class DefaultServer implements CollabinateServer
 {
 	private KeyIndexableGraph graph;
 	
-	public DefaultServer(final KeyIndexableGraph graph,
-			Comparator<Vertex> streamItemDateComparator)
+	public DefaultServer(final KeyIndexableGraph graph)
 	{
 		if (null == graph)
 		{
 			throw new IllegalArgumentException("graph must not be null");
-		}
-		if (null == streamItemDateComparator)
-		{
-			throw new IllegalArgumentException("comparator must not be null");
 		}
 		this.graph = new IdGraph<KeyIndexableGraph>(graph);
 	}
