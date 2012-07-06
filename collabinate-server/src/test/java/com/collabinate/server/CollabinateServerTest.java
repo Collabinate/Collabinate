@@ -44,6 +44,13 @@ public abstract class CollabinateServerTest
 	}
 	
 	@Test
+	public void retrieving_no_stream_items_should_give_empty_array()
+	{
+		StreamItemData[] stream = server.getStream("1", 0, 1);
+		assertEquals(0, stream.length);
+	}
+	
+	@Test
 	public void adding_a_stream_item_should_allow_retrieval_of_the_item()
 	{
 		final DateTime instant = DateTime.now();
@@ -51,6 +58,15 @@ public abstract class CollabinateServerTest
 		DateTime returnedTime =
 				server.getStream("1", 0, 1)[0].getTime();
 		assertEquals(instant.getMillis(), returnedTime.getMillis());
+	}
+	
+	@Test
+	public void retrieving_should_not_return_more_elements_than_exist()
+	{
+		server.addStreamItem("1", new StreamItemDataImpl(DateTime.now()));
+		server.addStreamItem("1", new StreamItemDataImpl(DateTime.now()));
+		StreamItemData[] stream = server.getStream("1", 0, 3);
+		assertEquals(2, stream.length);
 	}
 	
 	@Test
@@ -73,7 +89,7 @@ public abstract class CollabinateServerTest
 		server.addStreamItem("1", new StreamItemDataImpl(time1));		
 		server.addStreamItem("1", new StreamItemDataImpl(time0));
 		
-		StreamItemData[] items = server.getStream("1", 0, 3);
+		StreamItemData[] items = server.getStream("1", 0, 2);
 		assertEquals("All items not retrieved", 2, items.length, 0);
 		assertEquals("Items not in correct order", 
 				time0.getMillis(), items[0].getTime().getMillis(), 0);

@@ -66,13 +66,13 @@ public class DefaultServer implements CollabinateServer
 	private void insertStreamItem(Vertex entity, Vertex streamItem)
 	{
 		// get the edge to the first stream item, if any
-		Edge originalEdge = getStreamItemEdge(entity);
+		final Edge originalEdge = getStreamItemEdge(entity);
 		
 		// get the first stream item, if any, and remove the first edge
 		Vertex previousStreamItem = null;		
 		if (null != originalEdge)
 		{
-			previousStreamItem = originalEdge.getVertex(Direction.OUT);
+			previousStreamItem = originalEdge.getVertex(Direction.IN);
 			graph.removeEdge(originalEdge);		
 		}
 		
@@ -108,31 +108,42 @@ public class DefaultServer implements CollabinateServer
 	}
 
 	@Override
-	public StreamItemData[] getStream(String entityId, long startIndex, int itemsToReturn)
+	public StreamItemData[] getStream(String entityId, long startIndex,
+			int itemsToReturn)
 	{
 		Vertex entity = graph.getVertex(entityId);
-		
-		int index = 0;
-		int count = 0;
-		List<Vertex> vertices = new ArrayList<Vertex>();
-		
-		for (Vertex vertex : entity.getVertices(Direction.OUT, "StreamItem"))
+		if (null == entity)
 		{
-			if (count >= itemsToReturn)
-			{
-				break;
-			}
-			
-			if (index >= startIndex)
-			{
-				vertices.add(vertex);
-				count++;
-			}			
+			return new StreamItemData[0];
 		}
 		
-		return createStreamItems(vertices);
+		int streamPosition = 0;
+		int foundItemCount = 0;
+		List<Vertex> streamVertices = new ArrayList<Vertex>();
+		
+		Vertex currentStreamItem = getNextStreamItem(entity);
+		
+		while (null != currentStreamItem && foundItemCount < itemsToReturn)
+		{
+			if (streamPosition >= startIndex)
+			{
+				streamVertices.add(currentStreamItem);
+				foundItemCount++;
+			}
+			currentStreamItem = getNextStreamItem(currentStreamItem);
+			streamPosition++;
+		}
+		
+		return createStreamItems(streamVertices);
 	}
 	
+	private Vertex getNextStreamItem(Vertex node)
+	{
+		Iterator<Vertex> vertices = 
+				node.getVertices(Direction.OUT, "StreamItem").iterator();
+		return vertices.hasNext() ? vertices.next() : null;
+	}
+
 	private StreamItemData[] createStreamItems(Collection<Vertex> streamItems)
 	{
 		List<StreamItemData> itemData = new ArrayList<StreamItemData>();
