@@ -13,7 +13,7 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.util.wrappers.id.IdGraph;
 
-public class DefaultServer implements CollabinateServer
+public class DefaultServer implements CollabinateReader, CollabinateWriter
 {
 	private KeyIndexableGraph graph;
 	

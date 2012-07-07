@@ -7,11 +7,28 @@ import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 public class DefaultServerTest extends CollabinateServerTest
 {
+	private DefaultServer server;
+	
 	@Override
-	CollabinateServer createServer()
+	CollabinateReader getReader()
 	{
-		KeyIndexableGraph graph = new TinkerGraph();
-		return new DefaultServer(graph);
+		return getServer();
+	}
+	
+	@Override
+	CollabinateWriter getWriter()
+	{
+		return getServer();
+	}
+	
+	private DefaultServer getServer()
+	{
+		if (null == server)
+		{
+			KeyIndexableGraph graph = new TinkerGraph();
+			server = new DefaultServer(graph);
+		}
+		return server;
 	}
 	
 	@Test
