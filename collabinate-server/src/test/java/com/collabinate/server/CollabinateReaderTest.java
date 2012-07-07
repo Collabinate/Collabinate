@@ -8,7 +8,7 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-public abstract class CollabinateServerTest
+public abstract class CollabinateReaderTest
 {
 	private CollabinateReader reader;
 	private CollabinateWriter writer;
@@ -33,20 +33,6 @@ public abstract class CollabinateServerTest
 		assertNotNull(writer);
 	}
 
-	@Test
-	public void add_stream_item_should_not_allow_null_entity_ID()
-	{
-		exception.expect(IllegalArgumentException.class);
-		writer.addStreamItem(null, new StreamItemDataImpl(null));
-	}
-	
-	@Test
-	public void add_stream_item_should_not_allow_null_stream_item()
-	{
-		exception.expect(IllegalArgumentException.class);
-		writer.addStreamItem("", null);
-	}
-	
 	@Test
 	public void retrieving_no_stream_items_should_give_empty_array()
 	{
@@ -97,13 +83,6 @@ public abstract class CollabinateServerTest
 		assertEquals("All items not retrieved", 2, items.length, 0);
 		assertEquals("Items not in correct order", 
 				time0.getMillis(), items[0].getTime().getMillis(), 0);
-	}
-	
-	@Test
-	public void follow_entity_should_not_allow_null_user_ID()
-	{
-		exception.expect(IllegalArgumentException.class);
-		writer.followEntity(null, null);
 	}
 	
 	private class StreamItemDataImpl implements StreamItemData
