@@ -47,7 +47,7 @@ public abstract class CollabinateWriterTest
 	public void follow_entity_should_not_allow_null_user_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
-		writer.followEntity(null, null);
+		writer.followEntity(null, "1");
 	}
 	
 	private class StreamItemDataImpl implements StreamItemData

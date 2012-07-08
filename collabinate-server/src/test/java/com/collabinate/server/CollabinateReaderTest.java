@@ -85,6 +85,29 @@ public abstract class CollabinateReaderTest
 				time0.getMillis(), items[0].getTime().getMillis(), 0);
 	}
 	
+	@Test
+	public void feed_for_user_who_follows_nothing_should_be_empty()
+	{
+		assertEquals(0, reader.getFeed("user", 0, 1).length);
+	}
+	
+	@Test
+	public void feed_for_user_who_follows_entities_with_no_stream_items_should_be_empty()
+	{
+		writer.followEntity("user", null);
+		assertEquals(0, reader.getFeed("user", 0, 1).length);
+	}
+	
+	@Test
+	public void feed_should_contain_item_from_followed_entity()
+	{
+		final DateTime time = DateTime.now();
+		writer.addStreamItem("1", new StreamItemDataImpl(time));
+		writer.followEntity("user", "1");
+		//final DateTime returned = reader.getFeed("user", 0, 1)[0].getTime();
+		//assertEquals(time.getMillis(), returned.getMillis());
+	}
+	
 	private class StreamItemDataImpl implements StreamItemData
 	{
 		private DateTime time;

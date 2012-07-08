@@ -164,9 +164,15 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	@Override
 	public void followEntity(String userId, String entityId)
 	{
-		if (null == entityId)
+		if (null == userId)
 		{
 			throw new IllegalArgumentException("userId must not be null");
 		}
+	}
+	
+	@Override
+	public StreamItemData[] getFeed(String userId, long startIndex, int itemsToReturn)
+	{
+		return new StreamItemData[0];		
 	}
 }
