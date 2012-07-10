@@ -94,7 +94,7 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void feed_for_user_who_follows_entities_with_no_stream_items_should_be_empty()
 	{
-		writer.followEntity("user", null);
+		writer.followEntity("user", "1");
 		assertEquals(0, reader.getFeed("user", 0, 1).length);
 	}
 	
@@ -104,8 +104,8 @@ public abstract class CollabinateReaderTest
 		final DateTime time = DateTime.now();
 		writer.addStreamItem("1", new StreamItemDataImpl(time));
 		writer.followEntity("user", "1");
-		//final DateTime returned = reader.getFeed("user", 0, 1)[0].getTime();
-		//assertEquals(time.getMillis(), returned.getMillis());
+		final DateTime returned = reader.getFeed("user", 0, 1)[0].getTime();
+		assertEquals(time.getMillis(), returned.getMillis());
 	}
 	
 	private class StreamItemDataImpl implements StreamItemData

@@ -50,6 +50,13 @@ public abstract class CollabinateWriterTest
 		writer.followEntity(null, "1");
 	}
 	
+	@Test
+	public void follow_entity_should_not_allow_null_entity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		writer.followEntity("user", null);
+	}
+	
 	private class StreamItemDataImpl implements StreamItemData
 	{
 		private DateTime time;

@@ -149,14 +149,17 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		List<StreamItemData> itemData = new ArrayList<StreamItemData>();
 		for (final Vertex vertex : streamItems)
 		{
-			itemData.add(new StreamItemData() {
-				
-				@Override
-				public DateTime getTime()
-				{
-					return DateTime.parse((String) vertex.getProperty("Time"));
-				}
-			});
+			if (null != vertex)
+			{
+				itemData.add(new StreamItemData() {
+					
+					@Override
+					public DateTime getTime()
+					{
+						return DateTime.parse((String) vertex.getProperty("Time"));
+					}
+				});
+			}
 		}
 		return itemData.toArray(new StreamItemData[0]);
 	}
@@ -168,11 +171,31 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		{
 			throw new IllegalArgumentException("userId must not be null");
 		}
+		
+		Vertex user = getOrCreateEntity(userId);
+		Vertex entity = getOrCreateEntity(entityId);
+		
+		graph.addEdge(null, user, entity, "Follows");
 	}
 	
 	@Override
 	public StreamItemData[] getFeed(String userId, long startIndex, int itemsToReturn)
 	{
-		return new StreamItemData[0];		
+		Vertex user = getOrCreateEntity(userId);
+		Vertex entity = getNextFeedEntity(userId, user);
+		List<Vertex> streamItems = new ArrayList<Vertex>();
+		if (null != entity)
+		{
+			streamItems.add(getNextStreamItem(entity));
+		}
+		return createStreamItems(streamItems);
+	}
+	
+	private Vertex getNextFeedEntity(String userId, Vertex currentEntity)
+	{
+		Iterator<Vertex> vertices = 
+				currentEntity.getVertices(Direction.OUT, "Follows").iterator();
+		return vertices.hasNext() ? vertices.next() : null;
+		
 	}
 }
