@@ -108,13 +108,13 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public StreamItemData[] getStream(String entityId, long startIndex,
+	public List<StreamItemData> getStream(String entityId, long startIndex,
 			int itemsToReturn)
 	{
 		Vertex entity = graph.getVertex(entityId);
 		if (null == entity)
 		{
-			return new StreamItemData[0];
+			return new ArrayList<StreamItemData>();
 		}
 		
 		int streamPosition = 0;
@@ -144,9 +144,11 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		return vertices.hasNext() ? vertices.next() : null;
 	}
 
-	private StreamItemData[] createStreamItems(Collection<Vertex> streamItems)
+	private List<StreamItemData> createStreamItems(Collection<Vertex> streamItems)
 	{
-		List<StreamItemData> itemData = new ArrayList<StreamItemData>();
+		ArrayList<StreamItemData> itemData =
+				new ArrayList<StreamItemData>();
+		
 		for (final Vertex vertex : streamItems)
 		{
 			if (null != vertex)
@@ -161,7 +163,8 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 				});
 			}
 		}
-		return itemData.toArray(new StreamItemData[0]);
+		
+		return itemData;
 	}
 
 	@Override
@@ -179,7 +182,7 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public StreamItemData[] getFeed(String userId, long startIndex, int itemsToReturn)
+	public List<StreamItemData> getFeed(String userId, long startIndex, int itemsToReturn)
 	{
 		Vertex user = getOrCreateEntity(userId);
 		Vertex entity = getNextFeedEntity(userId, user);

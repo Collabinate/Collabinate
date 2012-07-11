@@ -2,6 +2,8 @@ package com.collabinate.server;
 
 import static org.junit.Assert.*;
 
+import java.util.List;
+
 import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
@@ -36,8 +38,8 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void retrieving_no_stream_items_should_give_empty_array()
 	{
-		StreamItemData[] stream = reader.getStream("1", 0, 1);
-		assertEquals(0, stream.length);
+		List<StreamItemData> stream = reader.getStream("1", 0, 1);
+		assertEquals(0, stream.size());
 	}
 	
 	@Test
@@ -46,7 +48,7 @@ public abstract class CollabinateReaderTest
 		final DateTime instant = DateTime.now();
 		writer.addStreamItem("1", new StreamItemDataImpl(instant));
 		DateTime returnedTime =
-				reader.getStream("1", 0, 1)[0].getTime();
+				reader.getStream("1", 0, 1).get(0).getTime();
 		assertEquals(instant.getMillis(), returnedTime.getMillis());
 	}
 	
@@ -55,8 +57,8 @@ public abstract class CollabinateReaderTest
 	{
 		writer.addStreamItem("1", new StreamItemDataImpl(DateTime.now()));
 		writer.addStreamItem("1", new StreamItemDataImpl(DateTime.now()));
-		StreamItemData[] stream = reader.getStream("1", 0, 3);
-		assertEquals(2, stream.length);
+		List<StreamItemData> stream = reader.getStream("1", 0, 3);
+		assertEquals(2, stream.size());
 	}
 	
 	@Test
@@ -65,8 +67,8 @@ public abstract class CollabinateReaderTest
 		writer.addStreamItem("1", new StreamItemDataImpl(DateTime.now()));
 		writer.addStreamItem("1", new StreamItemDataImpl(DateTime.now()));
 		
-		StreamItemData[] items = reader.getStream("1", 0, 2);
-		assertEquals("All items not retrieved", 2, items.length, 0);
+		List<StreamItemData> items = reader.getStream("1", 0, 2);
+		assertEquals("All items not retrieved", 2, items.size(), 0);
 	}
 		
 	@Test
@@ -79,23 +81,23 @@ public abstract class CollabinateReaderTest
 		writer.addStreamItem("1", new StreamItemDataImpl(time1));		
 		writer.addStreamItem("1", new StreamItemDataImpl(time0));
 		
-		StreamItemData[] items = reader.getStream("1", 0, 2);
-		assertEquals("All items not retrieved", 2, items.length, 0);
+		List<StreamItemData> items = reader.getStream("1", 0, 2);
+		assertEquals("All items not retrieved", 2, items.size(), 0);
 		assertEquals("Items not in correct order", 
-				time0.getMillis(), items[0].getTime().getMillis(), 0);
+				time0.getMillis(), items.get(0).getTime().getMillis(), 0);
 	}
 	
 	@Test
 	public void feed_for_user_who_follows_nothing_should_be_empty()
 	{
-		assertEquals(0, reader.getFeed("user", 0, 1).length);
+		assertEquals(0, reader.getFeed("user", 0, 1).size());
 	}
 	
 	@Test
 	public void feed_for_user_who_follows_entities_with_no_stream_items_should_be_empty()
 	{
 		writer.followEntity("user", "1");
-		assertEquals(0, reader.getFeed("user", 0, 1).length);
+		assertEquals(0, reader.getFeed("user", 0, 1).size());
 	}
 	
 	@Test
@@ -104,7 +106,7 @@ public abstract class CollabinateReaderTest
 		final DateTime time = DateTime.now();
 		writer.addStreamItem("1", new StreamItemDataImpl(time));
 		writer.followEntity("user", "1");
-		final DateTime returned = reader.getFeed("user", 0, 1)[0].getTime();
+		final DateTime returned = reader.getFeed("user", 0, 1).get(0).getTime();
 		assertEquals(time.getMillis(), returned.getMillis());
 	}
 	
