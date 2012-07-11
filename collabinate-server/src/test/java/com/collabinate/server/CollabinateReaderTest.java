@@ -1,7 +1,9 @@
 package com.collabinate.server;
 
 import static org.junit.Assert.*;
+import static org.junit.matchers.JUnitMatchers.*;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import org.joda.time.DateTime;
@@ -97,6 +99,7 @@ public abstract class CollabinateReaderTest
 	public void feed_for_user_who_follows_entities_with_no_stream_items_should_be_empty()
 	{
 		writer.followEntity("user", "1");
+		writer.followEntity("user", "2");
 		assertEquals(0, reader.getFeed("user", 0, 1).size());
 	}
 	
@@ -109,6 +112,25 @@ public abstract class CollabinateReaderTest
 		final DateTime returned = reader.getFeed("user", 0, 1).get(0).getTime();
 		assertEquals(time.getMillis(), returned.getMillis());
 	}
+	
+	@Test
+	public void feed_should_contain_items_from_all_followed_entities()
+	{
+		final DateTime time1 = DateTime.now();
+		final DateTime time2 = DateTime.now().plus(1000);
+		writer.addStreamItem("1", new StreamItemDataImpl(time1));
+		writer.addStreamItem("2", new StreamItemDataImpl(time2));
+		writer.followEntity("user", "1");
+		writer.followEntity("user", "2");
+		ArrayList<Long> timeMillis = new ArrayList<Long>();
+		for (StreamItemData data : reader.getFeed("user", 0, 2))
+		{
+			timeMillis.add(data.getTime().getMillis());
+		}
+		assertThat(timeMillis, hasItems(
+				time1.getMillis(), time2.getMillis()));
+	}
+	
 	
 	private class StreamItemDataImpl implements StreamItemData
 	{
