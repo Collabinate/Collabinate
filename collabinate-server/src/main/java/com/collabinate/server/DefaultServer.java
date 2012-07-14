@@ -2,8 +2,10 @@ package com.collabinate.server;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
+import java.util.PriorityQueue;
 
 import org.joda.time.DateTime;
 
@@ -53,11 +55,11 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 
 	private Vertex getOrCreateEntity(String entityId)
 	{
-		Vertex entity = graph.getVertex(entityId);		
+		Vertex entity = graph.getVertex(entityId);
 		if (null == entity)
 		{
 			entity = graph.addVertex(entityId);
-		}		
+		}
 		return entity;
 	}
 	
@@ -74,11 +76,11 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		final Edge originalEdge = getStreamItemEdge(entity);
 		
 		// get the first stream item, if any, and remove the first edge
-		Vertex previousStreamItem = null;		
+		Vertex previousStreamItem = null;
 		if (null != originalEdge)
 		{
 			previousStreamItem = originalEdge.getVertex(Direction.IN);
-			graph.removeEdge(originalEdge);		
+			graph.removeEdge(originalEdge);
 		}
 		
 		// connect the new stream item to the entity
@@ -199,6 +201,8 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	
 	private Vertex getNextStreamItem(Vertex node)
 	{
+		if (null == node)
+			return null;
 		Iterator<Vertex> vertices = 
 				node.getVertices(Direction.OUT, "StreamItem").iterator();
 		return vertices.hasNext() ? vertices.next() : null;
@@ -213,18 +217,23 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		{
 			if (null != vertex)
 			{
-				itemData.add(new StreamItemData() {
-					
-					@Override
-					public DateTime getTime()
-					{
-						return DateTime.parse((String) vertex.getProperty("Time"));
-					}
-				});
+				itemData.add(createStreamItemData(vertex));
 			}
 		}
 		
 		return itemData;
+	}
+	
+	private StreamItemData createStreamItemData(final Vertex streamItem)
+	{
+		return new StreamItemData() {
+			
+			@Override
+			public DateTime getTime()
+			{
+				return DateTime.parse((String) streamItem.getProperty("Time"));
+			}
+		};
 	}
 
 	@Override
@@ -302,14 +311,65 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	@Override
 	public List<StreamItemData> getFeed(String userId, long startIndex, int itemsToReturn)
 	{
+		StreamItemDateComparator comparator = new StreamItemDateComparator();
+		PriorityQueue<Vertex> queue = 
+				new PriorityQueue<Vertex>(11, comparator);
+		ArrayList<Vertex> streamItems = new ArrayList<Vertex>();
+		Vertex topOfEntity = null;
+		Vertex topOfQueue = null;
+		
 		Vertex user = getOrCreateEntity(userId);
-		Vertex entity = getNextFeedEntity(
-				getFeedLabel(getIdString(user)), user, Direction.OUT);
-		List<Vertex> streamItems = new ArrayList<Vertex>();
+		String feedLabel = getFeedLabel(getIdString(user));
+		Vertex entity = getNextFeedEntity(feedLabel, user, Direction.OUT);
+		
 		if (null != entity)
 		{
-			streamItems.add(getNextStreamItem(entity));
+			topOfEntity = getNextStreamItem(entity);
+			if (null != topOfEntity)
+			{
+				queue.add(topOfEntity);
+				topOfQueue = topOfEntity;
+			}
+			entity = getNextFeedEntity(feedLabel, entity, Direction.OUT);
+			topOfEntity = getNextStreamItem(entity);
 		}
+		
+		// while we have not yet hit our items to return,
+		// and there are still items in the queue OR
+		// there are more entities
+		while (streamItems.size() < (itemsToReturn + startIndex)
+				&& (queue.size() > 0 || entity != null))
+		{
+			// compare top of next entity to top of queue
+			int result = comparator.compare(topOfEntity, topOfQueue);
+
+			// if top of next entity is newer, take the top element,
+			// push the next element to the queue, and move to
+			// the next entity
+			if (result > 0)
+			{
+				streamItems.add(topOfEntity);
+				Vertex nextItem = getNextStreamItem(topOfEntity);
+				if (null != nextItem)
+					queue.add(nextItem);
+				entity = getNextFeedEntity(feedLabel, entity, Direction.OUT);
+				topOfEntity = getNextStreamItem(entity);
+				topOfQueue = queue.peek();
+			}
+			
+			// if top of queue is newer, take the top element, and
+			// push the next element to the queue
+			else
+			{
+				Vertex removedFromQueue = queue.remove();
+				Vertex nextItem = getNextStreamItem(removedFromQueue);
+				if (null != nextItem)
+					queue.add(getNextStreamItem(removedFromQueue));
+				streamItems.add(removedFromQueue);
+				topOfQueue = queue.peek();
+			}
+		}
+
 		return createStreamItems(streamItems);
 	}
 	
@@ -327,5 +387,23 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	private String getFeedLabel(String userId)
 	{
 		return "Feed+" + userId;
+	}
+
+	private class StreamItemDateComparator implements Comparator<Vertex>
+	{
+		@Override
+		public int compare(Vertex v1, Vertex v2)
+		{
+			long t1 = 0;
+			if (null != v1)
+				t1 = DateTime.parse((String)v1.getProperty("Time"))
+					.getMillis();
+			long t2 = 0;
+			if (null != v2)
+				t2 = DateTime.parse((String)v2.getProperty("Time"))
+					.getMillis();
+			
+			return new Long(t1).compareTo(t2);
+		}
 	}
 }
