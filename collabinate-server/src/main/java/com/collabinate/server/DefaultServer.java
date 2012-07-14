@@ -23,7 +23,10 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		{
 			throw new IllegalArgumentException("graph must not be null");
 		}
-		this.graph = new IdGraph<KeyIndexableGraph>(graph);
+		if (graph.getFeatures().ignoresSuppliedIds)
+			this.graph = new IdGraph<KeyIndexableGraph>(graph);
+		else
+			this.graph = graph;
 	}
 	
 	@Override
@@ -44,6 +47,8 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		Vertex streamItem = createStreamItem(streamItemData);
 		
 		insertStreamItem(entity, streamItem);
+		
+		updateFeedPaths(entity);
 	}
 
 	private Vertex getOrCreateEntity(String entityId)
@@ -105,6 +110,61 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		}
 		
 		return edge;
+	}
+	
+	private void updateFeedPaths(Vertex entity)
+	{
+		// get all the users that follow the entity
+		Iterable<Vertex> users =
+				entity.getVertices(Direction.IN, "Follows");
+		
+		// loop over each and move the entity to first
+		for (Vertex user : users)
+		{
+			putFeedEntityFirst(user, entity);
+		}
+	}
+	
+	private void putFeedEntityFirst(Vertex user, Vertex entity)
+	{
+		String feedLabel = getFeedLabel(getIdString(user));
+		
+		// get the previous entity
+		Vertex previous = getNextFeedEntity(
+				feedLabel, entity, Direction.IN);
+		
+		// if the previous entity is the user, we're done
+		if (user.getId().equals(previous.getId()))
+		{
+			return;
+		}
+		
+		// get the next entity
+		Vertex next = getNextFeedEntity(
+				feedLabel, entity, Direction.OUT);
+		
+		// get the entity that was originally first
+		Vertex originalFirst = getNextFeedEntity(
+				feedLabel, user, Direction.OUT);
+		
+		// delete the old edges
+		for (Edge edge : user.getEdges(Direction.OUT, feedLabel))
+			graph.removeEdge(edge);
+		for (Edge edge : previous.getEdges(Direction.OUT, feedLabel))
+			graph.removeEdge(edge);
+		for (Edge edge : entity.getEdges(Direction.OUT, feedLabel))
+			graph.removeEdge(edge);
+		
+		// add the new edges
+		graph.addEdge(null, user, entity, feedLabel);
+		graph.addEdge(null, entity, originalFirst, feedLabel);
+		if (null != next)
+			graph.addEdge(null, previous, next, feedLabel);
+	}
+	
+	private String getIdString(Vertex vertex)
+	{
+		return vertex.getId().toString();
 	}
 
 	@Override
@@ -179,13 +239,72 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		Vertex entity = getOrCreateEntity(entityId);
 		
 		graph.addEdge(null, user, entity, "Follows");
+		
+		addEntityToFeed(user, entity);
+	}
+	
+	private void addEntityToFeed(Vertex user, Vertex entityToAdd)
+	{
+		String feedLabel = getFeedLabel(getIdString(user));
+		DateTime entityDate = getTopStreamItemDate(entityToAdd);
+		Vertex previousEntity = user;
+		Vertex entity = getNextFeedEntity(
+				feedLabel, previousEntity, Direction.OUT);
+		DateTime currentEntityDate = getTopStreamItemDate(entity);
+		while (null != entity && 
+				entitySupercedes(currentEntityDate, entityDate))
+		{
+			previousEntity = entity;
+			entity = getNextFeedEntity(
+					feedLabel, previousEntity, Direction.OUT);
+			currentEntityDate = getTopStreamItemDate(entity);
+		}
+		
+		// add the edge from the previous entity
+		graph.addEdge(null, previousEntity, entityToAdd, feedLabel);
+		
+		// if there's a current entity, remove the edge from
+		// the previous to it, and add an edge from the added
+		if (null != entity)
+		{
+			for (Edge edge: previousEntity.getEdges(Direction.OUT, feedLabel))
+				graph.removeEdge(edge);
+			graph.addEdge(null, entityToAdd, entity, feedLabel);
+		}
+	}
+	
+	private DateTime getTopStreamItemDate(Vertex entity)
+	{
+		if (null == entity)
+			return null;
+		
+		List<StreamItemData> entityStream = 
+				getStream(getIdString(entity), 0, 1);
+		
+		if (entityStream.size() < 1)
+			return null;
+		
+		return entityStream.get(0).getTime();
+	}
+	
+	private boolean entitySupercedes(
+			DateTime currentEntityDate, DateTime entityDate)
+	{
+		if (null == entityDate)
+			return false;
+		if (null == currentEntityDate)
+			return true;
+		
+		// negation to cover the equals case
+		return !currentEntityDate.isAfter(entityDate);
 	}
 	
 	@Override
 	public List<StreamItemData> getFeed(String userId, long startIndex, int itemsToReturn)
 	{
 		Vertex user = getOrCreateEntity(userId);
-		Vertex entity = getNextFeedEntity(userId, user);
+		Vertex entity = getNextFeedEntity(
+				getFeedLabel(getIdString(user)), user, Direction.OUT);
 		List<Vertex> streamItems = new ArrayList<Vertex>();
 		if (null != entity)
 		{
@@ -194,11 +313,19 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		return createStreamItems(streamItems);
 	}
 	
-	private Vertex getNextFeedEntity(String userId, Vertex currentEntity)
+	private Vertex getNextFeedEntity(String feedLabel,
+			Vertex currentEntity, Direction direction)
 	{
 		Iterator<Vertex> vertices = 
-				currentEntity.getVertices(Direction.OUT, "Follows").iterator();
+				currentEntity
+				.getVertices(direction, feedLabel)
+				.iterator();
 		return vertices.hasNext() ? vertices.next() : null;
 		
+	}
+	
+	private String getFeedLabel(String userId)
+	{
+		return "Feed+" + userId;
 	}
 }
