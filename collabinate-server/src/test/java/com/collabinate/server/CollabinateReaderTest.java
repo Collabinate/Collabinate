@@ -131,6 +131,26 @@ public abstract class CollabinateReaderTest
 				time1.getMillis(), time2.getMillis()));
 	}
 	
+	@Test
+	public void new_stream_item_added_to_followed_entity_should_put_entity_into_correct_order_in_feed()
+	{
+		final DateTime time1 = DateTime.now();
+		final DateTime time2 = DateTime.now().plus(1000);
+		final DateTime time3 = DateTime.now().plus(2000);
+		final DateTime time4 = time1.minus(1000);
+		writer.addStreamItem("1", new StreamItemDataImpl(time1));
+		writer.addStreamItem("2", new StreamItemDataImpl(time2));
+		writer.followEntity("user", "1");
+		writer.followEntity("user", "2");
+		writer.addStreamItem("1", new StreamItemDataImpl(time3));
+		DateTime firstFeedItem = reader.getFeed("user", 0, 1)
+				.get(0).getTime();
+		assertEquals(time3.getMillis(), firstFeedItem.getMillis());
+		writer.addStreamItem("2", new StreamItemDataImpl(time4));
+		firstFeedItem = reader.getFeed("user", 0, 1)
+				.get(0).getTime();
+		assertEquals(time3.getMillis(), firstFeedItem.getMillis());
+	}
 	
 	private class StreamItemDataImpl implements StreamItemData
 	{
