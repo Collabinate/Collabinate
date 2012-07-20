@@ -49,7 +49,7 @@ public abstract class CollabinateReaderTest
 	{
 		final DateTime instant = DateTime.now();
 		writer.addStreamItem("1", new StreamItemDataImpl(instant));
-		DateTime returnedTime =
+		final DateTime returnedTime =
 				reader.getStream("1", 0, 1).get(0).getTime();
 		assertEquals(instant.getMillis(), returnedTime.getMillis());
 	}
