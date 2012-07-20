@@ -31,14 +31,7 @@ public abstract class CollabinateReaderTest
 	}
 	
 	@Test
-	public void should_not_be_null()
-	{
-		assertNotNull(reader);
-		assertNotNull(writer);
-	}
-
-	@Test
-	public void retrieving_no_stream_items_should_give_empty_array()
+	public void stream_for_new_entity_should_be_empty()
 	{
 		List<StreamItemData> stream = reader.getStream("1", 0, 1);
 		assertEquals(0, stream.size());
