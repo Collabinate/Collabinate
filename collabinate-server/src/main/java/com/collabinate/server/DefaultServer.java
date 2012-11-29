@@ -48,7 +48,7 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		
 		Vertex streamItem = createStreamItem(streamItemData);
 		
-		insertStreamItem(entity, streamItem);
+		insertStreamItem(entity, streamItem, streamItemData.getTime());
 		
 		updateFeedPaths(entity);
 	}
@@ -63,14 +63,15 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		return entity;
 	}
 	
-	private Vertex createStreamItem(StreamItemData streamItemData)
+	private Vertex createStreamItem(final StreamItemData streamItemData)
 	{
 		Vertex streamItem = graph.addVertex(null);
 		streamItem.setProperty("Time", streamItemData.getTime().toString());
 		return streamItem;
 	}
 	
-	private void insertStreamItem(Vertex entity, Vertex streamItem)
+	private void insertStreamItem(final Vertex entity,
+			final Vertex streamItem, final DateTime streamItemDate)
 	{
 		// get the edge to the first stream item, if any
 		final Edge originalEdge = getStreamItemEdge(entity);

@@ -127,22 +127,35 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void new_stream_item_added_to_followed_entity_should_put_entity_into_correct_order_in_feed()
 	{
-		final DateTime time1 = DateTime.now();
-		final DateTime time2 = DateTime.now().plus(1000);
-		final DateTime time3 = DateTime.now().plus(2000);
-		final DateTime time4 = time1.minus(1000);
-		writer.addStreamItem("1", new StreamItemDataImpl(time1));
-		writer.addStreamItem("2", new StreamItemDataImpl(time2));
-		writer.followEntity("user", "1");
-		writer.followEntity("user", "2");
-		writer.addStreamItem("1", new StreamItemDataImpl(time3));
-		DateTime firstFeedItem = reader.getFeed("user", 0, 1)
+		final DateTime time1 = DateTime.now();    // A1
+		final DateTime time2 = time1.plus(1000);  // A2
+		final DateTime time3 = time1.plus(2000);  // B1
+		final DateTime time4 = time1.minus(1000); // B2
+		// create stream items for two entities
+		// and have a user follow them
+		writer.addStreamItem("A", new StreamItemDataImpl(time1));
+		writer.addStreamItem("B", new StreamItemDataImpl(time2));
+		writer.followEntity("user", "A");
+		writer.followEntity("user", "B");
+		// The descending time order right now is A2, A1
+		writer.addStreamItem("A", new StreamItemDataImpl(time3));
+		// Now the time order is B1, A2, A1
+		DateTime feedItem = reader.getFeed("user", 0, 1)
 				.get(0).getTime();
-		assertEquals(time3.getMillis(), firstFeedItem.getMillis());
-		writer.addStreamItem("2", new StreamItemDataImpl(time4));
-		firstFeedItem = reader.getFeed("user", 0, 1)
-				.get(0).getTime();
-		assertEquals(time3.getMillis(), firstFeedItem.getMillis());
+		assertEquals(time3.getMillis(), feedItem.getMillis());
+		// Now we'll add 2B, but it actually comes EARLIER than
+		// all the rest, and thus the descending order should become
+		// B1 (time3), A2 (time2), A1 (time1), B2 (time4)
+		writer.addStreamItem("B", new StreamItemDataImpl(time4));
+		List<StreamItemData> feed = reader.getFeed("user", 0, 4);
+		feedItem = feed.get(0).getTime();
+		assertEquals(time3.getMillis(), feedItem.getMillis());
+		feedItem = feed.get(1).getTime();
+		assertEquals(time2.getMillis(), feedItem.getMillis());
+		feedItem = feed.get(2).getTime();
+		assertEquals(time1.getMillis(), feedItem.getMillis());
+		feedItem = feed.get(3).getTime();
+		assertEquals(time4.getMillis(), feedItem.getMillis());
 	}
 	
 	private class StreamItemDataImpl implements StreamItemData
