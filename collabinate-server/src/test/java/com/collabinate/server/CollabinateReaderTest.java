@@ -1,7 +1,7 @@
 package com.collabinate.server;
 
+import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
-import static org.junit.matchers.JUnitMatchers.*;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -63,7 +63,7 @@ public abstract class CollabinateReaderTest
 		writer.addStreamItem("1", new StreamItemDataImpl(DateTime.now()));
 		
 		List<StreamItemData> items = reader.getStream("1", 0, 2);
-		assertEquals("All items not retrieved", 2, items.size(), 0);
+		assertEquals("All items not retrieved", 2, items.size());
 	}
 		
 	@Test
@@ -77,9 +77,9 @@ public abstract class CollabinateReaderTest
 		writer.addStreamItem("1", new StreamItemDataImpl(time0));
 		
 		List<StreamItemData> items = reader.getStream("1", 0, 2);
-		assertEquals("All items not retrieved", 2, items.size(), 0);
+		assertEquals("All items not retrieved", 2, items.size());
 		assertEquals("Items not in correct order", 
-				time0.getMillis(), items.get(0).getTime().getMillis(), 0);
+				time0.getMillis(), items.get(0).getTime().getMillis());
 	}
 	
 	@Test
