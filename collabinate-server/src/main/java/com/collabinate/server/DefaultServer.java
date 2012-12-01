@@ -44,16 +44,15 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("streamItem must not be null");
 		}
 		
-		Vertex entity = getOrCreateEntity(entityId);
+		Vertex entity = getOrCreateEntityVertex(entityId);
 		
-		Vertex streamItem = createStreamItem(streamItemData);
+		Vertex streamItem = createStreamItemVertex(streamItemData);
 		
-		insertStreamItem(entity, streamItem, streamItemData.getTime());
-		
-		updateFeedPaths(entity);
+		if (insertStreamItem(entity, streamItem))
+			updateFeedPaths(entity);
 	}
 
-	private Vertex getOrCreateEntity(String entityId)
+	private Vertex getOrCreateEntityVertex(final String entityId)
 	{
 		Vertex entity = graph.getVertex(entityId);
 		if (null == entity)
@@ -63,52 +62,70 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		return entity;
 	}
 	
-	private Vertex createStreamItem(final StreamItemData streamItemData)
+	private Vertex createStreamItemVertex(final StreamItemData streamItemData)
 	{
 		Vertex streamItem = graph.addVertex(null);
 		streamItem.setProperty("Time", streamItemData.getTime().toString());
 		return streamItem;
 	}
 	
-	private void insertStreamItem(final Vertex entity,
-			final Vertex streamItem, final DateTime streamItemDate)
+	private boolean insertStreamItem(final Vertex entity,
+			final Vertex newStreamItem)
 	{
-		// get the edge to the first stream item, if any
-		final Edge originalEdge = getStreamItemEdge(entity);
-		
-		// get the first stream item, if any, and remove the first edge
-		Vertex previousStreamItem = null;
-		if (null != originalEdge)
+		if (null == entity)
 		{
-			previousStreamItem = originalEdge.getVertex(Direction.IN);
-			graph.removeEdge(originalEdge);
+			throw new IllegalArgumentException("entity must not be null");
 		}
 		
-		// connect the new stream item to the entity
-		graph.addEdge(null, entity, streamItem, "StreamItem");
-		
-		// if there was a previous stream item,
-		// connect the new stream item to it
-		if (null != previousStreamItem)
+		if (null == newStreamItem)
 		{
-			graph.addEdge(null, streamItem, previousStreamItem, "StreamItem");
+			throw new IllegalArgumentException(
+					"newStreamItem must not be null");
 		}
+		
+		StreamItemDateComparator comparator = new StreamItemDateComparator();
+		
+		Edge currentStreamEdge = getStreamItemEdge(entity);
+		Vertex currentStreamItem = getNextStreamItem(entity);
+		Vertex previousStreamItem = entity;
+		int position = 0;		
+						
+		while (currentStreamItem != null &&
+		       comparator.compare(newStreamItem, currentStreamItem) > 0)
+		{
+			previousStreamItem = currentStreamItem;
+			currentStreamEdge = getStreamItemEdge(currentStreamItem);
+			currentStreamItem = getNextStreamItem(currentStreamItem);
+			position++;
+		}
+		
+		graph.addEdge(null, previousStreamItem, newStreamItem, "StreamItem");
+		if (null != currentStreamEdge)
+		{
+			graph.addEdge(null, newStreamItem, currentStreamItem, "StreamItem");
+			graph.removeEdge(currentStreamEdge);
+		}
+		
+		return position == 0;
 	}
 	
-	private Edge getStreamItemEdge(Vertex entity)
+	private Edge getStreamItemEdge(Vertex node)
 	{
-		Iterator<Edge> iterator = 
-				entity.getEdges(Direction.OUT, "StreamItem").iterator();
+		if (null == node)
+			return null;
 		
-		Edge edge = iterator.hasNext() ? iterator.next() : null;
+		Iterator<Edge> edges = 
+				node.getEdges(Direction.OUT, "StreamItem").iterator();
+		
+		Edge edge = edges.hasNext() ? edges.next() : null;
 		
 		if (null != edge)
 		{
-			if (iterator.hasNext())
+			if (edges.hasNext())
 			{
 				throw new IllegalStateException(
-					"Multiple stream item edges for entity: " + 
-					entity.getId());
+					"Multiple stream item edges for vertex: " + 
+					node.getId());
 			}
 		}
 		
@@ -202,14 +219,13 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	
 	private Vertex getNextStreamItem(Vertex node)
 	{
-		if (null == node)
-			return null;
-		Iterator<Vertex> vertices = 
-				node.getVertices(Direction.OUT, "StreamItem").iterator();
-		return vertices.hasNext() ? vertices.next() : null;
+		Edge streamItemEdge = getStreamItemEdge(node);
+		return null == streamItemEdge ? null :
+			streamItemEdge.getVertex(Direction.OUT);
 	}
 
-	private List<StreamItemData> createStreamItems(Collection<Vertex> streamItems)
+	private List<StreamItemData> createStreamItems(
+			Collection<Vertex> streamItems)
 	{
 		ArrayList<StreamItemData> itemData =
 				new ArrayList<StreamItemData>();
@@ -245,8 +261,8 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("userId must not be null");
 		}
 		
-		Vertex user = getOrCreateEntity(userId);
-		Vertex entity = getOrCreateEntity(entityId);
+		Vertex user = getOrCreateEntityVertex(userId);
+		Vertex entity = getOrCreateEntityVertex(entityId);
 		
 		graph.addEdge(null, user, entity, "Follows");
 		
@@ -310,7 +326,8 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public List<StreamItemData> getFeed(String userId, long startIndex, int itemsToReturn)
+	public List<StreamItemData> getFeed(String userId, long startIndex,
+			int itemsToReturn)
 	{
 		StreamItemDateComparator comparator = new StreamItemDateComparator();
 		PriorityQueue<Vertex> queue = 
@@ -319,7 +336,7 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		Vertex topOfEntity = null;
 		Vertex topOfQueue = null;
 		
-		Vertex user = getOrCreateEntity(userId);
+		Vertex user = getOrCreateEntityVertex(userId);
 		String feedLabel = getFeedLabel(getIdString(user));
 		Vertex entity = getNextFeedEntity(feedLabel, user, Direction.OUT);
 		
