@@ -91,7 +91,7 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		int position = 0;		
 						
 		while (currentStreamItem != null &&
-		       comparator.compare(newStreamItem, currentStreamItem) > 0)
+		       comparator.compare(newStreamItem, currentStreamItem) < 0)
 		{
 			previousStreamItem = currentStreamItem;
 			currentStreamEdge = getStreamItemEdge(currentStreamItem);

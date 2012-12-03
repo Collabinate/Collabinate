@@ -72,14 +72,20 @@ public abstract class CollabinateReaderTest
 	{
 		final DateTime time0 = DateTime.now();
 		final DateTime time1 = time0.plus(1000);
+		final DateTime time2 = time0.minus(1000);
 
-		writer.addStreamItem("1", new StreamItemDataImpl(time1));		
-		writer.addStreamItem("1", new StreamItemDataImpl(time0));
+		writer.addStreamItem("1", new StreamItemDataImpl(time0));		
+		writer.addStreamItem("1", new StreamItemDataImpl(time1));
+		writer.addStreamItem("1", new StreamItemDataImpl(time2));
 		
-		List<StreamItemData> items = reader.getStream("1", 0, 2);
-		assertEquals("All items not retrieved", 2, items.size());
+		List<StreamItemData> items = reader.getStream("1", 0, 3);
+		assertEquals("All items not retrieved", 3, items.size());
+		assertEquals("Latest not first", 
+				time1.getMillis(), items.get(0).getTime().getMillis());
 		assertEquals("Items not in correct order", 
-				time0.getMillis(), items.get(0).getTime().getMillis());
+				time0.getMillis(), items.get(1).getTime().getMillis());
+		assertEquals("Earliest not last", 
+				time2.getMillis(), items.get(2).getTime().getMillis());
 	}
 	
 	@Test
