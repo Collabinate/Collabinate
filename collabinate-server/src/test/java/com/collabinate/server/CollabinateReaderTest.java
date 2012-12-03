@@ -65,29 +65,47 @@ public abstract class CollabinateReaderTest
 		List<StreamItemData> items = reader.getStream("1", 0, 2);
 		assertEquals("All items not retrieved", 2, items.size());
 	}
-		
+	
 	@Test
-	public void stream_items_should_be_returned_in_date_order()
-			throws InterruptedException
+	public void newest_stream_item_should_come_first_in_stream()
 	{
 		final DateTime time0 = DateTime.now();
 		final DateTime time1 = time0.plus(1000);
 		final DateTime time2 = time0.minus(1000);
-
-		writer.addStreamItem("1", new StreamItemDataImpl(time0));		
+		final DateTime time3 = time0.plus(2000); // newest
+		final DateTime time4 = time0.minus(2000);
+		
+		writer.addStreamItem("1", new StreamItemDataImpl(time0));
 		writer.addStreamItem("1", new StreamItemDataImpl(time1));
 		writer.addStreamItem("1", new StreamItemDataImpl(time2));
+		writer.addStreamItem("1", new StreamItemDataImpl(time3));
+		writer.addStreamItem("1", new StreamItemDataImpl(time4));
 		
-		List<StreamItemData> items = reader.getStream("1", 0, 3);
-		assertEquals("All items not retrieved", 3, items.size());
-		assertEquals("Latest not first", 
-				time1.getMillis(), items.get(0).getTime().getMillis());
-		assertEquals("Items not in correct order", 
-				time0.getMillis(), items.get(1).getTime().getMillis());
-		assertEquals("Earliest not last", 
-				time2.getMillis(), items.get(2).getTime().getMillis());
+		List<StreamItemData> items = reader.getStream("1", 0, 1);
+		assertEquals("Newest item not first in stream", 
+			time3.getMillis(), items.get(0).getTime().getMillis());
 	}
 	
+	@Test
+	public void oldest_stream_item_should_come_last_in_stream()
+	{
+		final DateTime time0 = DateTime.now();
+		final DateTime time1 = time0.minus(1000);
+		final DateTime time2 = time0.plus(1000);
+		final DateTime time3 = time0.minus(2000); // oldest	
+		final DateTime time4 = time0.plus(2000);
+		
+		writer.addStreamItem("1", new StreamItemDataImpl(time0));
+		writer.addStreamItem("1", new StreamItemDataImpl(time1));
+		writer.addStreamItem("1", new StreamItemDataImpl(time2));
+		writer.addStreamItem("1", new StreamItemDataImpl(time3));
+		writer.addStreamItem("1", new StreamItemDataImpl(time4));
+		
+		List<StreamItemData> items = reader.getStream("1", 0, 5);
+		assertEquals("Oldest item not last in stream", 
+			time3.getMillis(), items.get(4).getTime().getMillis());
+	}
+		
 	@Test
 	public void feed_for_user_who_follows_nothing_should_be_empty()
 	{
