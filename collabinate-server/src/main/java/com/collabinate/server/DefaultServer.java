@@ -138,50 +138,18 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		Iterable<Vertex> users =
 				entity.getVertices(Direction.IN, "Follows");
 		
-		// loop over each and move the entity to first
+		// loop over each user and move the entity to the correct
+		// feed position by un-following and re-following
+		String entityId = entity.getId().toString();
+		String userId;
 		for (Vertex user : users)
 		{
-			putFeedEntityFirst(user, entity);
+			userId = user.getId().toString();
+			unfollowEntity(userId, entityId);
+			followEntity(userId, entityId);
 		}
 	}
-	
-	private void putFeedEntityFirst(Vertex user, Vertex entity)
-	{
-		String feedLabel = getFeedLabel(getIdString(user));
 		
-		// get the previous entity
-		Vertex previous = getNextFeedEntity(
-				feedLabel, entity, Direction.IN);
-		
-		// if the previous entity is the user, we're done
-		if (user.getId().equals(previous.getId()))
-		{
-			return;
-		}
-		
-		// get the next entity
-		Vertex next = getNextFeedEntity(
-				feedLabel, entity, Direction.OUT);
-		
-		// get the entity that was originally first
-		Vertex originalFirst = getNextFeedEntity(
-				feedLabel, user, Direction.OUT);
-		
-		// delete the old edges
-		for (Edge edge : user.getEdges(Direction.OUT, feedLabel))
-			graph.removeEdge(edge);
-		for (Edge edge : previous.getEdges(Direction.OUT, feedLabel))
-			graph.removeEdge(edge);
-		for (Edge edge : entity.getEdges(Direction.OUT, feedLabel))
-			graph.removeEdge(edge);
-		
-		// add the new edges
-		graph.addEdge(null, user, entity, feedLabel);
-		graph.addEdge(null, entity, originalFirst, feedLabel);
-		if (null != next)
-			graph.addEdge(null, previous, next, feedLabel);
-	}
-	
 	private String getIdString(Vertex vertex)
 	{
 		return vertex.getId().toString();
@@ -261,12 +229,58 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("userId must not be null");
 		}
 		
+		if (null == entityId)
+		{
+			throw new IllegalArgumentException("entityId must not be null");
+		}
+		
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		
 		graph.addEdge(null, user, entity, "Follows");
 		
 		addEntityToFeed(user, entity);
+	}
+	
+	public void unfollowEntity(String userId, String entityId)
+	{
+		if (null == userId)
+		{
+			throw new IllegalArgumentException("userId must not be null");
+		}
+
+		if (null == entityId)
+		{
+			throw new IllegalArgumentException("entityId must not be null");
+		}
+		
+		Vertex user = getOrCreateEntityVertex(userId);
+		Vertex entity = getOrCreateEntityVertex(entityId);
+		String feedLabel = getFeedLabel(getIdString(user));
+		
+		// remove the follow relationship
+		for (Edge edge: user.getEdges(Direction.OUT, "Follows"))
+		{
+			if (edge.getVertex(Direction.OUT).getId().equals(
+					entity.getId()))
+				graph.removeEdge(edge);
+		}
+		
+		// remove the entity from the user feed
+		Vertex previousEntity = getNextFeedEntity(feedLabel, entity,
+				Direction.IN);
+		Vertex nextEntity = getNextFeedEntity(feedLabel, entity,
+				Direction.OUT);
+		for (Edge edge: entity.getEdges(Direction.BOTH, feedLabel))
+		{
+			graph.removeEdge(edge);
+		}
+		
+		if (null != nextEntity)
+		{
+			graph.addEdge(null, previousEntity, nextEntity, feedLabel);
+		}
+		
 	}
 	
 	private void addEntityToFeed(Vertex user, Vertex entityToAdd)
@@ -394,12 +408,28 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	private Vertex getNextFeedEntity(String feedLabel,
 			Vertex currentEntity, Direction direction)
 	{
+		if (null == currentEntity)
+			return null;
+		
 		Iterator<Vertex> vertices = 
 				currentEntity
 				.getVertices(direction, feedLabel)
 				.iterator();
-		return vertices.hasNext() ? vertices.next() : null;
 		
+		Vertex vertex = vertices.hasNext() ? vertices.next() : null;
+		
+		if (null != vertex)
+		{
+			if (vertices.hasNext())
+			{
+				throw new IllegalStateException(
+					"Multiple feed edges for vertex: " +
+					vertex.getId() + " with feedLabel: " +
+					feedLabel);
+			}
+		}
+		
+		return vertex;
 	}
 	
 	private String getFeedLabel(String userId)
