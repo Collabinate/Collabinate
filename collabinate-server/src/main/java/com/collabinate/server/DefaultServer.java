@@ -221,7 +221,7 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	{
 		Edge streamItemEdge = getStreamItemEdge(node);
 		return null == streamItemEdge ? null :
-			streamItemEdge.getVertex(Direction.OUT);
+			streamItemEdge.getVertex(Direction.IN);
 	}
 
 	private List<StreamItemData> createStreamItems(
