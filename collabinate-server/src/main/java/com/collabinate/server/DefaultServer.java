@@ -286,13 +286,13 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 	private void addEntityToFeed(Vertex user, Vertex entityToAdd)
 	{
 		String feedLabel = getFeedLabel(getIdString(user));
-		DateTime entityDate = getTopStreamItemDate(entityToAdd);
+		DateTime entityToAddDate = getTopStreamItemDate(entityToAdd);
 		Vertex previousEntity = user;
 		Vertex entity = getNextFeedEntity(
 				feedLabel, previousEntity, Direction.OUT);
 		DateTime currentEntityDate = getTopStreamItemDate(entity);
 		while (null != entity && 
-				entitySupercedes(currentEntityDate, entityDate))
+				entitySupercedes(currentEntityDate, entityToAddDate))
 		{
 			previousEntity = entity;
 			entity = getNextFeedEntity(
@@ -396,7 +396,7 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 				Vertex removedFromQueue = queue.remove();
 				Vertex nextItem = getNextStreamItem(removedFromQueue);
 				if (null != nextItem)
-					queue.add(getNextStreamItem(removedFromQueue));
+					queue.add(nextItem);
 				streamItems.add(removedFromQueue);
 				topOfQueue = queue.peek();
 			}
