@@ -1,5 +1,7 @@
 package com.collabinate.server;
 
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
@@ -13,6 +15,7 @@ import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.util.io.graphml.GraphMLWriter;
 import com.tinkerpop.blueprints.util.wrappers.id.IdGraph;
 
 public class DefaultServer implements CollabinateReader, CollabinateWriter
@@ -259,10 +262,10 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		String feedLabel = getFeedLabel(getIdString(user));
 		
 		// remove the follow relationship
-		for (Edge edge: user.getEdges(Direction.OUT, "Follows"))
+		for (Edge edge: entity.getEdges(Direction.IN, "Follows"))
 		{
 			if (edge.getVertex(Direction.OUT).getId().equals(
-					entity.getId()))
+					user.getId()))
 				graph.removeEdge(edge);
 		}
 		
@@ -336,13 +339,19 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 			return true;
 		
 		// negation to cover the equals case
-		return !currentEntityDate.isAfter(entityDate);
+		return !currentEntityDate.isBefore(entityDate);
 	}
 	
 	@Override
 	public List<StreamItemData> getFeed(String userId, long startIndex,
 			int itemsToReturn)
 	{
+		exportGraph(DateTime.now().toString() 
+					+ "_user" + userId
+					+ "_start" + startIndex
+					+ "_items" + itemsToReturn
+					+ ".graphml");
+		
 		StreamItemDateComparator comparator = new StreamItemDateComparator();
 		PriorityQueue<Vertex> queue = 
 				new PriorityQueue<Vertex>(11, comparator);
@@ -403,6 +412,23 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		}
 
 		return createStreamItems(streamItems);
+	}
+
+	private void exportGraph(String fileName)
+	{
+		try
+		{
+			GraphMLWriter writer = new GraphMLWriter(graph);
+			writer.setNormalize(true);
+			FileOutputStream file = new FileOutputStream(fileName);
+			writer.outputGraph(file);
+			file.flush();
+			file.close();
+		}
+		catch (IOException exc)
+		{
+			// TODO: handle
+		}
 	}
 	
 	private Vertex getNextFeedEntity(String feedLabel,
