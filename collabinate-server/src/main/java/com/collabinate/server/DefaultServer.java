@@ -94,7 +94,7 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		int position = 0;		
 						
 		while (currentStreamItem != null &&
-		       comparator.compare(newStreamItem, currentStreamItem) < 0)
+		       comparator.compare(newStreamItem, currentStreamItem) > 0)
 		{
 			previousStreamItem = currentStreamItem;
 			currentStreamEdge = getStreamItemEdge(currentStreamItem);
@@ -128,6 +128,29 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 			{
 				throw new IllegalStateException(
 					"Multiple stream item edges for vertex: " + 
+					node.getId());
+			}
+		}
+		
+		return edge;
+	}
+	
+	private Edge getFeedEdge(Vertex node, String feedLabel)
+	{
+		if (null == node)
+			return null;
+		
+		Iterator<Edge> edges =
+				node.getEdges(Direction.OUT, feedLabel).iterator();
+		
+		Edge edge = edges.hasNext() ? edges.next() : null;
+		
+		if (null != edge)
+		{
+			if (edges.hasNext())
+			{
+				throw new IllegalStateException(
+					"Multiple feed edges for vertex: " +
 					node.getId());
 			}
 		}
@@ -242,7 +265,7 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		
 		graph.addEdge(null, user, entity, "Follows");
 		
-		addEntityToFeed(user, entity);
+		insertFeedEntity(user, entity);
 	}
 	
 	public void unfollowEntity(String userId, String entityId)
@@ -286,74 +309,54 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 		
 	}
 	
-	private void addEntityToFeed(Vertex user, Vertex entityToAdd)
+	private boolean insertFeedEntity(final Vertex user, final Vertex newEntity)
 	{
-		String feedLabel = getFeedLabel(getIdString(user));
-		DateTime entityToAddDate = getTopStreamItemDate(entityToAdd);
-		Vertex previousEntity = user;
-		Vertex entity = getNextFeedEntity(
-				feedLabel, previousEntity, Direction.OUT);
-		DateTime currentEntityDate = getTopStreamItemDate(entity);
-		while (null != entity && 
-				entitySupercedes(currentEntityDate, entityToAddDate))
+		if (null == user)
 		{
-			previousEntity = entity;
-			entity = getNextFeedEntity(
-					feedLabel, previousEntity, Direction.OUT);
-			currentEntityDate = getTopStreamItemDate(entity);
+			throw new IllegalArgumentException("user must not be null");
 		}
 		
-		// add the edge from the previous entity
-		graph.addEdge(null, previousEntity, entityToAdd, feedLabel);
-		
-		// if there's a current entity, remove the edge from
-		// the previous to it, and add an edge from the added
-		if (null != entity)
+		if (null == newEntity)
 		{
-			for (Edge edge: previousEntity.getEdges(Direction.OUT, feedLabel))
-				graph.removeEdge(edge);
-			graph.addEdge(null, entityToAdd, entity, feedLabel);
+			throw new IllegalArgumentException(
+					"newEntity must not be null");
 		}
+		
+		EntityFirstStreamItemDateComparator comparator = 
+				new EntityFirstStreamItemDateComparator();
+		
+		String feedLabel = getFeedLabel((String)user.getId());
+		Edge currentFeedEdge = getFeedEdge(user, feedLabel);
+		Vertex currentFeedEntity = getNextFeedEntity(feedLabel, user,
+				Direction.OUT);
+		Vertex previousFeedEntity = user;
+		int position = 0;		
+						
+		while (currentFeedEntity != null &&
+		       comparator.compare(newEntity, currentFeedEntity) > 0)
+		{
+			previousFeedEntity = currentFeedEntity;
+			currentFeedEdge = getStreamItemEdge(currentFeedEntity);
+			currentFeedEntity = getNextStreamItem(currentFeedEntity);
+			position++;
+		}
+		
+		graph.addEdge(null, previousFeedEntity, newEntity, feedLabel);
+		if (null != currentFeedEdge)
+		{
+			graph.addEdge(null, newEntity, currentFeedEntity, feedLabel);
+			graph.removeEdge(currentFeedEdge);
+		}
+		
+		return position == 0;
 	}
-	
-	private DateTime getTopStreamItemDate(Vertex entity)
-	{
-		if (null == entity)
-			return null;
-		
-		List<StreamItemData> entityStream = 
-				getStream(getIdString(entity), 0, 1);
-		
-		if (entityStream.size() < 1)
-			return null;
-		
-		return entityStream.get(0).getTime();
-	}
-	
-	private boolean entitySupercedes(
-			DateTime currentEntityDate, DateTime entityDate)
-	{
-		if (null == entityDate)
-			return false;
-		if (null == currentEntityDate)
-			return true;
-		
-		// negation to cover the equals case
-		return !currentEntityDate.isBefore(entityDate);
-	}
-	
+
 	@Override
 	public List<StreamItemData> getFeed(String userId, long startIndex,
 			int itemsToReturn)
 	{
-		exportGraph(DateTime.now().toString() 
-					+ "_user" + userId
-					+ "_start" + startIndex
-					+ "_items" + itemsToReturn
-					+ ".graphml");
-		
-		StreamItemDateComparator comparator = new StreamItemDateComparator();
-		PriorityQueue<Vertex> queue = 
+		StreamItemDateComparator comparator = new StreamItemDateComparator();		
+		PriorityQueue<Vertex> queue =
 				new PriorityQueue<Vertex>(11, comparator);
 		ArrayList<Vertex> streamItems = new ArrayList<Vertex>();
 		Vertex topOfEntity = null;
@@ -387,7 +390,7 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 			// if top of next entity is newer, take the top element,
 			// push the next element to the queue, and move to
 			// the next entity
-			if (result > 0)
+			if (result < 0)
 			{
 				streamItems.add(topOfEntity);
 				Vertex nextItem = getNextStreamItem(topOfEntity);
@@ -398,16 +401,27 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 				topOfQueue = queue.peek();
 			}
 			
-			// if top of queue is newer, take the top element, and
-			// push the next element to the queue
 			else
 			{
-				Vertex removedFromQueue = queue.remove();
-				Vertex nextItem = getNextStreamItem(removedFromQueue);
-				if (null != nextItem)
-					queue.add(nextItem);
-				streamItems.add(removedFromQueue);
-				topOfQueue = queue.peek();
+				// if there's no top of entity and the queue is empty,
+				// we need to move to the next entity
+				if (queue.isEmpty())
+				{
+					entity = getNextFeedEntity(feedLabel,
+							entity, Direction.OUT);
+					topOfEntity = getNextStreamItem(entity);
+				}
+				// if top of queue is newer, take the top element, and
+				// push the next element to the queue
+				else
+				{
+					Vertex removedFromQueue = queue.remove();
+					Vertex nextItem = getNextStreamItem(removedFromQueue);
+					if (null != nextItem)
+						queue.add(nextItem);
+					streamItems.add(removedFromQueue);
+					topOfQueue = queue.peek();
+				}
 			}
 		}
 
@@ -476,8 +490,34 @@ public class DefaultServer implements CollabinateReader, CollabinateWriter
 			if (null != v2)
 				t2 = DateTime.parse((String)v2.getProperty("Time"))
 					.getMillis();
+
+			return new Long(t2).compareTo(t1);
+		}
+	}
+	
+	private class EntityFirstStreamItemDateComparator
+		implements Comparator<Vertex>
+	{
+		@Override
+		public int compare(Vertex v1, Vertex v2)
+		{
+			Vertex streamItem = null;
 			
-			return new Long(t1).compareTo(t2);
+			long t1 = 0;
+			if (null != v1)
+				streamItem = getNextStreamItem(v1);
+			if (null != streamItem)
+				t1 = DateTime.parse((String)streamItem.getProperty("Time"))
+					.getMillis();
+			
+			long t2 = 0;
+			if (null != v2)
+				streamItem = getNextStreamItem(v2);
+			if (null != streamItem)
+				t2 = DateTime.parse((String)streamItem.getProperty("Time"))
+					.getMillis();
+			
+			return new Long(t2).compareTo(t1);
 		}
 	}
 }
