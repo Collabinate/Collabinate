@@ -7,7 +7,7 @@ import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 public class DefaultServerReaderTest extends CollabinateReaderTest
 {
-	private DefaultServer server;
+	private GraphServer server;
 	
 	@Override
 	CollabinateReader getReader()
@@ -21,12 +21,12 @@ public class DefaultServerReaderTest extends CollabinateReaderTest
 		return getServer();
 	}
 	
-	private DefaultServer getServer()
+	private GraphServer getServer()
 	{
 		if (null == server)
 		{
 			KeyIndexableGraph graph = new TinkerGraph();
-			server = new DefaultServer(graph);
+			server = new GraphServer(graph);
 		}
 		return server;
 	}
@@ -35,6 +35,6 @@ public class DefaultServerReaderTest extends CollabinateReaderTest
 	public void should_not_allow_null_graph()
 	{
 		exception.expect(IllegalArgumentException.class);
-		new DefaultServer(null);
+		new GraphServer(null);
 	}
 }

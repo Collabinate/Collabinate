@@ -1,7 +1,7 @@
 package com.collabinate.server;
 
-import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
+import static org.junit.matchers.JUnitMatchers.*;
 
 import java.util.ArrayList;
 import java.util.List;

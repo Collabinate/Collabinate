@@ -11,13 +11,13 @@ public class DefaultServerWriterTest extends CollabinateWriterTest
 	CollabinateWriter getWriter()
 	{
 		KeyIndexableGraph graph = new TinkerGraph();
-		return new DefaultServer(graph);
+		return new GraphServer(graph);
 	}
 	
 	@Test
 	public void should_not_allow_null_graph()
 	{
 		exception.expect(IllegalArgumentException.class);
-		new DefaultServer(null);
+		new GraphServer(null);
 	}
 }
