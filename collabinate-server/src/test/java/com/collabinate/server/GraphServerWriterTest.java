@@ -5,7 +5,7 @@ import org.junit.Test;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
-public class DefaultServerWriterTest extends CollabinateWriterTest
+public class GraphServerWriterTest extends CollabinateWriterTest
 {
 	@Override
 	CollabinateWriter getWriter()
