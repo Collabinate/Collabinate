@@ -30,17 +30,17 @@ public abstract class CollabinateWriterTest
 	}
 
 	@Test
-	public void add_stream_item_should_not_allow_null_entity_ID()
+	public void add_stream_entry_should_not_allow_null_entity_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
-		writer.addStreamItem(null, new StreamItemDataImpl(null));
+		writer.addStreamEntry(null, new StreamEntryImpl(null));
 	}
 	
 	@Test
-	public void add_stream_item_should_not_allow_null_stream_item()
+	public void add_stream_entry_should_not_allow_null_stream_entry()
 	{
 		exception.expect(IllegalArgumentException.class);
-		writer.addStreamItem("", null);
+		writer.addStreamEntry("", null);
 	}
 		
 	@Test
@@ -57,11 +57,11 @@ public abstract class CollabinateWriterTest
 		writer.followEntity("user", null);
 	}
 	
-	private class StreamItemDataImpl implements StreamItemData
+	private class StreamEntryImpl implements StreamEntry
 	{
 		private DateTime time;
 		
-		public StreamItemDataImpl(DateTime time)
+		public StreamEntryImpl(DateTime time)
 		{
 			this.time = time;
 		}

@@ -16,7 +16,7 @@ public interface CollabinateWriter
 	 * @param entityId The entity for which an entry will be added.
 	 * @param streamEntry The entry to add.
 	 */
-	public void addStreamItem(String entityId, StreamItemData streamItem);
+	public void addStreamEntry(String entityId, StreamEntry streamEntry);
 	
 	/**
 	 * Adds an entity to the collection of entities a user follows.

@@ -51,23 +51,23 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public void addStreamItem(String entityId, StreamItemData streamItemData)
+	public void addStreamEntry(String entityId, StreamEntry streamEntry)
 	{
 		if (null == entityId)
 		{
 			throw new IllegalArgumentException("entityId must not be null");
 		}
 		
-		if (null == streamItemData)
+		if (null == streamEntry)
 		{
-			throw new IllegalArgumentException("streamItem must not be null");
+			throw new IllegalArgumentException("streamEntry must not be null");
 		}
 		
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		
-		Vertex streamItem = createStreamItemVertex(streamItemData);
+		Vertex streamEntryVertex = createStreamEntryVertex(streamEntry);
 		
-		if (insertStreamItem(entity, streamItem))
+		if (insertStreamEntry(entity, streamEntryVertex))
 			updateFeedPaths(entity);
 	}
 
@@ -81,60 +81,60 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		return entity;
 	}
 	
-	private Vertex createStreamItemVertex(final StreamItemData streamItemData)
+	private Vertex createStreamEntryVertex(final StreamEntry streamEntry)
 	{
-		Vertex streamItem = graph.addVertex(null);
-		streamItem.setProperty("Time", streamItemData.getTime().toString());
-		return streamItem;
+		Vertex streamEntryVertex = graph.addVertex(null);
+		streamEntryVertex.setProperty("Time", streamEntry.getTime().toString());
+		return streamEntryVertex;
 	}
 	
-	private boolean insertStreamItem(final Vertex entity,
-			final Vertex newStreamItem)
+	private boolean insertStreamEntry(final Vertex entity,
+			final Vertex newStreamEntry)
 	{
 		if (null == entity)
 		{
 			throw new IllegalArgumentException("entity must not be null");
 		}
 		
-		if (null == newStreamItem)
+		if (null == newStreamEntry)
 		{
 			throw new IllegalArgumentException(
-					"newStreamItem must not be null");
+					"newStreamEntry must not be null");
 		}
 		
-		StreamItemDateComparator comparator = new StreamItemDateComparator();
+		StreamEntryDateComparator comparator = new StreamEntryDateComparator();
 		
-		Edge currentStreamEdge = getStreamItemEdge(entity);
-		Vertex currentStreamItem = getNextStreamItem(entity);
-		Vertex previousStreamItem = entity;
+		Edge currentStreamEdge = getStreamEntryEdge(entity);
+		Vertex currentStreamEntry = getNextStreamEntry(entity);
+		Vertex previousStreamEntry = entity;
 		int position = 0;		
 						
-		while (currentStreamItem != null &&
-		       comparator.compare(newStreamItem, currentStreamItem) > 0)
+		while (currentStreamEntry != null &&
+		       comparator.compare(newStreamEntry, currentStreamEntry) > 0)
 		{
-			previousStreamItem = currentStreamItem;
-			currentStreamEdge = getStreamItemEdge(currentStreamItem);
-			currentStreamItem = getNextStreamItem(currentStreamItem);
+			previousStreamEntry = currentStreamEntry;
+			currentStreamEdge = getStreamEntryEdge(currentStreamEntry);
+			currentStreamEntry = getNextStreamEntry(currentStreamEntry);
 			position++;
 		}
 		
-		graph.addEdge(null, previousStreamItem, newStreamItem, "StreamItem");
+		graph.addEdge(null, previousStreamEntry, newStreamEntry, "StreamEntry");
 		if (null != currentStreamEdge)
 		{
-			graph.addEdge(null, newStreamItem, currentStreamItem, "StreamItem");
+			graph.addEdge(null, newStreamEntry, currentStreamEntry, "StreamEntry");
 			graph.removeEdge(currentStreamEdge);
 		}
 		
 		return position == 0;
 	}
 	
-	private Edge getStreamItemEdge(Vertex node)
+	private Edge getStreamEntryEdge(Vertex node)
 	{
 		if (null == node)
 			return null;
 		
 		Iterator<Edge> edges = 
-				node.getEdges(Direction.OUT, "StreamItem").iterator();
+				node.getEdges(Direction.OUT, "StreamEntry").iterator();
 		
 		Edge edge = edges.hasNext() ? edges.next() : null;
 		
@@ -143,7 +143,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			if (edges.hasNext())
 			{
 				throw new IllegalStateException(
-					"Multiple stream item edges for vertex: " + 
+					"Multiple stream entry edges for vertex: " + 
 					node.getId());
 			}
 		}
@@ -198,67 +198,67 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<StreamItemData> getStream(String entityId, long startIndex,
-			int itemsToReturn)
+	public List<StreamEntry> getStream(String entityId, long startIndex,
+			int entriesToReturn)
 	{
 		Vertex entity = graph.getVertex(entityId);
 		if (null == entity)
 		{
-			return new ArrayList<StreamItemData>();
+			return new ArrayList<StreamEntry>();
 		}
 		
 		int streamPosition = 0;
-		int foundItemCount = 0;
+		int foundEntryCount = 0;
 		List<Vertex> streamVertices = new ArrayList<Vertex>();
 		
-		Vertex currentStreamItem = getNextStreamItem(entity);
+		Vertex currentStreamEntry = getNextStreamEntry(entity);
 		
-		while (null != currentStreamItem && foundItemCount < itemsToReturn)
+		while (null != currentStreamEntry && foundEntryCount < entriesToReturn)
 		{
 			if (streamPosition >= startIndex)
 			{
-				streamVertices.add(currentStreamItem);
-				foundItemCount++;
+				streamVertices.add(currentStreamEntry);
+				foundEntryCount++;
 			}
-			currentStreamItem = getNextStreamItem(currentStreamItem);
+			currentStreamEntry = getNextStreamEntry(currentStreamEntry);
 			streamPosition++;
 		}
 		
-		return createStreamItems(streamVertices);
+		return createStreamEntries(streamVertices);
 	}
 	
-	private Vertex getNextStreamItem(Vertex node)
+	private Vertex getNextStreamEntry(Vertex node)
 	{
-		Edge streamItemEdge = getStreamItemEdge(node);
-		return null == streamItemEdge ? null :
-			streamItemEdge.getVertex(Direction.IN);
+		Edge streamEntryEdge = getStreamEntryEdge(node);
+		return null == streamEntryEdge ? null :
+			streamEntryEdge.getVertex(Direction.IN);
 	}
 
-	private List<StreamItemData> createStreamItems(
-			Collection<Vertex> streamItems)
+	private List<StreamEntry> createStreamEntries(
+			Collection<Vertex> streamEntries)
 	{
-		ArrayList<StreamItemData> itemData =
-				new ArrayList<StreamItemData>();
+		ArrayList<StreamEntry> entries =
+				new ArrayList<StreamEntry>();
 		
-		for (final Vertex vertex : streamItems)
+		for (final Vertex vertex : streamEntries)
 		{
 			if (null != vertex)
 			{
-				itemData.add(createStreamItemData(vertex));
+				entries.add(createStreamEntry(vertex));
 			}
 		}
 		
-		return itemData;
+		return entries;
 	}
 	
-	private StreamItemData createStreamItemData(final Vertex streamItem)
+	private StreamEntry createStreamEntry(final Vertex streamEntry)
 	{
-		return new StreamItemData() {
+		return new StreamEntry() {
 			
 			@Override
 			public DateTime getTime()
 			{
-				return DateTime.parse((String) streamItem.getProperty("Time"));
+				return DateTime.parse((String) streamEntry.getProperty("Time"));
 			}
 		};
 	}
@@ -338,8 +338,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 					"newEntity must not be null");
 		}
 		
-		EntityFirstStreamItemDateComparator comparator = 
-				new EntityFirstStreamItemDateComparator();
+		EntityFirstStreamEntryDateComparator comparator = 
+				new EntityFirstStreamEntryDateComparator();
 		
 		String feedLabel = getFeedLabel((String)user.getId());
 		Edge currentFeedEdge = getFeedEdge(user, feedLabel);
@@ -352,8 +352,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		       comparator.compare(newEntity, currentFeedEntity) > 0)
 		{
 			previousFeedEntity = currentFeedEntity;
-			currentFeedEdge = getStreamItemEdge(currentFeedEntity);
-			currentFeedEntity = getNextStreamItem(currentFeedEntity);
+			currentFeedEdge = getStreamEntryEdge(currentFeedEntity);
+			currentFeedEntity = getNextStreamEntry(currentFeedEntity);
 			position++;
 		}
 		
@@ -368,13 +368,13 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<StreamItemData> getFeed(String userId, long startIndex,
-			int itemsToReturn)
+	public List<StreamEntry> getFeed(String userId, long startIndex,
+			int entriesToReturn)
 	{
-		StreamItemDateComparator comparator = new StreamItemDateComparator();		
+		StreamEntryDateComparator comparator = new StreamEntryDateComparator();		
 		PriorityQueue<Vertex> queue =
 				new PriorityQueue<Vertex>(11, comparator);
-		ArrayList<Vertex> streamItems = new ArrayList<Vertex>();
+		ArrayList<Vertex> streamEntries = new ArrayList<Vertex>();
 		Vertex topOfEntity = null;
 		Vertex topOfQueue = null;
 		
@@ -384,20 +384,20 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		
 		if (null != entity)
 		{
-			topOfEntity = getNextStreamItem(entity);
+			topOfEntity = getNextStreamEntry(entity);
 			if (null != topOfEntity)
 			{
 				queue.add(topOfEntity);
 				topOfQueue = topOfEntity;
 			}
 			entity = getNextFeedEntity(feedLabel, entity, Direction.OUT);
-			topOfEntity = getNextStreamItem(entity);
+			topOfEntity = getNextStreamEntry(entity);
 		}
 		
-		// while we have not yet hit our items to return,
-		// and there are still items in the queue OR
+		// while we have not yet hit our entries to return,
+		// and there are still entries in the queue OR
 		// there are more entities
-		while (streamItems.size() < (itemsToReturn + startIndex)
+		while (streamEntries.size() < (entriesToReturn + startIndex)
 				&& (queue.size() > 0 || entity != null))
 		{
 			// compare top of next entity to top of queue
@@ -408,12 +408,12 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			// the next entity
 			if (result < 0)
 			{
-				streamItems.add(topOfEntity);
-				Vertex nextItem = getNextStreamItem(topOfEntity);
-				if (null != nextItem)
-					queue.add(nextItem);
+				streamEntries.add(topOfEntity);
+				Vertex nextEntry = getNextStreamEntry(topOfEntity);
+				if (null != nextEntry)
+					queue.add(nextEntry);
 				entity = getNextFeedEntity(feedLabel, entity, Direction.OUT);
-				topOfEntity = getNextStreamItem(entity);
+				topOfEntity = getNextStreamEntry(entity);
 				topOfQueue = queue.peek();
 			}
 			
@@ -425,23 +425,23 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 				{
 					entity = getNextFeedEntity(feedLabel,
 							entity, Direction.OUT);
-					topOfEntity = getNextStreamItem(entity);
+					topOfEntity = getNextStreamEntry(entity);
 				}
 				// if top of queue is newer, take the top element, and
 				// push the next element to the queue
 				else
 				{
 					Vertex removedFromQueue = queue.remove();
-					Vertex nextItem = getNextStreamItem(removedFromQueue);
-					if (null != nextItem)
-						queue.add(nextItem);
-					streamItems.add(removedFromQueue);
+					Vertex nextEntry = getNextStreamEntry(removedFromQueue);
+					if (null != nextEntry)
+						queue.add(nextEntry);
+					streamEntries.add(removedFromQueue);
 					topOfQueue = queue.peek();
 				}
 			}
 		}
 
-		return createStreamItems(streamItems);
+		return createStreamEntries(streamEntries);
 	}
 
 	@SuppressWarnings("unused")
@@ -494,7 +494,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		return "Feed+" + userId;
 	}
 
-	private class StreamItemDateComparator implements Comparator<Vertex>
+	private class StreamEntryDateComparator implements Comparator<Vertex>
 	{
 		@Override
 		public int compare(Vertex v1, Vertex v2)
@@ -512,26 +512,26 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		}
 	}
 	
-	private class EntityFirstStreamItemDateComparator
+	private class EntityFirstStreamEntryDateComparator
 		implements Comparator<Vertex>
 	{
 		@Override
 		public int compare(Vertex v1, Vertex v2)
 		{
-			Vertex streamItem = null;
+			Vertex streamEntry = null;
 			
 			long t1 = 0;
 			if (null != v1)
-				streamItem = getNextStreamItem(v1);
-			if (null != streamItem)
-				t1 = DateTime.parse((String)streamItem.getProperty("Time"))
+				streamEntry = getNextStreamEntry(v1);
+			if (null != streamEntry)
+				t1 = DateTime.parse((String)streamEntry.getProperty("Time"))
 					.getMillis();
 			
 			long t2 = 0;
 			if (null != v2)
-				streamItem = getNextStreamItem(v2);
-			if (null != streamItem)
-				t2 = DateTime.parse((String)streamItem.getProperty("Time"))
+				streamEntry = getNextStreamEntry(v2);
+			if (null != streamEntry)
+				t2 = DateTime.parse((String)streamEntry.getProperty("Time"))
 					.getMillis();
 			
 			return new Long(t2).compareTo(t1);

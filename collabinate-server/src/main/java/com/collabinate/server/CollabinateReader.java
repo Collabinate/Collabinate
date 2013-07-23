@@ -16,10 +16,10 @@ public interface CollabinateReader
 	 * 
 	 * @param entityId The ID of the entity for which to retrieve a stream.
 	 * @param startIndex The zero-based index of the first element to retrieve.
-	 * @param itemsToReturn The maximum number of stream entries to retrieve.
+	 * @param entriesToReturn The maximum number of stream entries to retrieve.
 	 * @return A collection of stream entries for the given entity.
 	 */
-	public List<StreamItemData> getStream(String entityId, long startIndex, int itemsToReturn);
+	public List<StreamEntry> getStream(String entityId, long startIndex, int entriesToReturn);
 	
 	/**
 	 * Retrieves a collection of stream entries for the entities that a user
@@ -27,8 +27,8 @@ public interface CollabinateReader
 	 * 
 	 * @param userId The ID of the user for which to retrieve a feed.
 	 * @param startIndex The zero-based index of the first element to retrieve.
-	 * @param itemsToReturn The maximum number of feed entries to retrieve.
+	 * @param entriesToReturn The maximum number of feed entries to retrieve.
 	 * @return A collection of feed entries for the given user.
 	 */
-	public List<StreamItemData> getFeed(String userId, long startIndex, int itemsToReturn);
+	public List<StreamEntry> getFeed(String userId, long startIndex, int entriesToReturn);
 }
