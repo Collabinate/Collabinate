@@ -63,43 +63,66 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("streamEntry must not be null");
 		}
 		
-		Vertex entity = getOrCreateEntityVertex(entityId);
+		Vertex entityVertex = getOrCreateEntityVertex(entityId);
 		
 		Vertex streamEntryVertex = createStreamEntryVertex(streamEntry);
 		
-		if (insertStreamEntry(entity, streamEntryVertex))
-			updateFeedPaths(entity);
+		if (insertStreamEntry(entityVertex, streamEntryVertex))
+			updateFeedPaths(entityVertex);
 	}
 
+	/**
+	 * Attempts to retrieve the vertex for the entity with the given ID. If a
+	 * matching entity cannot be found, the vertex is created.
+	 * 
+	 * @param entityId The ID of the entity for which to retrieve a vertex.
+	 * @return The vertex for the given entity.
+	 */
 	private Vertex getOrCreateEntityVertex(final String entityId)
 	{
-		Vertex entity = graph.getVertex(entityId);
-		if (null == entity)
+		Vertex entityVertex = graph.getVertex(entityId);
+		if (null == entityVertex)
 		{
-			entity = graph.addVertex(entityId);
+			entityVertex = graph.addVertex(entityId);
 		}
-		return entity;
+		return entityVertex;
 	}
 	
+	/**
+	 * Creates a new vertex to represent a given stream entry.
+	 * 
+	 * @param streamEntry The stream entry to be represented.
+	 * @return A vertex that represents the given stream entry.
+	 */
 	private Vertex createStreamEntryVertex(final StreamEntry streamEntry)
 	{
 		Vertex streamEntryVertex = graph.addVertex(null);
-		streamEntryVertex.setProperty("Time", streamEntry.getTime().toString());
+		streamEntryVertex.setProperty(STRING_TIME, 
+				streamEntry.getTime().toString());
 		return streamEntryVertex;
 	}
 	
+	/**
+	 * Adds a stream entry vertex at the correct chronological location among
+	 * the stream vertices of an entity.
+	 * 
+	 * @param entity The vertex representing the entity.
+	 * @param addedStreamEntry The stream entry to add to the stream.
+	 * @return true if the added stream entry is the newest (first)in the
+	 * stream, otherwise false.
+	 */
 	private boolean insertStreamEntry(final Vertex entity,
-			final Vertex newStreamEntry)
+			final Vertex addedStreamEntry)
 	{
 		if (null == entity)
 		{
 			throw new IllegalArgumentException("entity must not be null");
 		}
 		
-		if (null == newStreamEntry)
+		if (null == addedStreamEntry)
 		{
 			throw new IllegalArgumentException(
-					"newStreamEntry must not be null");
+					"addedStreamEntry must not be null");
 		}
 		
 		StreamEntryDateComparator comparator = new StreamEntryDateComparator();
@@ -108,9 +131,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		Vertex currentStreamEntry = getNextStreamEntry(entity);
 		Vertex previousStreamEntry = entity;
 		int position = 0;		
-						
+		
+		// advance along the stream path, comparing each stream entry to the
+		// new entry
 		while (currentStreamEntry != null &&
-		       comparator.compare(newStreamEntry, currentStreamEntry) > 0)
+		       comparator.compare(addedStreamEntry, currentStreamEntry) > 0)
 		{
 			previousStreamEntry = currentStreamEntry;
 			currentStreamEdge = getStreamEntryEdge(currentStreamEntry);
@@ -118,46 +143,53 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			position++;
 		}
 		
-		graph.addEdge(null, previousStreamEntry, newStreamEntry, "StreamEntry");
+		// add a stream edge between the previous entry (the one that is newer
+		// than the added one, or the entity if there are none) and the new one.
+		graph.addEdge(null, previousStreamEntry, addedStreamEntry,
+				STRING_STREAM_ENTRY);
+		
+		// if there are one or more entries that are older than the added one,
+		// add an edge between the added one and the next older one, and delete
+		// the edge between the that one and the previous (next newer) one.
 		if (null != currentStreamEdge)
 		{
-			graph.addEdge(null, newStreamEntry, currentStreamEntry, "StreamEntry");
+			graph.addEdge(null, addedStreamEntry, currentStreamEntry,
+					STRING_STREAM_ENTRY);
 			graph.removeEdge(currentStreamEdge);
 		}
 		
 		return position == 0;
 	}
 	
+	/**
+	 * Retrieves the edge to the next stream entry from the given vertex,
+	 * whether the given vertex is an entity or a stream entry.
+	 * @param node A stream entry or entity for which to find the next stream
+	 * entry edge.
+	 * @return The next stream edge in the stream containing or starting at
+	 * the given vertex.
+	 */
 	private Edge getStreamEntryEdge(Vertex node)
 	{
-		if (null == node)
-			return null;
-		
-		Iterator<Edge> edges = 
-				node.getEdges(Direction.OUT, "StreamEntry").iterator();
-		
-		Edge edge = edges.hasNext() ? edges.next() : null;
-		
-		if (null != edge)
-		{
-			if (edges.hasNext())
-			{
-				throw new IllegalStateException(
-					"Multiple stream entry edges for vertex: " + 
-					node.getId());
-			}
-		}
-		
-		return edge;
+		return getSingleOutgoingEdge(node, STRING_STREAM_ENTRY);
 	}
 	
-	private Edge getFeedEdge(Vertex node, String feedLabel)
+	/**
+	 * Retrieves the single edge emanating from the given vertex where the edge
+	 * has the given label.
+	 * 
+	 * @param node The vertex for which to find the labeled edge.
+	 * @param edgeLabel The label of the edge to find.
+	 * @return The edge with the given label emanating from the given vertex, or
+	 * null if the node is null or has no such edge.
+	 */
+	private Edge getSingleOutgoingEdge(Vertex node, String edgeLabel)
 	{
 		if (null == node)
 			return null;
 		
 		Iterator<Edge> edges =
-				node.getEdges(Direction.OUT, feedLabel).iterator();
+				node.getEdges(Direction.OUT, edgeLabel).iterator();
 		
 		Edge edge = edges.hasNext() ? edges.next() : null;
 		
@@ -166,7 +198,9 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			if (edges.hasNext())
 			{
 				throw new IllegalStateException(
-					"Multiple feed edges for vertex: " +
+					"Multiple outgoing edges with label: \"" +
+					edgeLabel +
+					"\" for vertex: " +
 					node.getId());
 			}
 		}
@@ -178,7 +212,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	{
 		// get all the users that follow the entity
 		Iterable<Vertex> users =
-				entity.getVertices(Direction.IN, "Follows");
+				entity.getVertices(Direction.IN, STRING_FOLLOWS);
 		
 		// loop over each user and move the entity to the correct
 		// feed position by un-following and re-following
@@ -258,7 +292,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			@Override
 			public DateTime getTime()
 			{
-				return DateTime.parse((String) streamEntry.getProperty("Time"));
+				return DateTime.parse((String) streamEntry
+						.getProperty(STRING_TIME));
 			}
 		};
 	}
@@ -279,7 +314,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		
-		graph.addEdge(null, user, entity, "Follows");
+		graph.addEdge(null, user, entity, STRING_FOLLOWS);
 		
 		insertFeedEntity(user, entity);
 	}
@@ -301,7 +336,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		String feedLabel = getFeedLabel(getIdString(user));
 		
 		// remove the follow relationship
-		for (Edge edge: entity.getEdges(Direction.IN, "Follows"))
+		for (Edge edge: entity.getEdges(Direction.IN, STRING_FOLLOWS))
 		{
 			if (edge.getVertex(Direction.OUT).getId().equals(
 					user.getId()))
@@ -342,7 +377,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 				new EntityFirstStreamEntryDateComparator();
 		
 		String feedLabel = getFeedLabel((String)user.getId());
-		Edge currentFeedEdge = getFeedEdge(user, feedLabel);
+		Edge currentFeedEdge = getSingleOutgoingEdge(user, feedLabel);
 		Vertex currentFeedEntity = getNextFeedEntity(feedLabel, user,
 				Direction.OUT);
 		Vertex previousFeedEntity = user;
@@ -491,7 +526,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	
 	private String getFeedLabel(String userId)
 	{
-		return "Feed+" + userId;
+		return STRING_FEED_LABEL_PREFIX + userId;
 	}
 
 	private class StreamEntryDateComparator implements Comparator<Vertex>
@@ -501,11 +536,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		{
 			long t1 = 0;
 			if (null != v1)
-				t1 = DateTime.parse((String)v1.getProperty("Time"))
+				t1 = DateTime.parse((String)v1.getProperty(STRING_TIME))
 					.getMillis();
 			long t2 = 0;
 			if (null != v2)
-				t2 = DateTime.parse((String)v2.getProperty("Time"))
+				t2 = DateTime.parse((String)v2.getProperty(STRING_TIME))
 					.getMillis();
 
 			return new Long(t2).compareTo(t1);
@@ -524,17 +559,22 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			if (null != v1)
 				streamEntry = getNextStreamEntry(v1);
 			if (null != streamEntry)
-				t1 = DateTime.parse((String)streamEntry.getProperty("Time"))
+				t1 = DateTime.parse((String)streamEntry.getProperty(STRING_TIME))
 					.getMillis();
 			
 			long t2 = 0;
 			if (null != v2)
 				streamEntry = getNextStreamEntry(v2);
 			if (null != streamEntry)
-				t2 = DateTime.parse((String)streamEntry.getProperty("Time"))
+				t2 = DateTime.parse((String)streamEntry.getProperty(STRING_TIME))
 					.getMillis();
 			
 			return new Long(t2).compareTo(t1);
 		}
 	}
+	
+	private static final String STRING_TIME = "Time";
+	private static final String STRING_FOLLOWS = "Follows";
+	private static final String STRING_STREAM_ENTRY = "StreamEntry";
+	private static final String STRING_FEED_LABEL_PREFIX = "Feed+";
 }

@@ -11,10 +11,13 @@ public interface CollabinateWriter
 {
 	/**
 	 * Adds an entry to an entity's stream, at the correct chronological
-	 * location.
+	 * location. This method should be implemented to be as idempotent as
+	 * possible, e.g. stream entries with the same exact time and content should
+	 * not be duplicated.
 	 * 
-	 * @param entityId The entity for which an entry will be added.
-	 * @param streamEntry The entry to add.
+	 * @param entityId The ID of the entity to which an entry will be added.
+	 * This value must not be null.
+	 * @param streamEntry The entry to add. This value must not be null.
 	 */
 	public void addStreamEntry(String entityId, StreamEntry streamEntry);
 	
