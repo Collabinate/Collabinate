@@ -17,7 +17,7 @@ Collabinate uses a concrete set of terminology to describe the data and operatio
 * **Entity**: An object in the system that can have a stream associated with it.  A person in Facebook would be an entity, as would an insurance policy in an insurance system.
 * **User**: A special type of entity that represents a user of the software system. Users can comment on stream items, follow (or "friend") entities, and access a feed based on these follow relationships. An example of a user would be someone with a Twitter account, or an insurance agent with a login to an insurance system.
 * **Stream**: A collection of entries that contain information about an entity. The collection of comments on a YouTube video is a stream, as well as the set of claims on an insurance policy.
-* **Stream Item**: A single dated entry within the stream of an entity. These items utilize [ActivityStreams](http://activitystrea.ms/) for formatting. A comment on a Pinterest item would be a stream item, and so would a premium change on an insurance policy.
+* **Stream Entry**: A single dated entry within the stream of an entity. These items utilize [ActivityStreams](http://activitystrea.ms/) for formatting. A comment on a Pinterest item would be a stream item, and so would a premium change on an insurance policy.
 * **Comment**: A response to a stream item by a user. A reply to a Yammer post is a comment, as well as a question asked about coverage on an insurance policy by an agent.
 * **Feed**: The collection of stream items created on or by all entities that a user follows. Cover Stories in Flipboard are a feed, as are the list of changes to all insurance policies sold by an agent.
 
