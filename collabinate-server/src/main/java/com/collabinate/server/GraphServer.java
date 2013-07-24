@@ -208,6 +208,13 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		return edge;
 	}
 	
+	/**
+	 * Puts an entity into the correct chronological order in the feed paths
+	 * of all the users that follow it.  This is used for changes to the first
+	 * stream entry of an entity, which potentially changes its feed order.
+	 * 
+	 * @param entity The entity for which followers are updated.
+	 */
 	private void updateFeedPaths(Vertex entity)
 	{
 		// get all the users that follow the entity
@@ -216,16 +223,23 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		
 		// loop over each user and move the entity to the correct
 		// feed position by un-following and re-following
+		// TODO: is this the best way to do this?
 		String entityId = entity.getId().toString();
 		String userId;
 		for (Vertex user : users)
 		{
-			userId = user.getId().toString();
+			userId = getIdString(user);
 			unfollowEntity(userId, entityId);
 			followEntity(userId, entityId);
 		}
 	}
-		
+	
+	/**
+	 * Gets the ID of a vertex in string form.
+	 * 
+	 * @param vertex The vertex for which the ID will be returned.
+	 * @return The ID of the vertex formatted as a string.
+	 */
 	private String getIdString(Vertex vertex)
 	{
 		return vertex.getId().toString();
