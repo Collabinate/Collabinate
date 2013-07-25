@@ -31,16 +31,22 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 */
 	private KeyIndexableGraph graph;
 	
+	private StreamEntrySerDes<Vertex> serdes;
+	
 	/**
 	 * Ensures that the graph can have IDs assigned.
 	 * 
 	 * @param graph A Tinkerpop BluePrints graph to act as the store for the server.
 	 */
-	public GraphServer(final KeyIndexableGraph graph)
+	public GraphServer(final KeyIndexableGraph graph, StreamEntrySerDes<Vertex> serdes)
 	{
 		if (null == graph)
 		{
 			throw new IllegalArgumentException("graph must not be null");
+		}
+		if (null == serdes)
+		{
+			throw new IllegalArgumentException("serdes must not be null");
 		}
 		
 		// ensure we can provide IDs to the graph
@@ -48,6 +54,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			this.graph = new IdGraph<KeyIndexableGraph>(graph);
 		else
 			this.graph = graph;
+		
+		this.serdes = serdes;
 	}
 	
 	@Override
@@ -145,17 +153,15 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		
 		// add a stream edge between the previous entry (the one that is newer
 		// than the added one, or the entity if there are none) and the new one.
-		graph.addEdge(null, previousStreamEntry, addedStreamEntry,
-				STRING_STREAM_ENTRY);
+		previousStreamEntry.addEdge(STRING_STREAM_ENTRY, addedStreamEntry);
 		
 		// if there are one or more entries that are older than the added one,
 		// add an edge between the added one and the next older one, and delete
 		// the edge between the that one and the previous (next newer) one.
 		if (null != currentStreamEdge)
 		{
-			graph.addEdge(null, addedStreamEntry, currentStreamEntry,
-					STRING_STREAM_ENTRY);
-			graph.removeEdge(currentStreamEdge);
+			addedStreamEntry.addEdge(STRING_STREAM_ENTRY, currentStreamEntry);
+			currentStreamEdge.remove();
 		}
 		
 		return position == 0;
@@ -255,12 +261,19 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			return new ArrayList<StreamEntry>();
 		}
 		
+		// since we need to advance from the beginning of the stream,
+		// this lets us keep track of where we are
 		int streamPosition = 0;
+		// once we reach the number of entries to return, we can stop
 		int foundEntryCount = 0;
+		
 		List<Vertex> streamVertices = new ArrayList<Vertex>();
 		
 		Vertex currentStreamEntry = getNextStreamEntry(entity);
 		
+		// advance along the stream, collecting vertices after we get to the
+		// start index, and stopping when we have enough to return or run out
+		// of stream
 		while (null != currentStreamEntry && foundEntryCount < entriesToReturn)
 		{
 			if (streamPosition >= startIndex)
@@ -272,9 +285,20 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			streamPosition++;
 		}
 		
+		// we only have the vertices, the actual entries need to be created
 		return createStreamEntries(streamVertices);
 	}
 	
+	/**
+	 * Retrieves the stream entry after the given node by following the outgoing
+	 * stream edge. The node can be an entity (including users) or a stream
+	 * entry.
+	 * 
+	 * @param node The entity or stream entry for which to find the next stream
+	 * entry.
+	 * @return The next stream entry after the given node, or null if one does
+	 * not exist.
+	 */
 	private Vertex getNextStreamEntry(Vertex node)
 	{
 		Edge streamEntryEdge = getStreamEntryEdge(node);
@@ -328,7 +352,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		
-		graph.addEdge(null, user, entity, STRING_FOLLOWS);
+		user.addEdge(STRING_FOLLOWS, entity);
 		
 		insertFeedEntity(user, entity);
 	}
@@ -354,7 +378,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		{
 			if (edge.getVertex(Direction.OUT).getId().equals(
 					user.getId()))
-				graph.removeEdge(edge);
+				edge.remove();
 		}
 		
 		// remove the entity from the user feed
@@ -364,12 +388,12 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 				Direction.OUT);
 		for (Edge edge: entity.getEdges(Direction.BOTH, feedLabel))
 		{
-			graph.removeEdge(edge);
+			edge.remove();
 		}
 		
 		if (null != nextEntity)
 		{
-			graph.addEdge(null, previousEntity, nextEntity, feedLabel);
+			previousEntity.addEdge(feedLabel, nextEntity);
 		}
 		
 	}
@@ -406,11 +430,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			position++;
 		}
 		
-		graph.addEdge(null, previousFeedEntity, newEntity, feedLabel);
+		previousFeedEntity.addEdge(feedLabel, newEntity);
 		if (null != currentFeedEdge)
 		{
-			graph.addEdge(null, newEntity, currentFeedEntity, feedLabel);
-			graph.removeEdge(currentFeedEdge);
+			newEntity.addEdge(feedLabel, currentFeedEntity);
+			currentFeedEdge.remove();
 		}
 		
 		return position == 0;

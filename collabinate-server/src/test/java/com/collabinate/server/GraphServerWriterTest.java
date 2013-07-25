@@ -11,13 +11,13 @@ public class GraphServerWriterTest extends CollabinateWriterTest
 	CollabinateWriter getWriter()
 	{
 		KeyIndexableGraph graph = new TinkerGraph();
-		return new GraphServer(graph);
+		return new GraphServer(graph, null);
 	}
 	
 	@Test
 	public void should_not_allow_null_graph()
 	{
 		exception.expect(IllegalArgumentException.class);
-		new GraphServer(null);
+		new GraphServer(null, null);
 	}
 }

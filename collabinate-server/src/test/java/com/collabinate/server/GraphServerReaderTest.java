@@ -26,7 +26,7 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 		if (null == server)
 		{
 			KeyIndexableGraph graph = new TinkerGraph();
-			server = new GraphServer(graph);
+			server = new GraphServer(graph, null);
 		}
 		return server;
 	}
@@ -35,6 +35,6 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 	public void should_not_allow_null_graph()
 	{
 		exception.expect(IllegalArgumentException.class);
-		new GraphServer(null);
+		new GraphServer(null, null);
 	}
 }
