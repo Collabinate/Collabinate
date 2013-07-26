@@ -5,6 +5,12 @@ import org.junit.Test;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
+/**
+ * Test class for the graph implementation of CollabinateReader.
+ * 
+ * @author mafuba
+ *
+ */
 public class GraphServerReaderTest extends CollabinateReaderTest
 {
 	private GraphServer server;
@@ -21,6 +27,11 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 		return getServer();
 	}
 	
+	/**
+	 * Ensures the same server is used as both the reader and writer.
+	 * 
+	 * @return The server to use.
+	 */
 	private GraphServer getServer()
 	{
 		if (null == server)

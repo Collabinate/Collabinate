@@ -65,7 +65,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		
 		Vertex entityVertex = getOrCreateEntityVertex(entityId);
 		
-		Vertex streamEntryVertex = createStreamEntryVertex(streamEntry);
+		Vertex streamEntryVertex = serializeStreamEntry(streamEntry);
 		
 		if (insertStreamEntry(entityVertex, streamEntryVertex))
 			updateFeedPaths(entityVertex);
@@ -89,12 +89,12 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	/**
-	 * Creates a new vertex to represent a given stream entry.
+	 * Creates a new vertex representation of a given stream entry.
 	 * 
 	 * @param streamEntry The stream entry to be represented.
 	 * @return A vertex that represents the given stream entry.
 	 */
-	private Vertex createStreamEntryVertex(final StreamEntry streamEntry)
+	private Vertex serializeStreamEntry(final StreamEntry streamEntry)
 	{
 		Vertex streamEntryVertex = graph.addVertex(null);
 		streamEntryVertex.setProperty(STRING_TIME, 
@@ -278,7 +278,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		}
 		
 		// we only have the vertices, the actual entries need to be created
-		return createStreamEntries(streamVertices);
+		return deserializeStreamEntries(streamVertices);
 	}
 	
 	/**
@@ -298,31 +298,45 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			streamEntryEdge.getVertex(Direction.IN);
 	}
 
-	private List<StreamEntry> createStreamEntries(
-			Collection<Vertex> streamEntries)
+	/**
+	 * Turns a collection of stream entry vertices into a collection of stream
+	 * entries.
+	 * 
+	 * @param streamEntryVertices The vertices to deserialize.
+	 * @return A collection of stream entries that were represented by the
+	 * given vertices.
+	 */
+	private List<StreamEntry> deserializeStreamEntries(
+			Collection<Vertex> streamEntryVertices)
 	{
 		ArrayList<StreamEntry> entries =
 				new ArrayList<StreamEntry>();
 		
-		for (final Vertex vertex : streamEntries)
+		for (final Vertex vertex : streamEntryVertices)
 		{
 			if (null != vertex)
 			{
-				entries.add(createStreamEntry(vertex));
+				entries.add(deserializeStreamEntry(vertex));
 			}
 		}
 		
 		return entries;
 	}
 	
-	private StreamEntry createStreamEntry(final Vertex streamEntry)
+	/**
+	 * Deserializes a vertex representing a stream entry.
+	 * 
+	 * @param streamEntryVertex The vertex to deserialize.
+	 * @return A stream entry that was represented by the given vertex.
+	 */
+	private StreamEntry deserializeStreamEntry(final Vertex streamEntryVertex)
 	{
 		return new StreamEntry() {
 			
 			@Override
 			public DateTime getTime()
 			{
-				return DateTime.parse((String) streamEntry
+				return DateTime.parse((String) streamEntryVertex
 						.getProperty(STRING_TIME));
 			}
 		};
@@ -349,6 +363,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		insertFeedEntity(user, entity);
 	}
 	
+	@Override
 	public void unfollowEntity(String userId, String entityId)
 	{
 		if (null == userId)
@@ -373,7 +388,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 				edge.remove();
 		}
 		
-		// remove the entity from the user feed
+		// remove the entity from the user feed by removing the feed edges
+		// into and out of it
 		Vertex previousEntity = getNextFeedEntity(feedLabel, entity,
 				Direction.IN);
 		Vertex nextEntity = getNextFeedEntity(feedLabel, entity,
@@ -383,6 +399,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			edge.remove();
 		}
 		
+		// replace the missing edge for the feed if necessary
 		if (null != nextEntity)
 		{
 			previousEntity.addEdge(feedLabel, nextEntity);
@@ -390,6 +407,13 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		
 	}
 	
+	/**
+	 * Inserts an entity into the feed for a user.
+	 * 
+	 * @param user The user whose feed will be updated.
+	 * @param newEntity the entity to add to the user's feed.
+	 * @return true if the entity is first in the feed, otherwise false.
+	 */
 	private boolean insertFeedEntity(final Vertex user, final Vertex newEntity)
 	{
 		if (null == user)
@@ -403,16 +427,19 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 					"newEntity must not be null");
 		}
 		
+		// we order entities based on the date of their first stream entry
 		EntityFirstStreamEntryDateComparator comparator = 
 				new EntityFirstStreamEntryDateComparator();
 		
+		// start with the user and the first feed entity
 		String feedLabel = getFeedLabel((String)user.getId());
 		Edge currentFeedEdge = getSingleOutgoingEdge(user, feedLabel);
 		Vertex currentFeedEntity = getNextFeedEntity(feedLabel, user,
 				Direction.OUT);
 		Vertex previousFeedEntity = user;
 		int position = 0;		
-						
+		
+		// advance along the feed until we find where the new entity belongs
 		while (currentFeedEntity != null &&
 		       comparator.compare(newEntity, currentFeedEntity) > 0)
 		{
@@ -422,13 +449,18 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			position++;
 		}
 		
+		// add an edge from the previous entity to the new one
 		previousFeedEntity.addEdge(feedLabel, newEntity);
+		
+		// if there are following entities, add an edge from the new one to the
+		// following one
 		if (null != currentFeedEdge)
 		{
 			newEntity.addEdge(feedLabel, currentFeedEntity);
 			currentFeedEdge.remove();
 		}
 		
+		// if we didn't advance, the entity is the first in the feed
 		return position == 0;
 	}
 
@@ -436,11 +468,23 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	public List<StreamEntry> getFeed(String userId, long startIndex,
 			int entriesToReturn)
 	{
-		StreamEntryDateComparator comparator = new StreamEntryDateComparator();		
+		// this method represents the core of the Graphity algorithm
+		// http://www.rene-pickhardt.de/graphity-an-efficient-graph-model-for-retrieving-the-top-k-news-feeds-for-users-in-social-networks/
+		
+		// we order stream entries by their date
+		StreamEntryDateComparator comparator = new StreamEntryDateComparator();
+		
+		// a priority queue is used to order the entries that are "next" for
+		// each entity we've already reached in the feed
 		PriorityQueue<Vertex> queue =
 				new PriorityQueue<Vertex>(11, comparator);
 		ArrayList<Vertex> streamEntries = new ArrayList<Vertex>();
+		
+		// this is used to track the newest entry in the farthest entity reached
 		Vertex topOfEntity = null;
+		
+		// this is used to track the newest entry within all of the streams for
+		// entities that have already been reached
 		Vertex topOfQueue = null;
 		
 		Vertex user = getOrCreateEntityVertex(userId);
@@ -506,9 +550,14 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			}
 		}
 
-		return createStreamEntries(streamEntries);
+		return deserializeStreamEntries(streamEntries);
 	}
 
+	/**
+	 * Outputs the graph to a GraphML file.
+	 * 
+	 * @param fileName The file to which the data will be written.
+	 */
 	@SuppressWarnings("unused")
 	private void exportGraph(String fileName)
 	{
@@ -527,19 +576,34 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		}
 	}
 	
+	/**
+	 * Retrieves an adjacent entity in a path of entities for a feed, where the
+	 * entities are ordered by their newest stream entry.
+	 * 
+	 * @param feedLabel The unique-per-user label for the edges in the feed.
+	 * @param currentEntity The start entity.
+	 * @param direction Whether to get the next entity (out) or the previous
+	 * entity (in).
+	 * @return The entity adjacent to the given entity for the given feed in the
+	 * given direction, or null if one does not exist.
+	 */
 	private Vertex getNextFeedEntity(String feedLabel,
 			Vertex currentEntity, Direction direction)
 	{
 		if (null == currentEntity)
 			return null;
 		
+		// get a list of vertices along edges that match the label and direction
+		// of the given values
 		Iterator<Vertex> vertices = 
 				currentEntity
 				.getVertices(direction, feedLabel)
 				.iterator();
 		
+		// get the first vertex if it exists
 		Vertex vertex = vertices.hasNext() ? vertices.next() : null;
 		
+		// if there are more vertices, the feed is incorrectly structured
 		if (null != vertex)
 		{
 			if (vertices.hasNext())
@@ -554,11 +618,24 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		return vertex;
 	}
 	
+	/**
+	 * Builds a feed edge label based on a common prefix prepended to the
+	 * userId.
+	 * 
+	 * @param userId The ID of the user for which to return a feed label.
+	 * @return A feed edge label constructed from the given user ID.
+	 */
 	private String getFeedLabel(String userId)
 	{
 		return STRING_FEED_LABEL_PREFIX + userId;
 	}
 
+	/**
+	 * A comparator for stream entry vertices that orders by the entry time.
+	 * 
+	 * @author mafuba
+	 *
+	 */
 	private class StreamEntryDateComparator implements Comparator<Vertex>
 	{
 		@Override
@@ -577,6 +654,13 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		}
 	}
 	
+	/**
+	 * A comparator for entity vertices that orders by the time of the first
+	 * stream entry for the entity.
+	 * 
+	 * @author mafuba
+	 *
+	 */
 	private class EntityFirstStreamEntryDateComparator
 		implements Comparator<Vertex>
 	{

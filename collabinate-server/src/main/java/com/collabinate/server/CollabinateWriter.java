@@ -28,4 +28,12 @@ public interface CollabinateWriter
 	 * @param entityId The ID of the entity that the user follows.
 	 */
 	public void followEntity(String userId, String entityId);
+	
+	/**
+	 * Removes an entity from the collection of entities a user follows.
+	 * 
+	 * @param userId The ID of the user that follows the entity.
+	 * @param entityId The ID of the entity that the user follows.
+	 */
+	public void unfollowEntity(String userId, String entityId);
 }

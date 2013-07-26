@@ -12,6 +12,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+/**
+ * Abstract test class to test any implementation of a CollabinateReader.
+ * 
+ * @author mafuba
+ *
+ */
 public abstract class CollabinateReaderTest
 {
 	private CollabinateReader reader;

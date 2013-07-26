@@ -8,6 +8,12 @@ import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
+/**
+ * Abstract test class to test any implementation of a CollabinateWriter.
+ * 
+ * @author mafuba
+ *
+ */
 public abstract class CollabinateWriterTest
 {
 	private CollabinateWriter writer;
