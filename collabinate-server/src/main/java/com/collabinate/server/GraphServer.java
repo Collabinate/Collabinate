@@ -30,23 +30,17 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 * The graph database backing this instance.
 	 */
 	private KeyIndexableGraph graph;
-	
-	private StreamEntrySerDes<Vertex> serdes;
-	
+		
 	/**
 	 * Ensures that the graph can have IDs assigned.
 	 * 
 	 * @param graph A Tinkerpop BluePrints graph to act as the store for the server.
 	 */
-	public GraphServer(final KeyIndexableGraph graph, StreamEntrySerDes<Vertex> serdes)
+	public GraphServer(final KeyIndexableGraph graph)
 	{
 		if (null == graph)
 		{
 			throw new IllegalArgumentException("graph must not be null");
-		}
-		if (null == serdes)
-		{
-			throw new IllegalArgumentException("serdes must not be null");
 		}
 		
 		// ensure we can provide IDs to the graph
@@ -54,8 +48,6 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			this.graph = new IdGraph<KeyIndexableGraph>(graph);
 		else
 			this.graph = graph;
-		
-		this.serdes = serdes;
 	}
 	
 	@Override
