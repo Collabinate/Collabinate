@@ -4,19 +4,18 @@ import java.io.Console;
 
 import org.restlet.*;
 import org.restlet.data.*;
-import org.restlet.resource.*;
 
 /**
  * Hello world!
  * 
  */
-public class App extends ServerResource
+public class App
 {
 	public static void main(String[] args) throws Exception
 	{
 		long startTime = System.currentTimeMillis();
 		System.out.println("Collabinate Server Version 1.0.0 Build 1");
-		Server server = new Server(Protocol.HTTP, 8182, App.class);
+		Server server = new Server(Protocol.HTTP, 8182, new CollabinateApplication());
 		server.start();
 		long totalStartTime = System.currentTimeMillis() - startTime;
 		System.out.println(String.format("Server started in %1$d milliseconds",
@@ -38,11 +37,5 @@ public class App extends ServerResource
 			System.out
 					.println("No interactive console available; terminate process to quit");
 		}
-	}
-
-	@Get
-	public String toString()
-	{
-		return "hello, let's collabinate!";
 	}
 }
