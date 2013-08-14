@@ -65,7 +65,7 @@
 					</descriptorRefs>
 					<archive>
 						<manifest>
-							<mainClass>com.collabinate.server.App</mainClass>
+							<mainClass>com.collabinate.server.Collabinate</mainClass>
 						</manifest>
 					</archive>
 				</configuration>

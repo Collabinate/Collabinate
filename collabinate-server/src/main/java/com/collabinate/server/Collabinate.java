@@ -8,7 +8,7 @@ import org.restlet.*;
  * Main Collabinate entry point.
  * 
  */
-public class App
+public class Collabinate
 {
 	private static CollabinateReader reader;
 	private static CollabinateWriter writer;
