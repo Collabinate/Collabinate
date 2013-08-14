@@ -14,7 +14,6 @@ import org.restlet.data.MediaType;
  */
 public class CollabinateApplication extends Application
 {
-
 	/**
 	 * Sets the application properties.
 	 */

@@ -3,7 +3,6 @@ package com.collabinate.server;
 import java.io.Console;
 
 import org.restlet.*;
-import org.restlet.data.*;
 
 /**
  * Hello world!
@@ -15,7 +14,7 @@ public class App
 	{
 		long startTime = System.currentTimeMillis();
 		System.out.println("Collabinate Server Version 1.0.0 Build 1");
-		Server server = new Server(Protocol.HTTP, 8182, new CollabinateApplication());
+		Component server = new CollabinateComponent();
 		server.start();
 		long totalStartTime = System.currentTimeMillis() - startTime;
 		System.out.println(String.format("Server started in %1$d milliseconds",
@@ -23,7 +22,7 @@ public class App
 		quit(server);
 	}
 
-	private static void quit(Server server) throws Exception
+	private static void quit(Restlet server) throws Exception
 	{
 		Console console = System.console();
 		if (null != console)
