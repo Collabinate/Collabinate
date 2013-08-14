@@ -5,7 +5,7 @@ import java.io.Console;
 import org.restlet.*;
 
 /**
- * Hello world!
+ * Main Collabinate entry point.
  * 
  */
 public class App
@@ -52,8 +52,8 @@ public class App
 		}
 		else
 		{
-			System.out
-					.println("No interactive console available; terminate process to quit");
+			System.out.println("No interactive console available;" + 
+				" terminate process to quit");
 		}
 	}
 }
