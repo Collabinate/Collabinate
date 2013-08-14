@@ -14,7 +14,8 @@ public class CollabinateComponent extends Component
 	/**
 	 * Set up the component
 	 */
-	public CollabinateComponent()
+	public CollabinateComponent(CollabinateReader reader,
+			CollabinateWriter writer)
 	{
 		setName("Collabinate");
 		getServers().add(Protocol.HTTP, 8182);
