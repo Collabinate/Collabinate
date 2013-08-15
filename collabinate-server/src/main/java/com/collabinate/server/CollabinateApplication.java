@@ -1,10 +1,8 @@
 package com.collabinate.server;
 
 import org.restlet.Application;
-import org.restlet.Request;
-import org.restlet.Response;
 import org.restlet.Restlet;
-import org.restlet.data.MediaType;
+import org.restlet.routing.Router;
 
 /**
  * Main Restlet application
@@ -25,20 +23,9 @@ public class CollabinateApplication extends Application
 	@Override
 	public Restlet createInboundRoot()
 	{
-		return new Restlet(){
-			@Override
-			public void handle(Request request, Response response) {
-				String entity = "Method       : " + request.getMethod()
-						+ "\nResource URI : "
-						+ request.getResourceRef()
-						+ "\nIP address   : "
-						+ request.getClientInfo().getAddress()
-						+ "\nAgent name   : "
-						+ request.getClientInfo().getAgentName()
-						+ "\nAgent version: "
-						+ request.getClientInfo().getAgentVersion();
-				response.setEntity(entity, MediaType.TEXT_PLAIN);
-            }
-		};
+		Router router = new Router(getContext());
+		router.attach("/", TraceResource.class);
+		
+		return router;
 	}
 }

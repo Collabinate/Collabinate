@@ -57,6 +57,6 @@ public class CollabinateComponentTest
 				"riap://application/invalid/route");
 		Response response = component.handle(request);
 		
-		assertEquals(404, response.getStatus().getCode());		
+		assertEquals(404, response.getStatus().getCode());
 	}
 }
