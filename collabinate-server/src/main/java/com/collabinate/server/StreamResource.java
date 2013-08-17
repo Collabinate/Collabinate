@@ -1,5 +1,7 @@
 package com.collabinate.server;
 
+import org.restlet.data.Reference;
+import org.restlet.data.Status;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
@@ -21,5 +23,7 @@ public class StreamResource extends ServerResource
 	@Post
 	public void addEntry(String entry)
 	{
+		setLocationRef(new Reference(getReference()).addSegment("A"));
+		setStatus(Status.SUCCESS_CREATED);
 	}
 }

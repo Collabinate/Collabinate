@@ -9,6 +9,7 @@ import org.restlet.Component;
 import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.data.Method;
+import org.restlet.data.Status;
 
 /**
  * Test class for the server component.
@@ -36,7 +37,7 @@ public class CollabinateComponentTest
 	}
 	
 	@Test
-	public void application_should_be_named_collabinate()
+	public void component_should_be_named_collabinate()
 	{
 		assertEquals("Collabinate", component.getName());
 	}
@@ -47,16 +48,16 @@ public class CollabinateComponentTest
 		Request request = new Request(Method.GET, "riap://application/");
 		Response response = component.handle(request);
 		
-		assertEquals(200, response.getStatus().getCode());
+		assertEquals(Status.SUCCESS_OK, response.getStatus());
 	}
 	
 	@Test
-	public void getting_invalid_route_should_return_500()
+	public void getting_invalid_route_should_return_404()
 	{
 		Request request = new Request(Method.GET, 
 				"riap://application/invalid/route");
 		Response response = component.handle(request);
 		
-		assertEquals(404, response.getStatus().getCode());
+		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, response.getStatus());
 	}
 }

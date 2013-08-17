@@ -10,6 +10,7 @@ import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.data.MediaType;
 import org.restlet.data.Method;
+import org.restlet.data.Status;
 
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
@@ -52,13 +53,25 @@ public class StreamResourceTest
 	}
 	
 	@Test
-	public void inserting_item_in_stream_should_return_200()
+	public void item_added_to_stream_should_return_201()
 	{
 		Request request = new Request(Method.POST,
 				"riap://application/1/tenant/entity/stream");
 		request.setEntity("TEST", MediaType.TEXT_PLAIN);
 		Response response = component.handle(request);
 		
-		assertEquals(200, response.getStatus().getCode());
+		assertEquals(Status.SUCCESS_CREATED, response.getStatus());
+	}
+	
+	@Test
+	public void item_added_to_stream_should_return_child_location()
+	{
+		Request request = new Request(Method.POST,
+				"riap://application/1/tenant/entity/stream");
+		request.setEntity("TEST", MediaType.TEXT_PLAIN);
+		Response response = component.handle(request);
+		
+		assertEquals(request.getResourceRef().getPath() + "/",
+				response.getLocationRef().getParentRef().getPath());
 	}
 }
