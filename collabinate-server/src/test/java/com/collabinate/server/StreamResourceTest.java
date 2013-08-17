@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.restlet.Component;
 import org.restlet.Request;
 import org.restlet.Response;
+import org.restlet.data.MediaType;
 import org.restlet.data.Method;
 
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
@@ -44,9 +45,20 @@ public class StreamResourceTest
 	public void empty_stream_should_return_empty_response()
 	{
 		Request request = new Request(Method.GET, 
-				"riap://application/1/entity/stream");
+				"riap://application/1/tenant/entity/stream");
 		Response response = component.handle(request);
 		
 		assertEquals(0, response.getEntity().getSize());
+	}
+	
+	@Test
+	public void inserting_item_in_stream_should_return_200()
+	{
+		Request request = new Request(Method.POST,
+				"riap://application/1/tenant/entity/stream");
+		request.setEntity("TEST", MediaType.TEXT_PLAIN);
+		Response response = component.handle(request);
+		
+		assertEquals(200, response.getStatus().getCode());
 	}
 }

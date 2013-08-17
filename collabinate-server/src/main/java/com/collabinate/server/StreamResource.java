@@ -1,6 +1,7 @@
 package com.collabinate.server;
 
 import org.restlet.resource.Get;
+import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
 /**
@@ -12,8 +13,13 @@ import org.restlet.resource.ServerResource;
 public class StreamResource extends ServerResource
 {
 	@Get
-	public String Stream()
+	public String getStream()
 	{
 		return "";
+	}
+	
+	@Post
+	public void addEntry(String entry)
+	{
 	}
 }
