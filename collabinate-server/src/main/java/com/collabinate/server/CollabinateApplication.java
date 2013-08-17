@@ -15,9 +15,12 @@ public class CollabinateApplication extends Application
 	/**
 	 * Sets the application properties.
 	 */
-	public CollabinateApplication()
+	public CollabinateApplication(CollabinateReader reader, 
+			CollabinateWriter writer)
 	{
 		setName("Collabinate");
+		getContext().getAttributes().put("collabinateReader", reader);
+		getContext().getAttributes().put("collabinateWriter", writer);
 	}
 	
 	@Override
@@ -25,7 +28,8 @@ public class CollabinateApplication extends Application
 	{
 		Router router = new Router(getContext());
 		router.attach("/", TraceResource.class);
-		router.attach("/{apiVersion}/{tenantId}/{entityId}/stream", StreamResource.class);
+		router.attach("/{apiVersion}/{tenantId}/{entityId}/stream",
+				StreamResource.class);
 		
 		return router;
 	}

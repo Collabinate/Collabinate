@@ -19,6 +19,7 @@ public class CollabinateComponent extends Component
 	{
 		setName("Collabinate");
 		getServers().add(Protocol.HTTP, 8182);
-		getDefaultHost().attachDefault(new CollabinateApplication());
+		getDefaultHost().attachDefault(
+				new CollabinateApplication(reader, writer));
 	}
 }

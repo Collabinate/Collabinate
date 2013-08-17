@@ -57,7 +57,6 @@ public class StreamResourceTest
 	{
 		Request request = new Request(Method.POST,
 				"riap://application/1/tenant/entity/stream");
-		request.setEntity("TEST", MediaType.TEXT_PLAIN);
 		Response response = component.handle(request);
 		
 		assertEquals(Status.SUCCESS_CREATED, response.getStatus());
@@ -68,10 +67,21 @@ public class StreamResourceTest
 	{
 		Request request = new Request(Method.POST,
 				"riap://application/1/tenant/entity/stream");
-		request.setEntity("TEST", MediaType.TEXT_PLAIN);
 		Response response = component.handle(request);
 		
 		assertEquals(request.getResourceRef().getPath() + "/",
 				response.getLocationRef().getParentRef().getPath());
+	}
+	
+	@Test
+	public void item_added_to_stream_should_have_entity_in_body()
+	{
+		Request request = new Request(Method.POST,
+				"riap://application/1/tenant/entity/stream");
+		String entityBody = "TEST";
+		request.setEntity(entityBody, MediaType.TEXT_PLAIN);
+		Response response = component.handle(request);
+		
+		assertEquals(entityBody, response.getEntityAsText());
 	}
 }
