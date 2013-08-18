@@ -31,7 +31,7 @@ public class StreamResourceTest
 	TinkerGraph graph;
 	
 	@Before
-	public void Setup()
+	public void setup()
 	{
 		graph = new TinkerGraph();
 		server = new GraphServer(graph);
@@ -40,7 +40,7 @@ public class StreamResourceTest
 	}
 	
 	@After
-	public void Teardown() throws Exception
+	public void teardown() throws Exception
 	{
 		if (component.isStarted())
 		{
@@ -48,6 +48,15 @@ public class StreamResourceTest
 		}
 		
 		graph.clear();
+	}
+	
+	@Test
+	public void get_empty_stream_should_get_empty_atom_feed()
+	{
+		Request request = new Request(Method.GET, RESOURCE_PATH);
+		Response response = component.handle(request);
+		
+		assertEquals(Status.SUCCESS_OK, response.getStatus());
 	}
 	
 	@Test
@@ -95,5 +104,5 @@ public class StreamResourceTest
 	}
 	
 	private static final String RESOURCE_PATH = 
-			"riap://application/1/tenant/entity/stream";
+			"riap://application/1/tenant/entities/entity/stream";
 }
