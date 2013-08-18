@@ -3,6 +3,8 @@ package com.collabinate.server;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
+import org.restlet.ext.atom.Entry;
+import org.restlet.ext.atom.Feed;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
@@ -16,9 +18,28 @@ import org.restlet.resource.ServerResource;
 public class StreamResource extends ServerResource
 {
 	@Get
-	public String getStream()
+	public Feed getStream()
 	{
-		return "";
+		CollabinateReader reader = (CollabinateReader)getContext()
+				.getAttributes().get("collabinateReader");
+		String entityId = getAttribute("entityId");
+		String startString = getQueryValue("start");
+		String countString = getQueryValue("count");
+		long start = null == startString ? 0 : Long.parseLong(startString);
+		int count = null == countString ? DEFAULT_COUNT : 
+			Integer.parseInt(countString);
+		
+		Feed feed = new Feed();
+		feed.setTitle(entityId);
+		
+		for (StreamEntry entry : reader.getStream(entityId, start, count))
+		{
+			Entry atomEntry = new Entry();
+			atomEntry.setSummary(entry.getContent());
+			feed.getEntries().add(atomEntry);
+		}
+		
+		return feed;
 	}
 	
 	@Post
@@ -36,7 +57,7 @@ public class StreamResource extends ServerResource
 		writer.addStreamEntry(getAttribute("entityId"), entry);
 		
 		if (null != entryContent)
-			getResponse().setEntity(entryContent, 
+			getResponse().setEntity(entry.getContent(), 
 					getRequest().getEntity().getMediaType());
 		else
 			getResponse().setEntity(entry.getContent(), MediaType.TEXT_PLAIN);
@@ -44,4 +65,6 @@ public class StreamResource extends ServerResource
 		setLocationRef(new Reference(getReference()).addSegment(entry.getId()));
 		setStatus(Status.SUCCESS_CREATED);
 	}
+	
+	private static final int DEFAULT_COUNT = 20;
 }

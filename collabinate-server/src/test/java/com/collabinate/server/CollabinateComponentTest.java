@@ -2,6 +2,8 @@ package com.collabinate.server;
 
 import static org.junit.Assert.*;
 
+import java.util.logging.Level;
+
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -10,6 +12,7 @@ import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
+import org.restlet.engine.Engine;
 
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
@@ -27,6 +30,7 @@ public class CollabinateComponentTest
 	public void Setup()
 	{
 		GraphServer server = new GraphServer(new TinkerGraph());
+		Engine.setRestletLogLevel(Level.WARNING);
 		component = new CollabinateComponent(server, server);
 	}
 	
