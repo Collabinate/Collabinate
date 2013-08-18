@@ -3,8 +3,10 @@ package com.collabinate.server;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
+import org.restlet.ext.atom.Content;
 import org.restlet.ext.atom.Entry;
 import org.restlet.ext.atom.Feed;
+import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
@@ -17,9 +19,13 @@ import org.restlet.resource.ServerResource;
  */
 public class StreamResource extends ServerResource
 {
+	// TODO: some much heavier content processing is going to need to happen
+	// here to handle different XML and JSON representations of different
+	// stream types (e.g. activity streams, OData, raw)
 	@Get
 	public Feed getStream()
 	{
+		// extract necessary information from the context
 		CollabinateReader reader = (CollabinateReader)getContext()
 				.getAttributes().get("collabinateReader");
 		String entityId = getAttribute("entityId");
@@ -29,13 +35,24 @@ public class StreamResource extends ServerResource
 		int count = null == countString ? DEFAULT_COUNT : 
 			Integer.parseInt(countString);
 		
+		// build a new Atom feed
 		Feed feed = new Feed();
 		feed.setTitle(entityId);
 		
+		// loop over the stream entries for the entity and add them
 		for (StreamEntry entry : reader.getStream(entityId, start, count))
 		{
 			Entry atomEntry = new Entry();
-			atomEntry.setSummary(entry.getContent());
+			atomEntry.setId(entry.getId());
+			atomEntry.setPublished(entry.getTime().toDate());
+			
+			Content content = new Content();
+			StringRepresentation representation = 
+					new StringRepresentation(entry.getContent().toCharArray());
+			content.setInlineContent(representation);
+			
+			atomEntry.setContent(content);
+			
 			feed.getEntries().add(atomEntry);
 		}
 		
@@ -56,6 +73,7 @@ public class StreamResource extends ServerResource
 		
 		writer.addStreamEntry(getAttribute("entityId"), entry);
 		
+		// if there is no request entity return empty string with text type
 		if (null != entryContent)
 			getResponse().setEntity(entry.getContent(), 
 					getRequest().getEntity().getMediaType());

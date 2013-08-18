@@ -60,7 +60,7 @@ public class StreamResourceTest
 	}
 	
 	@Test
-	public void item_added_to_stream_should_return_child_location()
+	public void item_added_to_stream_should_create_and_return_child_location()
 	{
 		Request request = new Request(Method.POST, RESOURCE_PATH);
 		Response response = component.handle(request);
@@ -70,7 +70,7 @@ public class StreamResourceTest
 	}
 	
 	@Test
-	public void item_added_to_stream_should_have_entity_in_body()
+	public void item_added_to_stream_should_have_entity_in_response_body()
 	{
 		Request request = new Request(Method.POST, RESOURCE_PATH);
 		String entityBody = "TEST";
