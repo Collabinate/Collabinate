@@ -31,8 +31,11 @@ public class Collabinate
 		if (null == configuration)
 			throw new IllegalStateException("Configuration not loaded");
 
-		// TODO: load version externally
-		System.out.println("Collabinate Server Version 0.1.0 Build 1");
+		String version = configuration.getString(
+				"collabinate.version", "Unknown");
+		String build = configuration.getString("collabinate.build", "");
+		System.out.println("Collabinate Server Version " + 
+				version + ("" == build ? "" : ("+" + build)));
 		
 		// connect to the data store
 		KeyIndexableGraph graph = GraphFactory.getGraph();
