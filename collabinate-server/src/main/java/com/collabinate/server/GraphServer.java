@@ -96,9 +96,10 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 */
 	private Vertex serializeStreamEntry(final StreamEntry streamEntry)
 	{
-		Vertex streamEntryVertex = graph.addVertex(null);
+		Vertex streamEntryVertex = graph.addVertex(streamEntry.getId());
 		streamEntryVertex.setProperty(STRING_TIME, 
 				streamEntry.getTime().toString());
+		streamEntryVertex.setProperty(STRING_CONTENT, streamEntry.getContent());
 		return streamEntryVertex;
 	}
 	
@@ -331,15 +332,12 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 */
 	private StreamEntry deserializeStreamEntry(final Vertex streamEntryVertex)
 	{
-		return new StreamEntry() {
-			
-			@Override
-			public DateTime getTime()
-			{
-				return DateTime.parse((String) streamEntryVertex
-						.getProperty(STRING_TIME));
-			}
-		};
+		String id = (String)streamEntryVertex.getId();
+		DateTime time = DateTime.parse((String) streamEntryVertex
+				.getProperty(STRING_TIME));
+		String content = (String)streamEntryVertex.getProperty(STRING_CONTENT);
+		
+		return new StreamEntry(id, time, content);
 	}
 
 	@Override
@@ -688,6 +686,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	private static final String STRING_TIME = "Time";
+	private static final String STRING_CONTENT = "Content";
 	private static final String STRING_FOLLOWS = "Follows";
 	private static final String STRING_STREAM_ENTRY = "StreamEntry";
 	private static final String STRING_FEED_LABEL_PREFIX = "Feed+";

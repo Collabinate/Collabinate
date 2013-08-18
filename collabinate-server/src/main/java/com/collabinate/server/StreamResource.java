@@ -1,5 +1,6 @@
 package com.collabinate.server;
 
+import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
 import org.restlet.resource.Get;
@@ -21,9 +22,26 @@ public class StreamResource extends ServerResource
 	}
 	
 	@Post
-	public void addEntry(String entry)
+	public void addEntry(String entryContent)
 	{
-		setLocationRef(new Reference(getReference()).addSegment("A"));
+		CollabinateWriter writer = (CollabinateWriter)getContext()
+				.getAttributes().get("collabinateWriter");
+		
+		if (null == writer)
+			throw new IllegalStateException(
+					"Context does not contain a CollabinateWriter");
+		
+		StreamEntry entry = new StreamEntry(null, null, entryContent);
+		
+		writer.addStreamEntry(getAttribute("entityId"), entry);
+		
+		if (null != entryContent)
+			getResponse().setEntity(entryContent, 
+					getRequest().getEntity().getMediaType());
+		else
+			getResponse().setEntity(entry.getContent(), MediaType.TEXT_PLAIN);
+		
+		setLocationRef(new Reference(getReference()).addSegment(entry.getId()));
 		setStatus(Status.SUCCESS_CREATED);
 	}
 }

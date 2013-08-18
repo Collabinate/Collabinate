@@ -47,7 +47,7 @@ public abstract class CollabinateReaderTest
 	public void adding_a_stream_entry_should_allow_retrieval_of_the_entry()
 	{
 		final DateTime instant = DateTime.now();
-		writer.addStreamEntry("1", new StreamEntryImpl(instant));
+		writer.addStreamEntry("1", new StreamEntry(null, instant, null));
 		final DateTime returnedTime =
 				reader.getStream("1", 0, 1).get(0).getTime();
 		assertEquals(instant.getMillis(), returnedTime.getMillis());
@@ -56,8 +56,8 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void retrieving_should_not_return_more_elements_than_exist()
 	{
-		writer.addStreamEntry("1", new StreamEntryImpl(DateTime.now()));
-		writer.addStreamEntry("1", new StreamEntryImpl(DateTime.now()));
+		writer.addStreamEntry("1", new StreamEntry(null, DateTime.now(), null));
+		writer.addStreamEntry("1", new StreamEntry(null, DateTime.now(), null));
 		List<StreamEntry> stream = reader.getStream("1", 0, 3);
 		assertEquals(2, stream.size());
 	}
@@ -65,8 +65,8 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void adding_multiple_stream_entries_should_allow_retrieval_of_all()
 	{
-		writer.addStreamEntry("1", new StreamEntryImpl(DateTime.now()));
-		writer.addStreamEntry("1", new StreamEntryImpl(DateTime.now()));
+		writer.addStreamEntry("1", new StreamEntry(null, DateTime.now(), null));
+		writer.addStreamEntry("1", new StreamEntry(null, DateTime.now(), null));
 		
 		List<StreamEntry> entries = reader.getStream("1", 0, 2);
 		assertEquals("All entries not retrieved", 2, entries.size());
@@ -81,11 +81,11 @@ public abstract class CollabinateReaderTest
 		final DateTime time3 = time0.plus(2000); // newest
 		final DateTime time4 = time0.minus(2000);
 		
-		writer.addStreamEntry("1", new StreamEntryImpl(time0));
-		writer.addStreamEntry("1", new StreamEntryImpl(time1));
-		writer.addStreamEntry("1", new StreamEntryImpl(time2));
-		writer.addStreamEntry("1", new StreamEntryImpl(time3));
-		writer.addStreamEntry("1", new StreamEntryImpl(time4));
+		writer.addStreamEntry("1", new StreamEntry(null, time0, null));
+		writer.addStreamEntry("1", new StreamEntry(null, time1, null));
+		writer.addStreamEntry("1", new StreamEntry(null, time2, null));
+		writer.addStreamEntry("1", new StreamEntry(null, time3, null));
+		writer.addStreamEntry("1", new StreamEntry(null, time4, null));
 		
 		List<StreamEntry> entries = reader.getStream("1", 0, 1);
 		assertEquals("Newest entry not first in stream", 
@@ -101,11 +101,11 @@ public abstract class CollabinateReaderTest
 		final DateTime time3 = time0.minus(2000); // oldest	
 		final DateTime time4 = time0.plus(2000);
 		
-		writer.addStreamEntry("1", new StreamEntryImpl(time0));
-		writer.addStreamEntry("1", new StreamEntryImpl(time1));
-		writer.addStreamEntry("1", new StreamEntryImpl(time2));
-		writer.addStreamEntry("1", new StreamEntryImpl(time3));
-		writer.addStreamEntry("1", new StreamEntryImpl(time4));
+		writer.addStreamEntry("1", new StreamEntry(null, time0, null));
+		writer.addStreamEntry("1", new StreamEntry(null, time1, null));
+		writer.addStreamEntry("1", new StreamEntry(null, time2, null));
+		writer.addStreamEntry("1", new StreamEntry(null, time3, null));
+		writer.addStreamEntry("1", new StreamEntry(null, time4, null));
 		
 		List<StreamEntry> entries = reader.getStream("1", 0, 5);
 		assertEquals("Oldest entry not last in stream", 
@@ -130,7 +130,7 @@ public abstract class CollabinateReaderTest
 	public void feed_should_contain_entry_from_followed_entity()
 	{
 		final DateTime time = DateTime.now();
-		writer.addStreamEntry("1", new StreamEntryImpl(time));
+		writer.addStreamEntry("1", new StreamEntry(null, time, null));
 		writer.followEntity("user", "1");
 		final DateTime returned = reader.getFeed("user", 0, 1).get(0).getTime();
 		assertEquals(time.getMillis(), returned.getMillis());
@@ -141,8 +141,8 @@ public abstract class CollabinateReaderTest
 	{
 		final DateTime time1 = DateTime.now();
 		final DateTime time2 = DateTime.now().plus(1000);
-		writer.addStreamEntry("1", new StreamEntryImpl(time1));
-		writer.addStreamEntry("2", new StreamEntryImpl(time2));
+		writer.addStreamEntry("1", new StreamEntry(null, time1, null));
+		writer.addStreamEntry("2", new StreamEntry(null, time2, null));
 		writer.followEntity("user", "1");
 		writer.followEntity("user", "2");
 		ArrayList<Long> timeMillis = new ArrayList<Long>();
@@ -166,8 +166,8 @@ public abstract class CollabinateReaderTest
 		
 		// create stream entries for two entities
 		// and have a user follow them
-		writer.addStreamEntry("A", new StreamEntryImpl(time1));
-		writer.addStreamEntry("B", new StreamEntryImpl(time2));
+		writer.addStreamEntry("A", new StreamEntry(null, time1, null));
+		writer.addStreamEntry("B", new StreamEntry(null, time2, null));
 		writer.followEntity("user", "A");
 		writer.followEntity("user", "B");
 		// The descending time order right now is B1, A1
@@ -179,7 +179,7 @@ public abstract class CollabinateReaderTest
 
 		// Now add the entry with time A2 to A, making
 		// the time order A2, B1, A1
-		writer.addStreamEntry("A", new StreamEntryImpl(time3));
+		writer.addStreamEntry("A", new StreamEntry(null, time3, null));
 		feed = reader.getFeed("user", 0, 3);
 		feedEntry = feed.get(0).getTime();
 		assertEquals(time3.getMillis(), feedEntry.getMillis());
@@ -191,7 +191,7 @@ public abstract class CollabinateReaderTest
 		// Now we'll add B2, but it actually comes EARLIER than
 		// all the rest, and thus the descending order should become
 		// A2 (time3), B1 (time2), A1 (time1), B2 (time4)
-		writer.addStreamEntry("B", new StreamEntryImpl(time4));
+		writer.addStreamEntry("B", new StreamEntry(null, time4, null));
 		feed = reader.getFeed("user", 0, 4);
 		feedEntry = feed.get(0).getTime();
 		assertEquals(time3.getMillis(), feedEntry.getMillis());
@@ -201,21 +201,5 @@ public abstract class CollabinateReaderTest
 		assertEquals(time1.getMillis(), feedEntry.getMillis());
 		feedEntry = feed.get(3).getTime();
 		assertEquals(time4.getMillis(), feedEntry.getMillis());
-	}
-	
-	private class StreamEntryImpl implements StreamEntry
-	{
-		private DateTime time;
-		
-		public StreamEntryImpl(DateTime time)
-		{
-			this.time = time;
-		}
-		
-		@Override
-		public DateTime getTime()
-		{
-			return time;
-		}
-	}
+	}	
 }

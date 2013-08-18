@@ -17,6 +17,12 @@ public class CollabinateComponent extends Component
 	public CollabinateComponent(CollabinateReader reader,
 			CollabinateWriter writer)
 	{
+		if (null == reader)
+			throw new IllegalArgumentException("reader must not be null");
+		
+		if (null == writer)
+			throw new IllegalArgumentException("writer must not be null");
+		
 		setName("Collabinate");
 		getServers().add(Protocol.HTTP, 8182);
 		getDefaultHost().attachDefault(

@@ -2,7 +2,6 @@ package com.collabinate.server;
 
 import static org.junit.Assert.*;
 
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -39,7 +38,7 @@ public abstract class CollabinateWriterTest
 	public void add_stream_entry_should_not_allow_null_entity_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
-		writer.addStreamEntry(null, new StreamEntryImpl(null));
+		writer.addStreamEntry(null, new StreamEntry(null, null, null));
 	}
 	
 	@Test
@@ -61,21 +60,5 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		writer.followEntity("user", null);
-	}
-	
-	private class StreamEntryImpl implements StreamEntry
-	{
-		private DateTime time;
-		
-		public StreamEntryImpl(DateTime time)
-		{
-			this.time = time;
-		}
-		
-		@Override
-		public DateTime getTime()
-		{
-			return time;
-		}
-	}
+	}	
 }

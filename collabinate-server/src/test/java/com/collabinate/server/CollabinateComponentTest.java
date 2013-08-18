@@ -11,6 +11,8 @@ import org.restlet.Response;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
 
+import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
+
 /**
  * Test class for the server component.
  * 
@@ -24,7 +26,8 @@ public class CollabinateComponentTest
 	@Before
 	public void Setup()
 	{
-		component = new CollabinateComponent(null, null);
+		GraphServer server = new GraphServer(new TinkerGraph());
+		component = new CollabinateComponent(server, server);
 	}
 	
 	@After
