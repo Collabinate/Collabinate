@@ -36,7 +36,7 @@ public class StreamResourceTest
 		graph = new TinkerGraph();
 		server = new GraphServer(graph);
 		Engine.setRestletLogLevel(Level.WARNING);
-		component = new CollabinateComponent(server, server);
+		component = new CollabinateComponent(server, server, 8182);
 	}
 	
 	@After

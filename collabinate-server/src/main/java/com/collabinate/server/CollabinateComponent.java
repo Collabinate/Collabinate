@@ -17,6 +17,13 @@ public class CollabinateComponent extends Component
 	public CollabinateComponent(CollabinateReader reader,
 			CollabinateWriter writer)
 	{
+		this(reader, writer, Collabinate.getConfiguration()
+				.getInt("collabinate.port"));
+	}
+	
+	public CollabinateComponent(CollabinateReader reader,
+			CollabinateWriter writer, int port)
+	{
 		if (null == reader)
 			throw new IllegalArgumentException("reader must not be null");
 		
@@ -24,8 +31,8 @@ public class CollabinateComponent extends Component
 			throw new IllegalArgumentException("writer must not be null");
 		
 		setName("Collabinate");
-		getServers().add(Protocol.HTTP, 8182);
+		getServers().add(Protocol.HTTP, port);
 		getDefaultHost().attachDefault(
-				new CollabinateApplication(reader, writer));
+				new CollabinateApplication(reader, writer));		
 	}
 }

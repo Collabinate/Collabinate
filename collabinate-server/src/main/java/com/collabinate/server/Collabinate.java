@@ -4,6 +4,7 @@ import java.io.Console;
 import java.io.File;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.restlet.*;
 
@@ -25,15 +26,9 @@ public class Collabinate
 		long startTime = System.currentTimeMillis();
 		
 		//load configuration
-		DefaultConfigurationBuilder builder = new DefaultConfigurationBuilder();
-		builder.setFile(new File("configDefinition.xml"));
-		configuration = builder.getConfiguration();
-		if (null == configuration)
-			throw new IllegalStateException("Configuration not loaded");
-
-		String version = configuration.getString(
+		String version = getConfiguration().getString(
 				"collabinate.version", "Unknown");
-		String build = configuration.getString("collabinate.build", "");
+		String build = getConfiguration().getString("collabinate.build", "");
 		System.out.println("Collabinate Server Version " + 
 				version + ("" == build ? "" : ("+" + build)));
 		
@@ -76,9 +71,27 @@ public class Collabinate
 	 * Retrieves the loaded configuration for the server.
 	 * 
 	 * @return The server configuration.
+	 * @throws ConfigurationException 
 	 */
 	public static Configuration getConfiguration()
 	{
+		if (null != configuration)
+			return configuration;
+		
+		DefaultConfigurationBuilder builder = new DefaultConfigurationBuilder();
+		builder.setFile(new File("configDefinition.xml"));
+		try
+		{
+			configuration = builder.getConfiguration();
+		}
+		catch (ConfigurationException exc)
+		{
+			throw new IllegalStateException("Problem loading config", exc);
+		}
+		
+		if (null == configuration)
+			throw new IllegalStateException("Configuration not loaded");
+
 		return configuration;
 	}
 }

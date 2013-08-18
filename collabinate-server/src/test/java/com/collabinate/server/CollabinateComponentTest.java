@@ -31,7 +31,7 @@ public class CollabinateComponentTest
 	{
 		GraphServer server = new GraphServer(new TinkerGraph());
 		Engine.setRestletLogLevel(Level.WARNING);
-		component = new CollabinateComponent(server, server);
+		component = new CollabinateComponent(server, server, 8182);
 	}
 	
 	@After

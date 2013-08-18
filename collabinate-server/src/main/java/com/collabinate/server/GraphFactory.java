@@ -7,6 +7,19 @@ public class GraphFactory
 {
 	static KeyIndexableGraph getGraph()
 	{
-		return new TinkerGraph();
+		String graphType = Collabinate.getConfiguration()
+				.getString("collabinate.graphType", "TinkerGraph");
+		
+		switch (graphType)
+		{
+			case "Neo4jEmbedded":
+
+			case "TinkerGraph":
+				return new TinkerGraph();
+				
+			default:
+				throw new UnsupportedOperationException(
+						"Unsupported graph type configured: " + graphType);
+		}
 	}
 }
