@@ -1,8 +1,13 @@
 package com.collabinate.server;
 
 import java.io.Console;
+import java.io.File;
 
+import org.apache.commons.configuration.Configuration;
+import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.restlet.*;
+
+import com.tinkerpop.blueprints.KeyIndexableGraph;
 
 /**
  * Main Collabinate entry point.
@@ -10,6 +15,7 @@ import org.restlet.*;
  */
 public class Collabinate
 {
+	private static Configuration configuration;
 	private static CollabinateReader reader;
 	private static CollabinateWriter writer;
 	
@@ -17,13 +23,19 @@ public class Collabinate
 	{
 		// track server startup time
 		long startTime = System.currentTimeMillis();
-		// TODO: output version number automatically
-		System.out.println("Collabinate Server Version 1.0.0 Build 1");
+		
+		//load configuration
+		DefaultConfigurationBuilder builder = new DefaultConfigurationBuilder();
+		builder.setFile(new File("configDefinition.xml"));
+		configuration = builder.getConfiguration();
+		if (null == configuration)
+			throw new IllegalStateException("Configuration not loaded");
+
+		// TODO: load version externally
+		System.out.println("Collabinate Server Version 0.1.0 Build 1");
 		
 		// connect to the data store
-		// TODO: use configuration 
-		com.tinkerpop.blueprints.KeyIndexableGraph graph = 
-				new com.tinkerpop.blueprints.impls.tg.TinkerGraph();
+		KeyIndexableGraph graph = GraphFactory.getGraph();
 		
 		// create the engine
 		GraphServer engine = new GraphServer(graph);
@@ -55,5 +67,15 @@ public class Collabinate
 			System.out.println("No interactive console available;" + 
 				" terminate process to quit");
 		}
+	}
+	
+	/**
+	 * Retrieves the loaded configuration for the server.
+	 * 
+	 * @return The server configuration.
+	 */
+	public static Configuration getConfiguration()
+	{
+		return configuration;
 	}
 }
