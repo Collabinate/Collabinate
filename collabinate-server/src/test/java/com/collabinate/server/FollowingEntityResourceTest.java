@@ -54,7 +54,7 @@ public class FollowingEntityResourceTest
 		Request request = new Request(Method.GET, RESOURCE_PATH);
 		Response response = component.handle(request);
 		
-		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, response.getStatus());		
+		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, response.getStatus());
 	}
 	
 	@Test
@@ -69,19 +69,45 @@ public class FollowingEntityResourceTest
 	@Test
 	public void getting_followed_entity_should_return_200()
 	{
+		Request request = new Request(Method.PUT, RESOURCE_PATH);
+		Response response = component.handle(request);
+		request = new Request(Method.GET, RESOURCE_PATH);
+		response = component.handle(request);
 		
+		assertEquals(Status.SUCCESS_OK, response.getStatus());
 	}
 	
 	@Test
 	public void unfollowing_entity_should_return_200()
 	{
+		Request request = new Request(Method.PUT, RESOURCE_PATH);
+		Response response = component.handle(request);
+		request = new Request(Method.DELETE, RESOURCE_PATH);
+		response = component.handle(request);
 		
+		assertEquals(Status.SUCCESS_OK, response.getStatus());
+	}
+	
+	@Test
+	public void unfollowing_never_followed_entity_should_return_200()
+	{
+		Request request = new Request(Method.DELETE, RESOURCE_PATH);
+		Response response = component.handle(request);
+		
+		assertEquals(Status.SUCCESS_OK, response.getStatus());
 	}
 	
 	@Test
 	public void getting_unfollowed_entity_should_return_404()
 	{
+		Request request = new Request(Method.PUT, RESOURCE_PATH);
+		Response response = component.handle(request);
+		request = new Request(Method.DELETE, RESOURCE_PATH);
+		response = component.handle(request);
+		request = new Request(Method.GET, RESOURCE_PATH);
+		response = component.handle(request);
 		
+		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, response.getStatus());
 	}
 
 	private static final String RESOURCE_PATH = 
