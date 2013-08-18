@@ -50,6 +50,8 @@ public class CollabinateApplication extends Application
 		router.attach(
 				"/{apiVersion}/{tenantId}/users/{userId}/following/{entityId}",
 				FollowingEntityResource.class);
+		router.attach("/{apiVersion}/{tenantId}/users/{userId}/feed",
+				FeedResource.class);
 		
 		return router;
 	}
