@@ -201,5 +201,35 @@ public abstract class CollabinateReaderTest
 		assertEquals(time1.getMillis(), feedEntry.getMillis());
 		feedEntry = feed.get(3).getTime();
 		assertEquals(time4.getMillis(), feedEntry.getMillis());
-	}	
+	}
+	
+	@Test
+	public void is_following_should_return_false_if_user_does_not_follow()
+	{
+		writer.addStreamEntry("entity", new StreamEntry(null, null, null));
+		writer.addStreamEntry("user", new StreamEntry(null, null, null));
+		
+		assertFalse(reader.isUserFollowingEntity("user", "entity"));
+	}
+	
+	@Test
+	public void is_following_should_return_true_if_user_follows_entity()
+	{
+		writer.addStreamEntry("entity", new StreamEntry(null, null, null));
+		writer.addStreamEntry("user", new StreamEntry(null, null, null));
+		writer.followEntity("user", "entity");
+		
+		assertTrue(reader.isUserFollowingEntity("user", "entity"));
+	}
+	
+	@Test
+	public void is_following_should_return_false_after_unfollow()
+	{
+		writer.addStreamEntry("entity", new StreamEntry(null, null, null));
+		writer.addStreamEntry("user", new StreamEntry(null, null, null));
+		writer.followEntity("user", "entity");
+		writer.unfollowEntity("user", "entity");
+		
+		assertFalse(reader.isUserFollowingEntity("user", "entity"));
+	}
 }

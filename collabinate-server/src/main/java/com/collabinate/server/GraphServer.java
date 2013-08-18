@@ -405,6 +405,21 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		
 	}
 	
+	@Override
+	public Boolean isUserFollowingEntity(String userId, String entityId)
+	{
+		Vertex user = getOrCreateEntityVertex(userId);
+		Vertex entity = getOrCreateEntityVertex(entityId);
+		
+		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
+		{
+			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
+				return true;
+		}
+
+		return false;
+	}
+
 	/**
 	 * Inserts an entity into the feed for a user.
 	 * 

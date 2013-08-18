@@ -31,4 +31,14 @@ public interface CollabinateReader
 	 * @return A collection of feed entries for the given user.
 	 */
 	public List<StreamEntry> getFeed(String userId, long startIndex, int entriesToReturn);
+	
+	/**
+	 * Retrieves a boolean value for whether a user is following an entity.
+	 * 
+	 * @param userId The ID of the user for which to determine if an entity is
+	 * followed
+	 * @param entityId The ID of the entity to check if the user is following.
+	 * @return True if the given user follows the given entity, otherwise false.
+	 */
+	public Boolean isUserFollowingEntity(String userId, String entityId);
 }
