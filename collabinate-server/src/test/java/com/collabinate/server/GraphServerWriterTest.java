@@ -3,7 +3,6 @@ package com.collabinate.server;
 import org.junit.Test;
 
 import com.tinkerpop.blueprints.KeyIndexableGraph;
-import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 /**
  * Test class for the graph implementation of CollabinateWriter.
@@ -16,7 +15,7 @@ public class GraphServerWriterTest extends CollabinateWriterTest
 	@Override
 	CollabinateWriter getWriter()
 	{
-		KeyIndexableGraph graph = new TinkerGraph();
+		KeyIndexableGraph graph = GraphFactory.getGraph("TinkerGraph");
 		return new GraphServer(graph);
 	}
 	

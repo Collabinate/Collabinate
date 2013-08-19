@@ -3,7 +3,6 @@ package com.collabinate.server;
 import org.junit.Test;
 
 import com.tinkerpop.blueprints.KeyIndexableGraph;
-import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 /**
  * Test class for the graph implementation of CollabinateReader.
@@ -36,7 +35,7 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 	{
 		if (null == server)
 		{
-			KeyIndexableGraph graph = new TinkerGraph();
+			KeyIndexableGraph graph = GraphFactory.getGraph("TinkerGraph");
 			server = new GraphServer(graph);
 		}
 		return server;

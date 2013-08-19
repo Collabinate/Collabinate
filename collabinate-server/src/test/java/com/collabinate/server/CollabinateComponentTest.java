@@ -14,8 +14,6 @@ import org.restlet.data.Method;
 import org.restlet.data.Status;
 import org.restlet.engine.Engine;
 
-import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
-
 /**
  * Test class for the server component.
  * 
@@ -29,7 +27,8 @@ public class CollabinateComponentTest
 	@Before
 	public void Setup()
 	{
-		GraphServer server = new GraphServer(new TinkerGraph());
+		GraphServer server = new GraphServer(
+				GraphFactory.getGraph("TinkerGraph"));
 		Engine.setRestletLogLevel(Level.WARNING);
 		component = new CollabinateComponent(server, server, 8182);
 	}

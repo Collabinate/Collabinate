@@ -33,7 +33,7 @@ public class StreamResourceTest
 	@Before
 	public void setup()
 	{
-		graph = new TinkerGraph();
+		graph = (TinkerGraph)GraphFactory.getGraph("TinkerGraph");
 		server = new GraphServer(graph);
 		Engine.setRestletLogLevel(Level.WARNING);
 		component = new CollabinateComponent(server, server, 8182);

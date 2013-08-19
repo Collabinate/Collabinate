@@ -9,7 +9,12 @@ public class GraphFactory
 	{
 		String graphType = Collabinate.getConfiguration()
 				.getString("collabinate.graphType", "TinkerGraph");
-		
+
+		return getGraph(graphType);
+	}
+	
+	static KeyIndexableGraph getGraph(String graphType)
+	{
 		switch (graphType)
 		{
 			case "Neo4jEmbedded":
