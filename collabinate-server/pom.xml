@@ -47,8 +47,8 @@
 		</dependency>
 		<dependency>
 			<groupId>com.tinkerpop.blueprints</groupId>
-			<artifactId>blueprints-orient-graph</artifactId>
-			<version>2.3.0</version>
+			<artifactId>blueprints-core</artifactId>
+			<version>2.4.0</version>
 			<scope>compile</scope>
 		</dependency>
 		<dependency>

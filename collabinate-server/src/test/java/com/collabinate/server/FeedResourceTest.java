@@ -34,7 +34,7 @@ public class FeedResourceTest
 	@Before
 	public void setup()
 	{
-		graph = (TinkerGraph)GraphFactory.getGraph("TinkerGraph");
+		graph = new TinkerGraph();
 		server = new GraphServer(graph);
 		Engine.setRestletLogLevel(Level.WARNING);
 		component = new CollabinateComponent(server, server, 8182);

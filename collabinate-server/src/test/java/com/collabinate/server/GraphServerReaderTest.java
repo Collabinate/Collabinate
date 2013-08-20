@@ -2,6 +2,7 @@ package com.collabinate.server;
 
 import org.junit.Test;
 
+import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 
 /**
@@ -35,7 +36,8 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 	{
 		if (null == server)
 		{
-			KeyIndexableGraph graph = GraphFactory.getGraph("TinkerGraph");
+			KeyIndexableGraph graph = 
+					(KeyIndexableGraph)GraphFactory.open("src/test/resources/graph.properties");
 			server = new GraphServer(graph);
 		}
 		return server;

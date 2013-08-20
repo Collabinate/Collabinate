@@ -8,6 +8,8 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.restlet.*;
 
+import com.tinkerpop.blueprints.Graph;
+import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 
 /**
@@ -33,7 +35,11 @@ public class Collabinate
 				version + ("" == build ? "" : ("+" + build)));
 		
 		// connect to the data store
-		KeyIndexableGraph graph = GraphFactory.getGraph();
+		Graph configuredGraph = GraphFactory.open("graph.properties");
+		if (!(configuredGraph instanceof KeyIndexableGraph))
+			throw new IllegalStateException(
+					"Configured graph is not a KeyIndexableGraph");
+		KeyIndexableGraph graph = (KeyIndexableGraph)configuredGraph;
 		
 		// create the engine
 		GraphServer engine = new GraphServer(graph);
