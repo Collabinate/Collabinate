@@ -1,5 +1,6 @@
 package com.collabinate.server;
 
+import org.junit.After;
 import org.junit.Test;
 
 import com.tinkerpop.blueprints.GraphFactory;
@@ -13,12 +14,21 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
  */
 public class GraphServerWriterTest extends CollabinateWriterTest
 {
+	private KeyIndexableGraph graph;
+	
 	@Override
 	CollabinateWriter getWriter()
 	{
-		KeyIndexableGraph graph = 
-				(KeyIndexableGraph)GraphFactory.open("src/test/resources/graph.properties");
+		graph = (KeyIndexableGraph)GraphFactory.open(
+				"src/test/resources/graph.properties");
 		return new GraphServer(graph);
+	}
+	
+	@After
+	public void shutdownGraph()
+	{
+		if (null != graph)
+			graph.shutdown();
 	}
 	
 	@Test

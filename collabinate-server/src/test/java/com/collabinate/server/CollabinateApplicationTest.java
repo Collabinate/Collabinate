@@ -19,10 +19,12 @@ public class CollabinateApplicationTest
 	@Test
 	public void application_should_be_named_collabinate() throws Exception
 	{
-		GraphServer server = new GraphServer(
-				(KeyIndexableGraph)GraphFactory.open("src/test/resources/graph.properties"));
+		KeyIndexableGraph graph = (KeyIndexableGraph)GraphFactory.open(
+				"src/test/resources/graph.properties");
+		GraphServer server = new GraphServer(graph);
 		Application app = new CollabinateApplication(server, server);
 		assertEquals("Collabinate", app.getName());
 		app.stop();
+		graph.shutdown();
 	}
 }

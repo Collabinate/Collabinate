@@ -25,13 +25,15 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
  */
 public class CollabinateComponentTest
 {
+	private KeyIndexableGraph graph;
 	private Component component;
 	
 	@Before
 	public void Setup()
 	{
-		GraphServer server = new GraphServer(
-				(KeyIndexableGraph)GraphFactory.open("src/test/resources/graph.properties"));
+		graph = (KeyIndexableGraph)GraphFactory.open(
+				"src/test/resources/graph.properties");
+		GraphServer server = new GraphServer(graph);
 		Engine.setRestletLogLevel(Level.WARNING);
 		component = new CollabinateComponent(server, server, 8182);
 	}
@@ -43,6 +45,7 @@ public class CollabinateComponentTest
 		{
 			component.stop();
 		}
+		graph.shutdown();
 	}
 	
 	@Test
