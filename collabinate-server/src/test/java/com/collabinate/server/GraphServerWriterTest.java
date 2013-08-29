@@ -25,7 +25,7 @@ public class GraphServerWriterTest extends CollabinateWriterTest
 	}
 	
 	@After
-	public void shutdownGraph()
+	public void teardown()
 	{
 		if (null != graph)
 			graph.shutdown();

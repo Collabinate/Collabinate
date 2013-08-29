@@ -217,8 +217,16 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	private void updateFeedPaths(Vertex entity)
 	{
 		// get all the users that follow the entity
-		Iterable<Vertex> users =
+		Iterable<Vertex> usersInGraph =
 				entity.getVertices(Direction.IN, STRING_FOLLOWS);
+		
+		// copy the users to a separate list to prevent the collection
+		// underlying the iterable getting modified during processing
+		ArrayList<Vertex> users = new ArrayList<Vertex>();
+		for (Vertex user : usersInGraph)
+		{
+			users.add(user);
+		}
 		
 		// loop over each user and move the entity to the correct
 		// feed position by un-following and re-following

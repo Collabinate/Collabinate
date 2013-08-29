@@ -46,7 +46,7 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 	}
 	
 	@After
-	public void shutdownGraph()
+	public void teardown()
 	{
 		if (null != graph)
 			graph.shutdown();
