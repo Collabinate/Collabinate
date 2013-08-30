@@ -34,7 +34,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	/**
 	 * Ensures that the graph can have IDs assigned.
 	 * 
-	 * @param graph A Tinkerpop BluePrints graph to act as the store for the server.
+	 * @param graph A Tinkerpop BluePrints graph to act as the store for the
+	 * server.
 	 */
 	public GraphServer(final KeyIndexableGraph graph)
 	{
@@ -109,7 +110,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 * 
 	 * @param entity The vertex representing the entity.
 	 * @param addedStreamEntry The stream entry to add to the stream.
-	 * @return true if the added stream entry is the newest (first)in the
+	 * @return true if the added stream entry is the newest (first) in the
 	 * stream, otherwise false.
 	 */
 	private boolean insertStreamEntry(final Vertex entity,
@@ -250,6 +251,69 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	private String getIdString(Vertex vertex)
 	{
 		return vertex.getId().toString();
+	}
+	
+	@Override
+	public void deleteStreamEntry(String entityId, String entryId)
+	{
+		if (null == entityId)
+			throw new IllegalArgumentException("entityId must not be null");
+		
+		if (null == entryId)
+			throw new IllegalArgumentException("entryId must not be null");
+		
+		Vertex entityVertex = getOrCreateEntityVertex(entityId);
+				
+		if (removeStreamEntry(entityVertex, entryId))
+			updateFeedPaths(entityVertex);
+	}
+	
+	/**
+	 * Deletes the stream entry vertex that matches the given entryId within
+	 * the stream of the given entity.  The continuity of the stream is
+	 * maintained.
+	 * 
+	 * @param entityVertex The vertex representing the entity.
+	 * @param entryId The ID of the stream entry to delete from the stream.
+	 * @return true if the deleted stream entry was the newest (first) in the
+	 * stream, otherwise false.
+	 */
+	private boolean removeStreamEntry(Vertex entityVertex, String entryId)
+	{
+		if (null == entityVertex)
+			throw new IllegalArgumentException("entityVertex must not be null");
+		
+		if (null == entryId)
+			throw new IllegalArgumentException("entryId must not be null");
+		
+		Vertex currentStreamEntry = getNextStreamEntry(entityVertex);
+		Vertex previousStreamEntry = entityVertex;
+		int position = 0;		
+		
+		// advance along the stream path, checking each stream entry for a match
+		while (currentStreamEntry != null)
+		{
+			// if a match is found, remove it and make a new edge from the
+			// previous entry to the following entry (if one exists)
+			if (entryId == (String)currentStreamEntry.getId())
+			{
+				Vertex followingEntry = getNextStreamEntry(currentStreamEntry);
+				currentStreamEntry.remove();
+				if (null != followingEntry)
+					previousStreamEntry.addEdge(STRING_STREAM_ENTRY,
+							followingEntry);
+				currentStreamEntry = null;
+			}
+			// if no match, proceed along the stream updating the pointers
+			else
+			{
+				previousStreamEntry = currentStreamEntry;
+				currentStreamEntry = getNextStreamEntry(currentStreamEntry);
+				position++;
+			}
+		}
+		
+		return position == 0;
 	}
 
 	@Override

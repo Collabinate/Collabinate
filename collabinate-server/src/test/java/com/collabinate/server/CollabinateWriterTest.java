@@ -49,6 +49,22 @@ public abstract class CollabinateWriterTest
 		exception.expectMessage("streamEntry");
 		writer.addStreamEntry("", null);
 	}
+	
+	@Test
+	public void delete_stream_entry_by_id_should_not_allow_null_entity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entityId");
+		writer.deleteStreamEntry(null, "");
+	}
+		
+	@Test
+	public void delete_stream_entry_by_id_should_not_allow_null_entry_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entryId");
+		writer.deleteStreamEntry("", null);
+	}
 		
 	@Test
 	public void follow_entity_should_not_allow_null_user_ID()

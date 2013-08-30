@@ -22,6 +22,16 @@ public interface CollabinateWriter
 	public void addStreamEntry(String entityId, StreamEntry streamEntry);
 	
 	/**
+	 * Deletes an entry from an entity's stream.
+	 * 
+	 * @param entityId The ID of the entity from which an entry will be removed.
+	 * This value must not be null.
+	 * @param entryId The ID of the entry to remove.  This value must not be
+	 * null.
+	 */
+	public void deleteStreamEntry(String entityId, String entryId);
+	
+	/**
 	 * Adds an entity to the collection of entities a user follows.
 	 * 
 	 * @param userId The ID of the user that follows the entity.

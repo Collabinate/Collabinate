@@ -5,6 +5,7 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -110,6 +111,111 @@ public abstract class CollabinateReaderTest
 		List<StreamEntry> entries = reader.getStream("1", 0, 5);
 		assertEquals("Oldest entry not last in stream", 
 			time3.getMillis(), entries.get(4).getTime().getMillis());
+	}
+	
+	@Test
+	public void stream_with_all_entries_removed_should_be_empty()
+	{
+		String entryId = UUID.randomUUID().toString();
+		writer.addStreamEntry("1", new StreamEntry(entryId, null, null));
+		writer.deleteStreamEntry("1", entryId);
+		List<StreamEntry> stream = reader.getStream("1", 0, 1);
+		assertEquals(0, stream.size());
+	}
+	
+	@Test
+	public void removed_stream_entry_should_not_appear_in_stream()
+	{
+		String entryId1 = UUID.randomUUID().toString();
+		String entryId2 = UUID.randomUUID().toString();
+		writer.addStreamEntry("1", new StreamEntry(entryId1, null, null));
+		writer.addStreamEntry("1", new StreamEntry(entryId2, null, null));
+		writer.deleteStreamEntry("1", entryId1);
+		List<StreamEntry> stream = reader.getStream("1", 0, 1);
+		assertNotEquals("Removed entry appeared in stream", 
+				stream.get(0).getId(), entryId1);
+	}
+	
+	@Test
+	public void removing_stream_entry_should_not_change_remaining_order()
+	{
+		String entryId1 = UUID.randomUUID().toString();
+		String entryId2 = UUID.randomUUID().toString();
+		String entryId3 = UUID.randomUUID().toString();
+
+		final DateTime time1 = DateTime.now();
+		final DateTime time2 = time1.minus(1000);
+		final DateTime time3 = time1.plus(1000);
+		
+		// add entries, order will be 3, 1, 2
+		writer.addStreamEntry("1", new StreamEntry(entryId1, time1, null));
+		writer.addStreamEntry("1", new StreamEntry(entryId2, time2, null));
+		writer.addStreamEntry("1", new StreamEntry(entryId3, time3, null));
+		
+		// remove entry 1
+		writer.deleteStreamEntry("1", entryId1);
+		
+		// order should be 3, 2		
+		List<StreamEntry> entries = reader.getStream("1", 0, 2);
+		assertEquals("Newest not first.", entryId3, entries.get(0).getId());
+		assertEquals("Oldest not last.", entryId2, entries.get(1).getId());
+	}
+	
+	@Test
+	public void removing_old_entry_within_stream_should_not_affect_feed()
+	{
+		String entryId1 = UUID.randomUUID().toString();
+		String entryId2 = UUID.randomUUID().toString();
+		String entryId3 = UUID.randomUUID().toString();
+		String entryId4 = UUID.randomUUID().toString();
+
+		// order is 3, 1, 2, 4
+		final DateTime time1 = new DateTime(3000);
+		final DateTime time2 = time1.minus(1000);
+		final DateTime time3 = time1.plus(1000);
+		final DateTime time4 = time1.minus(2000);
+		
+		// add entries to entities, order is A=3,2 B=1,4
+		writer.addStreamEntry("B", new StreamEntry(entryId1, time1, null));
+		writer.addStreamEntry("A", new StreamEntry(entryId2, time2, null));
+		writer.addStreamEntry("A", new StreamEntry(entryId3, time3, null));
+		writer.addStreamEntry("B", new StreamEntry(entryId4, time4, null));
+		List<StreamEntry> entries = reader.getStream("A", 0, 2);
+		assertEquals("Newest not first.", entryId3, entries.get(0).getId());
+		assertEquals("Oldest not last.", entryId2, entries.get(1).getId());
+		entries = reader.getStream("B", 0, 2);
+		assertEquals("Newest not first.", entryId1, entries.get(0).getId());
+		assertEquals("Oldest not last.", entryId4, entries.get(1).getId());
+		
+		// follow the entities, feed order is 3, 1, 2, 4
+		writer.followEntity("user", "A");
+		writer.followEntity("user", "B");
+		
+		// order should be 3, 1, 2, 4	
+		entries = reader.getFeed("user", 0, 4);
+		assertEquals("Newest not first.", time3.getMillis(),
+				entries.get(0).getTime().getMillis());
+		assertEquals("First middle not correct.", time1.getMillis(),
+				entries.get(1).getTime().getMillis());
+		assertEquals("Second middle not correct.", time2.getMillis(),
+				entries.get(2).getTime().getMillis());
+		assertEquals("Oldest not last.", time4.getMillis(),
+				entries.get(3).getTime().getMillis());
+
+		// remove entry 2
+		writer.deleteStreamEntry("A", entryId2);
+		
+		// order should be 3, 1, 4	
+		entries = reader.getFeed("user", 0, 3);
+		assertEquals("Newest not first.", entryId3, entries.get(0).getId());
+		assertEquals("Middle not correct.", entryId1, entries.get(1).getId());
+		assertEquals("Oldest not last.", entryId4, entries.get(2).getId());
+	}
+	
+	@Test
+	public void removing_newest_entry_in_stream_should_not_affect_feed()
+	{
+		
 	}
 		
 	@Test
