@@ -38,6 +38,7 @@ public abstract class CollabinateWriterTest
 	public void add_stream_entry_should_not_allow_null_entity_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entityId");
 		writer.addStreamEntry(null, new StreamEntry(null, null, null));
 	}
 	
@@ -45,6 +46,7 @@ public abstract class CollabinateWriterTest
 	public void add_stream_entry_should_not_allow_null_stream_entry()
 	{
 		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("streamEntry");
 		writer.addStreamEntry("", null);
 	}
 		
@@ -52,6 +54,7 @@ public abstract class CollabinateWriterTest
 	public void follow_entity_should_not_allow_null_user_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("userId");
 		writer.followEntity(null, "1");
 	}
 	
@@ -59,6 +62,23 @@ public abstract class CollabinateWriterTest
 	public void follow_entity_should_not_allow_null_entity_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entityId");
 		writer.followEntity("user", null);
+	}
+	
+	@Test
+	public void unfollow_entity_should_not_allow_null_user_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("userId");
+		writer.unfollowEntity(null, "1");
+	}
+	
+	@Test
+	public void unfollow_entity_should_not_allow_null_entity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entityId");
+		writer.unfollowEntity("user", null);
 	}	
 }
