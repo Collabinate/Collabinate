@@ -529,8 +529,10 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		       comparator.compare(newEntity, currentFeedEntity) > 0)
 		{
 			previousFeedEntity = currentFeedEntity;
-			currentFeedEdge = getStreamEntryEdge(currentFeedEntity);
-			currentFeedEntity = getNextStreamEntry(currentFeedEntity);
+			currentFeedEdge = getSingleOutgoingEdge(currentFeedEntity,
+					feedLabel);
+			currentFeedEntity = getNextFeedEntity(feedLabel, currentFeedEntity,
+					Direction.OUT);
 			position++;
 		}
 		
@@ -643,8 +645,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 * 
 	 * @param fileName The file to which the data will be written.
 	 */
-	@SuppressWarnings("unused")
-	private void exportGraph(String fileName)
+	public void exportGraph(String fileName)
 	{
 		try
 		{

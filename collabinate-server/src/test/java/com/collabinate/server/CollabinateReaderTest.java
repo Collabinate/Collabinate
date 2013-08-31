@@ -164,10 +164,10 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void removing_old_entry_within_stream_should_not_affect_feed()
 	{
-		String entryId1 = UUID.randomUUID().toString();
-		String entryId2 = UUID.randomUUID().toString();
-		String entryId3 = UUID.randomUUID().toString();
-		String entryId4 = UUID.randomUUID().toString();
+		String entryId1 = "entry1";
+		String entryId2 = "entry2";
+		String entryId3 = "entry3";
+		String entryId4 = "entry4";
 
 		// order is 3, 1, 2, 4
 		final DateTime time1 = new DateTime(3000);
@@ -180,33 +180,16 @@ public abstract class CollabinateReaderTest
 		writer.addStreamEntry("A", new StreamEntry(entryId2, time2, null));
 		writer.addStreamEntry("A", new StreamEntry(entryId3, time3, null));
 		writer.addStreamEntry("B", new StreamEntry(entryId4, time4, null));
-		List<StreamEntry> entries = reader.getStream("A", 0, 2);
-		assertEquals("Newest not first.", entryId3, entries.get(0).getId());
-		assertEquals("Oldest not last.", entryId2, entries.get(1).getId());
-		entries = reader.getStream("B", 0, 2);
-		assertEquals("Newest not first.", entryId1, entries.get(0).getId());
-		assertEquals("Oldest not last.", entryId4, entries.get(1).getId());
 		
 		// follow the entities, feed order is 3, 1, 2, 4
 		writer.followEntity("user", "A");
 		writer.followEntity("user", "B");
 		
-		// order should be 3, 1, 2, 4	
-		entries = reader.getFeed("user", 0, 4);
-		assertEquals("Newest not first.", time3.getMillis(),
-				entries.get(0).getTime().getMillis());
-		assertEquals("First middle not correct.", time1.getMillis(),
-				entries.get(1).getTime().getMillis());
-		assertEquals("Second middle not correct.", time2.getMillis(),
-				entries.get(2).getTime().getMillis());
-		assertEquals("Oldest not last.", time4.getMillis(),
-				entries.get(3).getTime().getMillis());
-
 		// remove entry 2
 		writer.deleteStreamEntry("A", entryId2);
 		
 		// order should be 3, 1, 4	
-		entries = reader.getFeed("user", 0, 3);
+		List<StreamEntry> entries = reader.getFeed("user", 0, 3);
 		assertEquals("Newest not first.", entryId3, entries.get(0).getId());
 		assertEquals("Middle not correct.", entryId1, entries.get(1).getId());
 		assertEquals("Oldest not last.", entryId4, entries.get(2).getId());
@@ -215,7 +198,35 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void removing_newest_entry_in_stream_should_not_affect_feed()
 	{
+		String entryId1 = "entry1";
+		String entryId2 = "entry2";
+		String entryId3 = "entry3";
+		String entryId4 = "entry4";
+
+		// order is 3, 1, 2, 4
+		final DateTime time1 = new DateTime(3000);
+		final DateTime time2 = time1.minus(1000);
+		final DateTime time3 = time1.plus(1000);
+		final DateTime time4 = time1.minus(2000);
 		
+		// add entries to entities, order is A=3,2 B=1,4
+		writer.addStreamEntry("B", new StreamEntry(entryId1, time1, null));
+		writer.addStreamEntry("A", new StreamEntry(entryId2, time2, null));
+		writer.addStreamEntry("A", new StreamEntry(entryId3, time3, null));
+		writer.addStreamEntry("B", new StreamEntry(entryId4, time4, null));
+		
+		// follow the entities, feed order is 3, 1, 2, 4
+		writer.followEntity("user", "A");
+		writer.followEntity("user", "B");
+		
+		// remove entry 3
+		writer.deleteStreamEntry("A", entryId3);
+		
+		// order should be 1, 2, 4	
+		List<StreamEntry> entries = reader.getFeed("user", 0, 3);
+		assertEquals("Newest not first.", entryId1, entries.get(0).getId());
+		assertEquals("Middle not correct.", entryId2, entries.get(1).getId());
+		assertEquals("Oldest not last.", entryId4, entries.get(2).getId());
 	}
 		
 	@Test
@@ -258,6 +269,40 @@ public abstract class CollabinateReaderTest
 		}
 		assertThat(timeMillis, hasItems(
 				time1.getMillis(), time2.getMillis()));
+	}
+	
+	@Test
+	public void user_with_newest_entry_should_be_first_in_feed_when_added_last()
+	{
+		final DateTime time1 = new DateTime(1000);
+		final DateTime time2 = time1.plus(1000);
+		final DateTime time3 = time1.plus(2000);
+		writer.addStreamEntry("1", new StreamEntry(null, time1, null));
+		writer.addStreamEntry("2", new StreamEntry(null, time2, null));
+		writer.addStreamEntry("3", new StreamEntry(null, time3, null));
+		writer.followEntity("user", "1");
+		writer.followEntity("user", "2");
+		writer.followEntity("user", "3");
+		List<StreamEntry> entries = reader.getFeed("user", 0, 3);
+		assertEquals("newest entry not first", time3.getMillis(),
+				entries.get(0).getTime().getMillis());
+	}
+	
+	@Test
+	public void user_with_oldest_entry_should_be_last_in_feed_when_added_last()
+	{
+		final DateTime time1 = new DateTime(3000);
+		final DateTime time2 = time1.minus(1000);
+		final DateTime time3 = time1.minus(2000);
+		writer.addStreamEntry("1", new StreamEntry(null, time1, null));
+		writer.addStreamEntry("2", new StreamEntry(null, time2, null));
+		writer.addStreamEntry("3", new StreamEntry(null, time3, null));
+		writer.followEntity("user", "1");
+		writer.followEntity("user", "2");
+		writer.followEntity("user", "3");
+		List<StreamEntry> entries = reader.getFeed("user", 0, 3);
+		assertEquals("oldest entry not last", time3.getMillis(),
+				entries.get(2).getTime().getMillis());
 	}
 	
 	@Test
