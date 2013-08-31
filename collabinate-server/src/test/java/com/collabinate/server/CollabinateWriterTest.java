@@ -54,16 +54,23 @@ public abstract class CollabinateWriterTest
 	@Test
 	public void adding_duplicate_stream_entries_should_succeed()
 	{
-		StreamEntry entry = new StreamEntry("entry", DateTime.now(), "content");
+		StreamEntry entry = new StreamEntry("1", DateTime.now(), "content");
 		writer.addStreamEntry("entity", entry);
 		writer.addStreamEntry("entity", entry);
+		
+		//cleanup
+		writer.deleteStreamEntry("entity", "1");
+		writer.deleteStreamEntry("entity", "1");
 	}
 	
 	@Test
-	public void deleting_invalid_entry_should_succeed()
+	public void deleting_nonexistent_entry_should_succeed()
 	{
-		writer.addStreamEntry("entity", new StreamEntry("entry1", null, null));
-		writer.deleteStreamEntry("entity", "entry2");
+		writer.addStreamEntry("entity", new StreamEntry("1", null, null));
+		writer.deleteStreamEntry("entity", "2");
+		
+		//cleanup
+		writer.deleteStreamEntry("entity", "1");
 	}
 	
 	@Test
