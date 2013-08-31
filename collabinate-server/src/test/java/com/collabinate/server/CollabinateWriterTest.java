@@ -2,6 +2,7 @@ package com.collabinate.server;
 
 import static org.junit.Assert.*;
 
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -49,9 +50,24 @@ public abstract class CollabinateWriterTest
 		exception.expectMessage("streamEntry");
 		writer.addStreamEntry("", null);
 	}
+
+	@Test
+	public void adding_duplicate_stream_entries_should_succeed()
+	{
+		StreamEntry entry = new StreamEntry("entry", DateTime.now(), "content");
+		writer.addStreamEntry("entity", entry);
+		writer.addStreamEntry("entity", entry);
+	}
 	
 	@Test
-	public void delete_stream_entry_by_id_should_not_allow_null_entity_ID()
+	public void deleting_invalid_entry_should_succeed()
+	{
+		writer.addStreamEntry("entity", new StreamEntry("entry1", null, null));
+		writer.deleteStreamEntry("entity", "entry2");
+	}
+	
+	@Test
+	public void delete_stream_entry_should_not_allow_null_entity_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
@@ -59,7 +75,7 @@ public abstract class CollabinateWriterTest
 	}
 		
 	@Test
-	public void delete_stream_entry_by_id_should_not_allow_null_entry_ID()
+	public void delete_stream_entry_should_not_allow_null_entry_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entryId");

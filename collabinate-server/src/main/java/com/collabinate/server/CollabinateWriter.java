@@ -26,8 +26,8 @@ public interface CollabinateWriter
 	 * 
 	 * @param entityId The ID of the entity from which an entry will be removed.
 	 * This value must not be null.
-	 * @param entryId The ID of the entry to remove.  This value must not be
-	 * null.
+	 * @param entryId The ID of the entry to remove. The first matching entry
+	 * with this ID value will be deleted. This value must not be null.
 	 */
 	public void deleteStreamEntry(String entityId, String entryId);
 	

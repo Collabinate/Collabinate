@@ -24,7 +24,7 @@ public class StreamEntry
 	 * @param time The date and time of the entry, used for sorting the stream.
 	 * Will be set to the current date and time if null.
 	 * @param content The content of the entry, typically in Activity Streams
-	 * format.
+	 * format. Will be set to empty string if null.
 	 */
 	public StreamEntry(String id, DateTime time, String content)
 	{

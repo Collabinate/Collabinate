@@ -97,7 +97,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 */
 	private Vertex serializeStreamEntry(final StreamEntry streamEntry)
 	{
-		Vertex streamEntryVertex = graph.addVertex(streamEntry.getId());
+		Vertex streamEntryVertex = graph.addVertex(null);
+		streamEntryVertex.setProperty(STRING_ID, streamEntry.getId());
 		streamEntryVertex.setProperty(STRING_TIME, 
 				streamEntry.getTime().toString());
 		streamEntryVertex.setProperty(STRING_CONTENT, streamEntry.getContent());
@@ -295,7 +296,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		{
 			// if a match is found, remove it and make a new edge from the
 			// previous entry to the following entry (if one exists)
-			if (entryId == (String)currentStreamEntry.getId())
+			if (entryId == (String)currentStreamEntry.getProperty(STRING_ID))
 			{
 				Vertex followingEntry = getNextStreamEntry(currentStreamEntry);
 				currentStreamEntry.remove();
@@ -404,7 +405,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 */
 	private StreamEntry deserializeStreamEntry(final Vertex streamEntryVertex)
 	{
-		String id = (String)streamEntryVertex.getId();
+		String id = (String)streamEntryVertex.getProperty(STRING_ID);
 		DateTime time = DateTime.parse((String) streamEntryVertex
 				.getProperty(STRING_TIME));
 		String content = (String)streamEntryVertex.getProperty(STRING_CONTENT);
@@ -773,6 +774,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		}
 	}
 	
+	private static final String STRING_ID = "ID";
 	private static final String STRING_TIME = "Time";
 	private static final String STRING_CONTENT = "Content";
 	private static final String STRING_FOLLOWS = "Follows";
