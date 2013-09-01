@@ -32,7 +32,7 @@ public class Collabinate
 				"collabinate.version", "Unknown");
 		String build = getConfiguration().getString("collabinate.build", "");
 		System.out.println("Collabinate Server Version " + 
-				version + ("" == build ? "" : ("+" + build)));
+				version + (build.equals("") ? "" : ("+" + build)));
 		
 		// connect to the data store
 		Graph configuredGraph = GraphFactory.open("graph.properties");

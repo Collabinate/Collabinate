@@ -159,6 +159,9 @@ public abstract class CollabinateReaderTest
 		List<StreamEntry> stream = reader.getStream("entity", 0, 1);
 		assertNotEquals("Removed entry appeared in stream", 
 				stream.get(0).getId(), "1");
+		
+		//cleanup
+		writer.deleteStreamEntry("entity", "2");
 	}
 	
 	@Test
@@ -215,6 +218,8 @@ public abstract class CollabinateReaderTest
 		assertEquals("Oldest not last.", "4", entries.get(2).getId());
 		
 		//cleanup
+		writer.unfollowEntity("user", "entityA");
+		writer.unfollowEntity("user", "entityB");
 		writer.deleteStreamEntry("entityB", "1");
 		writer.deleteStreamEntry("entityA", "3");
 		writer.deleteStreamEntry("entityB", "4");
@@ -249,6 +254,8 @@ public abstract class CollabinateReaderTest
 		assertEquals("Oldest not last.", "4", entries.get(2).getId());
 		
 		//cleanup
+		writer.unfollowEntity("user", "entityA");
+		writer.unfollowEntity("user", "entityB");
 		writer.deleteStreamEntry("entityB", "1");
 		writer.deleteStreamEntry("entityA", "2");
 		writer.deleteStreamEntry("entityB", "4");

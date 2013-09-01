@@ -296,7 +296,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		{
 			// if a match is found, remove it and make a new edge from the
 			// previous entry to the following entry (if one exists)
-			if (entryId == (String)currentStreamEntry.getProperty(STRING_ID))
+			if (entryId.equals(currentStreamEntry.getProperty(STRING_ID)))
 			{
 				Vertex followingEntry = getNextStreamEntry(currentStreamEntry);
 				currentStreamEntry.remove();
@@ -763,6 +763,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 				t1 = DateTime.parse((String)streamEntry.getProperty(STRING_TIME))
 					.getMillis();
 			
+			streamEntry = null;
 			long t2 = 0;
 			if (null != v2)
 				streamEntry = getNextStreamEntry(v2);
