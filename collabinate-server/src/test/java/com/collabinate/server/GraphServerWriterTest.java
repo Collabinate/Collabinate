@@ -21,7 +21,10 @@ public class GraphServerWriterTest extends CollabinateWriterTest
 	{
 		graph = (KeyIndexableGraph)GraphFactory.open(
 				"src/test/resources/graph.properties");
-		return new GraphServer(graph);
+		GraphServer server = new GraphServer(graph);
+		server.setAutoCommit(false);
+		return server;
+		
 	}
 	
 	@After

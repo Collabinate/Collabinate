@@ -41,6 +41,7 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 			graph = (KeyIndexableGraph)GraphFactory.open(
 					"src/test/resources/graph.properties");
 			server = new GraphServer(graph);
+			server.setAutoCommit(false);
 		}
 		return server;
 	}

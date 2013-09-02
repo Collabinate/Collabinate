@@ -14,6 +14,7 @@ import org.joda.time.DateTime;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
+import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.util.io.graphml.GraphMLWriter;
 import com.tinkerpop.blueprints.util.wrappers.id.IdGraph;
@@ -30,6 +31,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 * The graph database backing this instance.
 	 */
 	private KeyIndexableGraph graph;
+	
+	/**
+	 * Whether the server should automatically commit transactions.
+	 */
+	private boolean autoCommit = true;
 		
 	/**
 	 * Ensures that the graph can have IDs assigned.
@@ -51,6 +57,28 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			this.graph = graph;
 	}
 	
+	/**
+	 * Sets whether the server should automatically commit transactions.
+	 * 
+	 * @param autoCommit The setting for whether the server automatically
+	 * commits transactions. True by default.
+	 */
+	public void setAutoCommit(boolean autoCommit)
+	{
+		this.autoCommit = autoCommit;
+	}
+	
+	/**
+	 * Causes the graph database to commit the current transaction.
+	 */
+	private void commit()
+	{
+		if (autoCommit && graph.getFeatures().supportsTransactions)
+		{
+			((TransactionalGraph)graph).commit();
+		}
+	}
+	
 	@Override
 	public void addStreamEntry(String entityId, StreamEntry streamEntry)
 	{
@@ -70,6 +98,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		
 		if (insertStreamEntry(entityVertex, streamEntryVertex))
 			updateFeedPaths(entityVertex);
+		
+		commit();
 	}
 
 	/**
@@ -267,6 +297,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 				
 		if (removeStreamEntry(entityVertex, entryId))
 			updateFeedPaths(entityVertex);
+		
+		commit();
 	}
 	
 	/**
@@ -351,6 +383,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			streamPosition++;
 		}
 		
+		commit();
+		
 		// we only have the vertices, the actual entries need to be created
 		return deserializeStreamEntries(streamVertices);
 	}
@@ -432,6 +466,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		user.addEdge(STRING_FOLLOWS, entity);
 		
 		insertFeedEntity(user, entity);
+		
+		commit();
 	}
 	
 	@Override
@@ -476,6 +512,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			previousEntity.addEdge(feedLabel, nextEntity);
 		}
 		
+		commit();
 	}
 	
 	@Override
@@ -487,9 +524,14 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
 		{
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
+			{
+				commit();
 				return true;
+			}
 		}
 
+		commit();
+		
 		return false;
 	}
 
@@ -638,6 +680,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			}
 		}
 
+		commit();
+		
 		return deserializeStreamEntries(streamEntries);
 	}
 

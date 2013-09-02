@@ -1,8 +1,8 @@
 package com.collabinate.server;
 
 /**
- * The interface for a Collabinate server that performs write (update)
- * operations.
+ * The interface for a Collabinate server that performs write (create, update,
+ * delete) operations.
  * 
  * @author mafuba
  *
