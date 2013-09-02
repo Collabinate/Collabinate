@@ -13,11 +13,13 @@ import org.joda.time.DateTime;
 
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.IndexableGraph;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.util.io.graphml.GraphMLWriter;
 import com.tinkerpop.blueprints.util.wrappers.id.IdGraph;
+import com.tinkerpop.blueprints.util.wrappers.partition.PartitionIndexableGraph;
 
 /**
  * An implementation of both reader and writer backed by a graph database.
@@ -30,7 +32,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	/**
 	 * The graph database backing this instance.
 	 */
-	private KeyIndexableGraph graph;
+	private PartitionIndexableGraph<IndexableGraph> graph;
 	
 	/**
 	 * Whether the server should automatically commit transactions.
@@ -50,11 +52,23 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("graph must not be null");
 		}
 		
+		// we need to go through hoops in the following to ensure that we end up
+		// with a graph that is both ID enabled and partitioned.
+		if (!(graph instanceof IndexableGraph))
+			throw new IllegalArgumentException(
+					"graph must implement IndexableGraph.");
+		
 		// ensure we can provide IDs to the graph
+		KeyIndexableGraph idGraph;
 		if (graph.getFeatures().ignoresSuppliedIds)
-			this.graph = new IdGraph<KeyIndexableGraph>(graph);
+			idGraph = new IdGraph<KeyIndexableGraph>(graph);
 		else
-			this.graph = graph;
+			idGraph = graph;
+		
+		// make the graph multi-tenant
+		IndexableGraph indexableGraph = (IndexableGraph)idGraph;
+		this.graph = new PartitionIndexableGraph<IndexableGraph>(
+				indexableGraph, "_tenant", "c");
 	}
 	
 	/**
