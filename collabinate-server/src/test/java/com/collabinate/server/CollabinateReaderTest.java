@@ -488,4 +488,15 @@ public abstract class CollabinateReaderTest
 		writer.deleteStreamEntry("c", "entity", "1");
 		writer.deleteStreamEntry("c", "user", "2");
 	}
+	
+	@Test
+	public void streams_for_the_same_entityId_for_different_tenants_should_be_different()
+	{
+		writer.addStreamEntry("c1", "entity", new StreamEntry("1", null, null));
+		writer.addStreamEntry("c2", "entity", new StreamEntry("1", null, null));
+		
+		List<StreamEntry> entries = reader.getStream("c1", "entity", 0, 2);
+		assertEquals("Stream not separate - invalid entry count.",
+				1, entries.size());
+	}
 }

@@ -36,6 +36,14 @@ public abstract class CollabinateWriterTest
 	}
 
 	@Test
+	public void add_stream_entry_should_not_allow_null_tenant_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("tenantId");
+		writer.addStreamEntry(null, "entity", new StreamEntry(null, null, null));
+	}
+	
+	@Test
 	public void add_stream_entry_should_not_allow_null_entity_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
@@ -64,15 +72,13 @@ public abstract class CollabinateWriterTest
 	}
 	
 	@Test
-	public void deleting_nonexistent_entry_should_succeed()
+	public void delete_stream_entry_should_not_allow_null_tenant_ID()
 	{
-		writer.addStreamEntry("c", "entity", new StreamEntry("1", null, null));
-		writer.deleteStreamEntry("c", "entity", "2");
-		
-		//cleanup
-		writer.deleteStreamEntry("c", "entity", "1");
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("tenantId");
+		writer.deleteStreamEntry(null, "entity", "");
 	}
-	
+		
 	@Test
 	public void delete_stream_entry_should_not_allow_null_entity_ID()
 	{
@@ -88,7 +94,25 @@ public abstract class CollabinateWriterTest
 		exception.expectMessage("entryId");
 		writer.deleteStreamEntry("c", "", null);
 	}
+	
+	@Test
+	public void deleting_nonexistent_entry_should_succeed()
+	{
+		writer.addStreamEntry("c", "entity", new StreamEntry("1", null, null));
+		writer.deleteStreamEntry("c", "entity", "2");
 		
+		//cleanup
+		writer.deleteStreamEntry("c", "entity", "1");
+	}
+	
+	@Test
+	public void follow_entity_should_not_allow_null_tenant_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("tenantId");
+		writer.followEntity(null, "user", "1");
+	}
+	
 	@Test
 	public void follow_entity_should_not_allow_null_user_ID()
 	{
@@ -103,6 +127,14 @@ public abstract class CollabinateWriterTest
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
 		writer.followEntity("c", "user", null);
+	}
+	
+	@Test
+	public void unfollow_entity_should_not_allow_null_tenant_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("tenantId");
+		writer.unfollowEntity(null, "user", "1");
 	}
 	
 	@Test

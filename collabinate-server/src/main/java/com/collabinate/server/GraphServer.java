@@ -83,6 +83,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	public void addStreamEntry(String tenantId, String entityId,
 			StreamEntry streamEntry)
 	{
+		if (null == tenantId)
+		{
+			throw new IllegalArgumentException("tenantId must not be null");
+		}
+		
 		if (null == entityId)
 		{
 			throw new IllegalArgumentException("entityId must not be null");
@@ -289,6 +294,9 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	public void deleteStreamEntry(String tenantId, String entityId,
 			String entryId)
 	{
+		if (null == tenantId)
+			throw new IllegalArgumentException("tenantId must not be null");
+		
 		if (null == entityId)
 			throw new IllegalArgumentException("entityId must not be null");
 		
@@ -452,6 +460,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	@Override
 	public void followEntity(String tenantId, String userId, String entityId)
 	{
+		if (null == tenantId)
+		{
+			throw new IllegalArgumentException("tenantId must not be null");
+		}
+		
 		if (null == userId)
 		{
 			throw new IllegalArgumentException("userId must not be null");
@@ -475,6 +488,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	@Override
 	public void unfollowEntity(String tenantId, String userId, String entityId)
 	{
+		if (null == tenantId)
+		{
+			throw new IllegalArgumentException("tenantId must not be null");
+		}
+
 		if (null == userId)
 		{
 			throw new IllegalArgumentException("userId must not be null");
