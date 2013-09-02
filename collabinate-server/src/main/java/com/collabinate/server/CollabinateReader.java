@@ -19,7 +19,8 @@ public interface CollabinateReader
 	 * @param entriesToReturn The maximum number of stream entries to retrieve.
 	 * @return A collection of stream entries for the given entity.
 	 */
-	public List<StreamEntry> getStream(String entityId, long startIndex, int entriesToReturn);
+	public List<StreamEntry> getStream(String tenantId, String entityId,
+			long startIndex, int entriesToReturn);
 	
 	/**
 	 * Retrieves a collection of stream entries for the entities that a user
@@ -30,7 +31,8 @@ public interface CollabinateReader
 	 * @param entriesToReturn The maximum number of feed entries to retrieve.
 	 * @return A collection of feed entries for the given user.
 	 */
-	public List<StreamEntry> getFeed(String userId, long startIndex, int entriesToReturn);
+	public List<StreamEntry> getFeed(String tenantId, String userId,
+			long startIndex, int entriesToReturn);
 	
 	/**
 	 * Retrieves a boolean value for whether a user is following an entity.
@@ -40,5 +42,6 @@ public interface CollabinateReader
 	 * @param entityId The ID of the entity to check if the user is following.
 	 * @return True if the given user follows the given entity, otherwise false.
 	 */
-	public Boolean isUserFollowingEntity(String userId, String entityId);
+	public Boolean isUserFollowingEntity(String tenantId, String userId,
+			String entityId);
 }

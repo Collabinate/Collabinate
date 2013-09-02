@@ -40,7 +40,7 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
-		writer.addStreamEntry(null, new StreamEntry(null, null, null));
+		writer.addStreamEntry("c", null, new StreamEntry(null, null, null));
 	}
 	
 	@Test
@@ -48,29 +48,29 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("streamEntry");
-		writer.addStreamEntry("", null);
+		writer.addStreamEntry("c", "", null);
 	}
 
 	@Test
 	public void adding_duplicate_stream_entries_should_succeed()
 	{
 		StreamEntry entry = new StreamEntry("1", DateTime.now(), "content");
-		writer.addStreamEntry("entity", entry);
-		writer.addStreamEntry("entity", entry);
+		writer.addStreamEntry("c", "entity", entry);
+		writer.addStreamEntry("c", "entity", entry);
 		
 		//cleanup
-		writer.deleteStreamEntry("entity", "1");
-		writer.deleteStreamEntry("entity", "1");
+		writer.deleteStreamEntry("c", "entity", "1");
+		writer.deleteStreamEntry("c", "entity", "1");
 	}
 	
 	@Test
 	public void deleting_nonexistent_entry_should_succeed()
 	{
-		writer.addStreamEntry("entity", new StreamEntry("1", null, null));
-		writer.deleteStreamEntry("entity", "2");
+		writer.addStreamEntry("c", "entity", new StreamEntry("1", null, null));
+		writer.deleteStreamEntry("c", "entity", "2");
 		
 		//cleanup
-		writer.deleteStreamEntry("entity", "1");
+		writer.deleteStreamEntry("c", "entity", "1");
 	}
 	
 	@Test
@@ -78,7 +78,7 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
-		writer.deleteStreamEntry(null, "");
+		writer.deleteStreamEntry("c", null, "");
 	}
 		
 	@Test
@@ -86,7 +86,7 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entryId");
-		writer.deleteStreamEntry("", null);
+		writer.deleteStreamEntry("c", "", null);
 	}
 		
 	@Test
@@ -94,7 +94,7 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("userId");
-		writer.followEntity(null, "1");
+		writer.followEntity("c", null, "1");
 	}
 	
 	@Test
@@ -102,7 +102,7 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
-		writer.followEntity("user", null);
+		writer.followEntity("c", "user", null);
 	}
 	
 	@Test
@@ -110,7 +110,7 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("userId");
-		writer.unfollowEntity(null, "1");
+		writer.unfollowEntity("c", null, "1");
 	}
 	
 	@Test
@@ -118,6 +118,6 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
-		writer.unfollowEntity("user", null);
+		writer.unfollowEntity("c", "user", null);
 	}	
 }

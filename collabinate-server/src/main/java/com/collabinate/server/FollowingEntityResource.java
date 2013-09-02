@@ -21,11 +21,12 @@ public class FollowingEntityResource extends ServerResource
 		// extract necessary information from the context
 		CollabinateReader reader = (CollabinateReader)getContext()
 				.getAttributes().get("collabinateReader");
+		String tenantId = getAttribute("tenantId");
 		String userId = getAttribute("userId");
 		String entityId = getAttribute("entityId");
 		
 		// test the follow relationship
-		if (reader.isUserFollowingEntity(userId, entityId))
+		if (reader.isUserFollowingEntity(tenantId, userId, entityId))
 			setStatus(Status.SUCCESS_OK);
 		else
 			setStatus(Status.CLIENT_ERROR_NOT_FOUND);
@@ -41,11 +42,12 @@ public class FollowingEntityResource extends ServerResource
 		// extract necessary information from the context
 		CollabinateWriter writer = (CollabinateWriter)getContext()
 				.getAttributes().get("collabinateWriter");
+		String tenantId = getAttribute("tenantId");
 		String userId = getAttribute("userId");
 		String entityId = getAttribute("entityId");
 		
 		// add the follow relationship
-		writer.followEntity(userId, entityId);
+		writer.followEntity(tenantId, userId, entityId);
 		
 		setStatus(Status.SUCCESS_CREATED);
 	}
@@ -56,11 +58,12 @@ public class FollowingEntityResource extends ServerResource
 		// extract necessary information from the context
 		CollabinateWriter writer = (CollabinateWriter)getContext()
 				.getAttributes().get("collabinateWriter");
+		String tenantId = getAttribute("tenantId");
 		String userId = getAttribute("userId");
 		String entityId = getAttribute("entityId");
 		
 		// remove the follow relationship
-		writer.unfollowEntity(userId, entityId);
+		writer.unfollowEntity(tenantId, userId, entityId);
 		
 		setStatus(Status.SUCCESS_OK);
 		

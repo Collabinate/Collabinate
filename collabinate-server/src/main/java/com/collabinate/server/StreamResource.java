@@ -28,6 +28,7 @@ public class StreamResource extends ServerResource
 		// extract necessary information from the context
 		CollabinateReader reader = (CollabinateReader)getContext()
 				.getAttributes().get("collabinateReader");
+		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
 		String startString = getQueryValue("start");
 		String countString = getQueryValue("count");
@@ -40,7 +41,8 @@ public class StreamResource extends ServerResource
 		feed.setTitle(entityId);
 		
 		// loop over the stream entries for the entity and add them
-		for (StreamEntry entry : reader.getStream(entityId, start, count))
+		for (StreamEntry entry : 
+			reader.getStream(tenantId, entityId, start, count))
 		{
 			Entry atomEntry = new Entry();
 			atomEntry.setId(entry.getId());
@@ -71,7 +73,8 @@ public class StreamResource extends ServerResource
 		
 		StreamEntry entry = new StreamEntry(null, null, entryContent);
 		
-		writer.addStreamEntry(getAttribute("entityId"), entry);
+		writer.addStreamEntry(getAttribute("tenantId"), 
+				getAttribute("entityId"), entry);
 		
 		// if there is no request entity return empty string with text type
 		if (null != entryContent)

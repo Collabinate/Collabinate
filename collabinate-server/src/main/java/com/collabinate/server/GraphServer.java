@@ -80,7 +80,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public void addStreamEntry(String entityId, StreamEntry streamEntry)
+	public void addStreamEntry(String tenantId, String entityId,
+			StreamEntry streamEntry)
 	{
 		if (null == entityId)
 		{
@@ -97,7 +98,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		Vertex streamEntryVertex = serializeStreamEntry(streamEntry);
 		
 		if (insertStreamEntry(entityVertex, streamEntryVertex))
-			updateFeedPaths(entityVertex);
+			updateFeedPaths(tenantId, entityVertex);
 		
 		commit();
 	}
@@ -246,7 +247,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 * 
 	 * @param entity The entity for which followers are updated.
 	 */
-	private void updateFeedPaths(Vertex entity)
+	private void updateFeedPaths(String tenantId, Vertex entity)
 	{
 		// get all the users that follow the entity
 		Iterable<Vertex> usersInGraph =
@@ -268,8 +269,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		for (Vertex user : users)
 		{
 			userId = getIdString(user);
-			unfollowEntity(userId, entityId);
-			followEntity(userId, entityId);
+			unfollowEntity(tenantId, userId, entityId);
+			followEntity(tenantId, userId, entityId);
 		}
 	}
 	
@@ -285,7 +286,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public void deleteStreamEntry(String entityId, String entryId)
+	public void deleteStreamEntry(String tenantId, String entityId,
+			String entryId)
 	{
 		if (null == entityId)
 			throw new IllegalArgumentException("entityId must not be null");
@@ -296,7 +298,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		Vertex entityVertex = getOrCreateEntityVertex(entityId);
 				
 		if (removeStreamEntry(entityVertex, entryId))
-			updateFeedPaths(entityVertex);
+			updateFeedPaths(tenantId, entityVertex);
 		
 		commit();
 	}
@@ -350,8 +352,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<StreamEntry> getStream(String entityId, long startIndex,
-			int entriesToReturn)
+	public List<StreamEntry> getStream(String tenantId, String entityId,
+			long startIndex, int entriesToReturn)
 	{
 		Vertex entity = graph.getVertex(entityId);
 		if (null == entity)
@@ -448,7 +450,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public void followEntity(String userId, String entityId)
+	public void followEntity(String tenantId, String userId, String entityId)
 	{
 		if (null == userId)
 		{
@@ -471,7 +473,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public void unfollowEntity(String userId, String entityId)
+	public void unfollowEntity(String tenantId, String userId, String entityId)
 	{
 		if (null == userId)
 		{
@@ -516,7 +518,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public Boolean isUserFollowingEntity(String userId, String entityId)
+	public Boolean isUserFollowingEntity(String tenantId, String userId,
+			String entityId)
 	{
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
@@ -595,8 +598,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<StreamEntry> getFeed(String userId, long startIndex,
-			int entriesToReturn)
+	public List<StreamEntry> getFeed(String tenantId, String userId,
+			long startIndex, int entriesToReturn)
 	{
 		// this method represents the core of the Graphity algorithm
 		// http://www.rene-pickhardt.de/graphity-an-efficient-graph-model-for-retrieving-the-top-k-news-feeds-for-users-in-social-networks/
@@ -804,16 +807,16 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			if (null != v1)
 				streamEntry = getNextStreamEntry(v1);
 			if (null != streamEntry)
-				t1 = DateTime.parse((String)streamEntry.getProperty(STRING_TIME))
-					.getMillis();
+				t1 = DateTime.parse((String)streamEntry
+						.getProperty(STRING_TIME)).getMillis();
 			
 			streamEntry = null;
 			long t2 = 0;
 			if (null != v2)
 				streamEntry = getNextStreamEntry(v2);
 			if (null != streamEntry)
-				t2 = DateTime.parse((String)streamEntry.getProperty(STRING_TIME))
-					.getMillis();
+				t2 = DateTime.parse((String)streamEntry
+						.getProperty(STRING_TIME)).getMillis();
 			
 			return new Long(t2).compareTo(t1);
 		}

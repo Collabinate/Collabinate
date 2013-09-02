@@ -19,7 +19,8 @@ public interface CollabinateWriter
 	 * This value must not be null.
 	 * @param streamEntry The entry to add. This value must not be null.
 	 */
-	public void addStreamEntry(String entityId, StreamEntry streamEntry);
+	public void addStreamEntry(String tenantId, String entityId,
+			StreamEntry streamEntry);
 	
 	/**
 	 * Deletes an entry from an entity's stream.
@@ -29,7 +30,8 @@ public interface CollabinateWriter
 	 * @param entryId The ID of the entry to remove. The first matching entry
 	 * with this ID value will be deleted. This value must not be null.
 	 */
-	public void deleteStreamEntry(String entityId, String entryId);
+	public void deleteStreamEntry(String tenantId, String entityId,
+			String entryId);
 	
 	/**
 	 * Adds an entity to the collection of entities a user follows.
@@ -37,7 +39,7 @@ public interface CollabinateWriter
 	 * @param userId The ID of the user that follows the entity.
 	 * @param entityId The ID of the entity that the user follows.
 	 */
-	public void followEntity(String userId, String entityId);
+	public void followEntity(String tenantId, String userId, String entityId);
 	
 	/**
 	 * Removes an entity from the collection of entities a user follows.
@@ -45,5 +47,5 @@ public interface CollabinateWriter
 	 * @param userId The ID of the user that follows the entity.
 	 * @param entityId The ID of the entity that the user follows.
 	 */
-	public void unfollowEntity(String userId, String entityId);
+	public void unfollowEntity(String tenantId, String userId, String entityId);
 }

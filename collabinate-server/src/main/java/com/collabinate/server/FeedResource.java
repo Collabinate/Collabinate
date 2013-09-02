@@ -25,6 +25,7 @@ public class FeedResource extends ServerResource
 		// extract necessary information from the context
 		CollabinateReader reader = (CollabinateReader)getContext()
 				.getAttributes().get("collabinateReader");
+		String tenantId = getAttribute("tenantId");
 		String userId = getAttribute("userId");
 		String startString = getQueryValue("start");
 		String countString = getQueryValue("count");
@@ -37,7 +38,7 @@ public class FeedResource extends ServerResource
 		feed.setTitle(userId);
 		
 		// loop over the stream entries for the feed and add them
-		for (StreamEntry entry : reader.getFeed(userId, start, count))
+		for (StreamEntry entry : reader.getFeed(tenantId, userId, start, count))
 		{
 			Entry atomEntry = new Entry();
 			atomEntry.setId(entry.getId());
