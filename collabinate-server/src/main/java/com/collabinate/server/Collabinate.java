@@ -40,6 +40,7 @@ public class Collabinate
 			throw new IllegalStateException(
 					"Configured graph is not a KeyIndexableGraph");
 		KeyIndexableGraph graph = (KeyIndexableGraph)configuredGraph;
+		registerShutdownHook(graph);
 		
 		// create the engine
 		GraphServer engine = new GraphServer(graph);
@@ -99,5 +100,17 @@ public class Collabinate
 			throw new IllegalStateException("Configuration not loaded");
 
 		return configuration;
+	}
+	
+	private static void registerShutdownHook(final Graph graph)
+	{
+		Runtime.getRuntime().addShutdownHook(new Thread()
+		{
+			@Override
+			public void run()
+			{
+				graph.shutdown();
+			}
+		});
 	}
 }
