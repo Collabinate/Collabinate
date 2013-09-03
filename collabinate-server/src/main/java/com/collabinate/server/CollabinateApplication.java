@@ -45,6 +45,8 @@ public class CollabinateApplication extends Application
 		
 		Router router = new Router(getContext());
 		router.attach("/", TraceResource.class);
+		router.attach("/{apiVersion}/{tenantId}/entities/{entityId}/stream/{entryId}",
+				StreamEntryResource.class);
 		router.attach("/{apiVersion}/{tenantId}/entities/{entityId}/stream",
 				StreamResource.class);
 		router.attach(
