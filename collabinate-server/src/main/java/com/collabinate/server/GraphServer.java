@@ -2,12 +2,15 @@ package com.collabinate.server;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
+import java.util.Set;
 
 import org.joda.time.DateTime;
 
@@ -68,7 +71,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		// make the graph multi-tenant
 		IndexableGraph indexableGraph = (IndexableGraph)idGraph;
 		this.graph = new PartitionIndexableGraph<IndexableGraph>(
-				indexableGraph, "_tenant", "c");
+				indexableGraph, "_tenant", "");
 	}
 	
 	/**
@@ -93,8 +96,53 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		}
 	}
 	
+	/**
+	 * Uses the PartitionGraph to keep tenant data separate by setting the
+	 * current partition to the current tenant.
+	 * 
+	 * @param map A structure containing the data used to switch partitions.
+	 * @return The previous partition values, so they can be replaced later.
+	 */
+	private AbstractMap.SimpleImmutableEntry<String, Set<String>> 
+		setCurrentTenant(AbstractMap.SimpleImmutableEntry<
+				String, Set<String>>  map)
+	{
+		// capture the existing values so they can be returned
+		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedValues = 
+				new AbstractMap.SimpleImmutableEntry<String, Set<String>>(
+						graph.getWritePartition(),
+						graph.getReadPartitions());
+		
+		// switch out the partition to the values provided
+		for (String readPartition : savedValues.getValue())
+			graph.removeReadPartition(readPartition);
+		
+		for (String readPartition : map.getValue())
+			graph.addReadPartition(readPartition);
+		
+		graph.setWritePartition(map.getKey());
+		
+		// return the previous values for use in returning to previous state
+		return savedValues;
+	}
+	
+	/**
+	 * Builds the structure used to switch the partition to a single tenant.
+	 * 
+	 * @param tenantId The ID of the tenant for which to build the structure.
+	 * @return The structure used to switch to the given tenant.
+	 */
+	private AbstractMap.SimpleImmutableEntry<String, Set<String>>
+		getTenantMap(String tenantId)
+	{
+		Set<String> set = new HashSet<String>();
+		set.add(tenantId);
+		return new AbstractMap
+				.SimpleImmutableEntry<String, Set<String>>(tenantId, set);
+	}
+	
 	@Override
-	public void addStreamEntry(String tenantId, String entityId,
+	public synchronized void addStreamEntry(String tenantId, String entityId,
 			StreamEntry streamEntry)
 	{
 		if (null == tenantId)
@@ -112,6 +160,10 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("streamEntry must not be null");
 		}
 		
+		entityId = tenantId + "/" + entityId;
+		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
+			setCurrentTenant(getTenantMap(tenantId));
+		
 		Vertex entityVertex = getOrCreateEntityVertex(entityId);
 		
 		Vertex streamEntryVertex = serializeStreamEntry(streamEntry);
@@ -120,6 +172,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			updateFeedPaths(tenantId, entityVertex);
 		
 		commit();
+		
+		setCurrentTenant(savedTenant);
 	}
 
 	/**
@@ -305,7 +359,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public void deleteStreamEntry(String tenantId, String entityId,
+	public synchronized void deleteStreamEntry(String tenantId, String entityId,
 			String entryId)
 	{
 		if (null == tenantId)
@@ -317,12 +371,18 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		if (null == entryId)
 			throw new IllegalArgumentException("entryId must not be null");
 		
+		entityId = tenantId + "/" + entityId;
+		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
+				setCurrentTenant(getTenantMap(tenantId));
+
 		Vertex entityVertex = getOrCreateEntityVertex(entityId);
 				
 		if (removeStreamEntry(entityVertex, entryId))
 			updateFeedPaths(tenantId, entityVertex);
 		
 		commit();
+		
+		setCurrentTenant(savedTenant);
 	}
 	
 	/**
@@ -374,9 +434,13 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<StreamEntry> getStream(String tenantId, String entityId,
+	public synchronized List<StreamEntry> getStream(String tenantId, String entityId,
 			long startIndex, int entriesToReturn)
 	{
+		entityId = tenantId + "/" + entityId;
+		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
+				setCurrentTenant(getTenantMap(tenantId));
+
 		Vertex entity = graph.getVertex(entityId);
 		if (null == entity)
 		{
@@ -409,6 +473,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		
 		commit();
 		
+		setCurrentTenant(savedTenant);
+
 		// we only have the vertices, the actual entries need to be created
 		return deserializeStreamEntries(streamVertices);
 	}
@@ -472,7 +538,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public void followEntity(String tenantId, String userId, String entityId)
+	public synchronized void followEntity(String tenantId, String userId,
+			String entityId)
 	{
 		if (null == tenantId)
 		{
@@ -489,6 +556,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("entityId must not be null");
 		}
 		
+		entityId = tenantId + "/" + entityId;
+		userId = tenantId + "/" + userId;
+		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
+				setCurrentTenant(getTenantMap(tenantId));
+
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		
@@ -497,10 +569,13 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		insertFeedEntity(user, entity);
 		
 		commit();
+		
+		setCurrentTenant(savedTenant);
 	}
 	
 	@Override
-	public void unfollowEntity(String tenantId, String userId, String entityId)
+	public synchronized void unfollowEntity(String tenantId, String userId,
+			String entityId)
 	{
 		if (null == tenantId)
 		{
@@ -517,6 +592,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("entityId must not be null");
 		}
 		
+		entityId = tenantId + "/" + entityId;
+		userId = tenantId + "/" + userId;
+		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
+				setCurrentTenant(getTenantMap(tenantId));
+
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		String feedLabel = getFeedLabel(getIdString(user));
@@ -547,12 +627,19 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		}
 		
 		commit();
+
+		setCurrentTenant(savedTenant);
 	}
 	
 	@Override
-	public Boolean isUserFollowingEntity(String tenantId, String userId,
+	public synchronized Boolean isUserFollowingEntity(String tenantId, String userId,
 			String entityId)
 	{
+		entityId = tenantId + "/" + entityId;
+		userId = tenantId + "/" + userId;
+		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
+				setCurrentTenant(getTenantMap(tenantId));
+
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		
@@ -567,6 +654,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 
 		commit();
 		
+		setCurrentTenant(savedTenant);
+
 		return false;
 	}
 
@@ -630,12 +719,16 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<StreamEntry> getFeed(String tenantId, String userId,
+	public synchronized List<StreamEntry> getFeed(String tenantId, String userId,
 			long startIndex, int entriesToReturn)
 	{
 		// this method represents the core of the Graphity algorithm
 		// http://www.rene-pickhardt.de/graphity-an-efficient-graph-model-for-retrieving-the-top-k-news-feeds-for-users-in-social-networks/
 		
+		userId = tenantId + "/" + userId;
+		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
+				setCurrentTenant(getTenantMap(tenantId));
+
 		// we order stream entries by their date
 		StreamEntryDateComparator comparator = new StreamEntryDateComparator();
 		
@@ -717,6 +810,8 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 
 		commit();
 		
+		setCurrentTenant(savedTenant);
+
 		return deserializeStreamEntries(streamEntries);
 	}
 
