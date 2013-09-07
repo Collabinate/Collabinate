@@ -498,5 +498,9 @@ public abstract class CollabinateReaderTest
 		List<StreamEntry> entries = reader.getStream("c1", "entity", 0, 2);
 		assertEquals("Stream not separate - invalid entry count.",
 				1, entries.size());
+		
+		//cleanup
+		writer.deleteStreamEntry("c1", "entity", "1");
+		writer.deleteStreamEntry("c2", "entity", "1");
 	}
 }
