@@ -1,6 +1,7 @@
 package com.collabinate.server;
 
 import org.restlet.Component;
+import org.restlet.Context;
 import org.restlet.data.Protocol;
 
 /**
@@ -31,7 +32,9 @@ public class CollabinateComponent extends Component
 			throw new IllegalArgumentException("writer must not be null");
 		
 		setName("Collabinate");
+		//getServers().clear();
 		getServers().add(Protocol.HTTP, port);
+		//setContext(new Context());
 		getDefaultHost().attachDefault(
 				new CollabinateApplication(reader, writer));		
 	}

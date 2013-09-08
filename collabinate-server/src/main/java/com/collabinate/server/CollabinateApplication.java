@@ -1,6 +1,7 @@
 package com.collabinate.server;
 
 import org.restlet.Application;
+import org.restlet.Context;
 import org.restlet.Restlet;
 import org.restlet.routing.Router;
 
@@ -28,6 +29,7 @@ public class CollabinateApplication extends Application
 			throw new IllegalArgumentException("writer must not be null");
 		
 		setName("Collabinate");
+		//setContext(new Context());
 		this.reader = reader;
 		this.writer = writer;
 	}
@@ -56,5 +58,16 @@ public class CollabinateApplication extends Application
 				FeedResource.class);
 		
 		return router;
+	}
+	
+	@Override
+	public synchronized void stop() throws Exception
+	{
+		reader = null;
+		writer = null;
+		//setContext(null);
+		getContext().getAttributes().put("collabinateReader", null);
+		getContext().getAttributes().put("collabinateWriter", null);
+		super.stop();
 	}
 }
