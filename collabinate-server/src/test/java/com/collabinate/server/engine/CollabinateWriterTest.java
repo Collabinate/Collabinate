@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.engine;
 
 import static org.junit.Assert.*;
 
@@ -7,6 +7,9 @@ import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
+
+import com.collabinate.server.StreamEntry;
+import com.collabinate.server.engine.CollabinateWriter;
 
 /**
  * Abstract test class to test any implementation of a CollabinateWriter.

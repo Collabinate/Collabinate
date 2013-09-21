@@ -15,6 +15,7 @@ import org.restlet.data.Status;
 import org.restlet.engine.Engine;
 import org.restlet.security.Authenticator;
 
+import com.collabinate.server.engine.GraphServer;
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 

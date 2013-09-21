@@ -6,8 +6,8 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
 
-import com.collabinate.server.CollabinateReader;
-import com.collabinate.server.CollabinateWriter;
+import com.collabinate.server.engine.CollabinateReader;
+import com.collabinate.server.engine.CollabinateWriter;
 
 /**
  * Restful resource representing a follow relationship between a user and an

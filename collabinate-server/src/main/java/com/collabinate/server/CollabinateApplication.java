@@ -5,6 +5,8 @@ import org.restlet.Restlet;
 import org.restlet.routing.Router;
 import org.restlet.security.Authenticator;
 
+import com.collabinate.server.engine.CollabinateReader;
+import com.collabinate.server.engine.CollabinateWriter;
 import com.collabinate.server.resources.FeedResource;
 import com.collabinate.server.resources.FollowingEntityResource;
 import com.collabinate.server.resources.StreamEntryResource;

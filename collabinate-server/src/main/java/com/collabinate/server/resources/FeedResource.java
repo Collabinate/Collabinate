@@ -7,8 +7,8 @@ import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
-import com.collabinate.server.CollabinateReader;
 import com.collabinate.server.StreamEntry;
+import com.collabinate.server.engine.CollabinateReader;
 
 /**
  * Restful resource representing the collection of stream entries for all

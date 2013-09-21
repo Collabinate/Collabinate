@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.engine;
 
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -14,6 +14,7 @@ import java.util.Set;
 
 import org.joda.time.DateTime;
 
+import com.collabinate.server.StreamEntry;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.IndexableGraph;

@@ -1,4 +1,6 @@
-package com.collabinate.server;
+package com.collabinate.server.engine;
+
+import com.collabinate.server.StreamEntry;
 
 /**
  * The interface for a Collabinate server that performs write (create, update,

@@ -1,6 +1,8 @@
-package com.collabinate.server;
+package com.collabinate.server.engine;
 
 import java.util.List;
+
+import com.collabinate.server.StreamEntry;
 
 /**
  * The interface for a Collabinate server that performs read (retrieval)

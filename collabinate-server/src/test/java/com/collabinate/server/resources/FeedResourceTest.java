@@ -19,7 +19,7 @@ import org.restlet.engine.Engine;
 import org.restlet.security.Authenticator;
 
 import com.collabinate.server.CollabinateComponent;
-import com.collabinate.server.GraphServer;
+import com.collabinate.server.engine.GraphServer;
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 /**

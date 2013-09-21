@@ -1,8 +1,11 @@
-package com.collabinate.server;
+package com.collabinate.server.engine;
 
 import org.junit.After;
 import org.junit.Test;
 
+import com.collabinate.server.engine.CollabinateReader;
+import com.collabinate.server.engine.CollabinateWriter;
+import com.collabinate.server.engine.GraphServer;
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 

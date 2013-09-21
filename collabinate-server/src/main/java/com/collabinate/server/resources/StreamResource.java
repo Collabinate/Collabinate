@@ -11,9 +11,9 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
-import com.collabinate.server.CollabinateReader;
-import com.collabinate.server.CollabinateWriter;
 import com.collabinate.server.StreamEntry;
+import com.collabinate.server.engine.CollabinateReader;
+import com.collabinate.server.engine.CollabinateWriter;
 
 /**
  * Restful resource representing a series of stream entries for an entity.
