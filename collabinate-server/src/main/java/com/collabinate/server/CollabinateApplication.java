@@ -3,6 +3,7 @@ package com.collabinate.server;
 import org.restlet.Application;
 import org.restlet.Restlet;
 import org.restlet.routing.Router;
+import org.restlet.security.Authenticator;
 
 /**
  * Main Restlet application
@@ -14,12 +15,13 @@ public class CollabinateApplication extends Application
 {
 	private CollabinateReader reader;
 	private CollabinateWriter writer;
+	private Authenticator authenticator;
 	
 	/**
 	 * Sets the application properties.
 	 */
 	public CollabinateApplication(CollabinateReader reader, 
-			CollabinateWriter writer)
+			CollabinateWriter writer, Authenticator authenticator)
 	{
 		if (null == reader)
 			throw new IllegalArgumentException("reader must not be null");
@@ -30,6 +32,7 @@ public class CollabinateApplication extends Application
 		setName("Collabinate");
 		this.reader = reader;
 		this.writer = writer;
+		this.authenticator = authenticator;
 	}
 	
 	@Override
@@ -55,6 +58,7 @@ public class CollabinateApplication extends Application
 		router.attach("/{apiVersion}/{tenantId}/users/{userId}/feed",
 				FeedResource.class);
 		
-		return router;
+		authenticator.setNext(router);
+		return authenticator;
 	}
 }

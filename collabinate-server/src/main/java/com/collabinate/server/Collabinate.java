@@ -7,6 +7,8 @@ import org.apache.commons.configuration.Configuration;
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.restlet.*;
+import org.restlet.data.ChallengeScheme;
+import org.restlet.security.ChallengeAuthenticator;
 
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.GraphFactory;
@@ -47,9 +49,18 @@ public class Collabinate
 		reader = engine;
 		writer = engine;
 		
+		// create the authenticator
+		ChallengeAuthenticator authenticator = new ChallengeAuthenticator(
+				null,  // context gets added in the component
+				false, // authentication is not optional
+				ChallengeScheme.HTTP_BASIC,
+				"Collabinate",
+				new GraphVerifier(graph));
+		
 		// create the Restlet component and start it
-		Component server = new CollabinateComponent(reader, writer);
-		server.start();		
+		CollabinateComponent server = new CollabinateComponent(reader, writer,
+				authenticator);
+		server.start();	
 		
 		// output server startup time
 		long totalStartTime = System.currentTimeMillis() - startTime;

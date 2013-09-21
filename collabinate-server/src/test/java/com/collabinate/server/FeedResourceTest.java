@@ -16,6 +16,7 @@ import org.restlet.data.MediaType;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
 import org.restlet.engine.Engine;
+import org.restlet.security.Authenticator;
 
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
@@ -37,7 +38,14 @@ public class FeedResourceTest
 		graph = new TinkerGraph();
 		server = new GraphServer(graph);
 		Engine.setRestletLogLevel(Level.WARNING);
-		component = new CollabinateComponent(server, server, 8182);
+		component = new CollabinateComponent(server, server,
+			new Authenticator(null) {
+				@Override
+				protected boolean authenticate(Request request, Response response)
+				{
+					return true;
+				}
+			}, 8182);
 	}
 	
 	@After

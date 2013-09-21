@@ -2,6 +2,7 @@ package com.collabinate.server;
 
 import org.restlet.Component;
 import org.restlet.data.Protocol;
+import org.restlet.security.Authenticator;
 
 /**
  * Main Restlet component.
@@ -15,14 +16,15 @@ public class CollabinateComponent extends Component
 	 * Set up the component
 	 */
 	public CollabinateComponent(CollabinateReader reader,
-			CollabinateWriter writer)
+			CollabinateWriter writer, Authenticator authenticator)
 	{
-		this(reader, writer, Collabinate.getConfiguration()
+		// the server is http on the configured port
+		this(reader, writer, authenticator, Collabinate.getConfiguration()
 				.getInt("collabinate.port"));
 	}
 	
 	public CollabinateComponent(CollabinateReader reader,
-			CollabinateWriter writer, int port)
+			CollabinateWriter writer, Authenticator authenticator, int port)
 	{
 		if (null == reader)
 			throw new IllegalArgumentException("reader must not be null");
@@ -32,7 +34,11 @@ public class CollabinateComponent extends Component
 		
 		setName("Collabinate");
 		getServers().add(Protocol.HTTP, port);
+		
+		// use a child context with the authenticator to avoid warnings
+		authenticator.setContext(getContext().createChildContext());
+		
 		getDefaultHost().attachDefault(
-				new CollabinateApplication(reader, writer));		
+				new CollabinateApplication(reader, writer, authenticator));				
 	}
 }
