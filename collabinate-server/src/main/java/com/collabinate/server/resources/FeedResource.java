@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.resources;
 
 import org.restlet.ext.atom.Content;
 import org.restlet.ext.atom.Entry;
@@ -6,6 +6,9 @@ import org.restlet.ext.atom.Feed;
 import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
+
+import com.collabinate.server.CollabinateReader;
+import com.collabinate.server.StreamEntry;
 
 /**
  * Restful resource representing the collection of stream entries for all

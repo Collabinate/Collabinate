@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.resources;
 
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
@@ -9,6 +9,10 @@ import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Get;
 import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
+
+import com.collabinate.server.CollabinateReader;
+import com.collabinate.server.CollabinateWriter;
+import com.collabinate.server.StreamEntry;
 
 /**
  * Restful resource representing a single stream entry for an entity.

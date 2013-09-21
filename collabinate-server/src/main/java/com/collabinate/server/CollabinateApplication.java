@@ -5,6 +5,12 @@ import org.restlet.Restlet;
 import org.restlet.routing.Router;
 import org.restlet.security.Authenticator;
 
+import com.collabinate.server.resources.FeedResource;
+import com.collabinate.server.resources.FollowingEntityResource;
+import com.collabinate.server.resources.StreamEntryResource;
+import com.collabinate.server.resources.StreamResource;
+import com.collabinate.server.resources.TraceResource;
+
 /**
  * Main Restlet application
  * 

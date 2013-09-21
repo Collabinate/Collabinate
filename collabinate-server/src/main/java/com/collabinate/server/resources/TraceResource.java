@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.resources;
 
 import org.restlet.resource.Get;
 import org.restlet.resource.Options;

@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.resources;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -18,15 +18,17 @@ import org.restlet.data.Status;
 import org.restlet.engine.Engine;
 import org.restlet.security.Authenticator;
 
+import com.collabinate.server.CollabinateComponent;
+import com.collabinate.server.GraphServer;
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 /**
- * Tests for the Stream Entry Resource
+ * Tests for the Feed Resource
  * 
  * @author mafuba
  * 
  */
-public class StreamEntryResourceTest
+public class FeedResourceTest
 {
 	GraphServer server;
 	Component component;
@@ -60,36 +62,49 @@ public class StreamEntryResourceTest
 	}
 	
 	@Test
-	public void get_nonexistent_entry_should_return_404()
+	public void get_empty_feed_should_get_empty_atom_feed()
 	{
 		Request request = new Request(Method.GET, RESOURCE_PATH);
-		Response response = component.handle(request);
-		
-		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, response.getStatus());
-	}
-	
-	@Test
-	public void putting_entry_should_return_200()
-	{
-		Request request = new Request(Method.PUT, RESOURCE_PATH);
 		Response response = component.handle(request);
 		
 		assertEquals(Status.SUCCESS_OK, response.getStatus());
 	}
 	
 	@Test
-	public void get_existing_entry_should_return_entry()
+	public void items_added_to_followed_entity_streams_should_appear_in_feed()
 	{
-		Request request = new Request(Method.PUT, RESOURCE_PATH);
-		request.setEntity("test", MediaType.TEXT_PLAIN);
-		Response response = component.handle(request);
-		request = new Request(Method.GET, RESOURCE_PATH);
-		response = component.handle(request);
+		// add entry TEST-A to the stream of entity 1
+		Request request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity1/stream");
+		String entityBody1 = "TEST-A";
+		request.setEntity(entityBody1, MediaType.TEXT_PLAIN);
+		component.handle(request);
 		
-		assertThat(response.getEntityAsText(), containsString("test"));		
-
+		// add entry TEST-B to the stream of entity 2
+		request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity2/stream");
+		String entityBody2 = "TEST-B";
+		request.setEntity(entityBody2, MediaType.TEXT_PLAIN);
+		component.handle(request);
+		
+		// follow the entities
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity1");
+		component.handle(request);
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity2");
+		component.handle(request);
+		
+		// get the feed
+		request = new Request(Method.GET, RESOURCE_PATH);
+		Response response = component.handle(request);
+		
+		String responseText = response.getEntityAsText();
+		
+		assertThat(responseText, containsString(entityBody1));		
+		assertThat(responseText, containsString(entityBody2));		
 	}
 	
 	private static final String RESOURCE_PATH = 
-			"riap://application/1/tenant/entities/entity/stream/entry";
+			"riap://application/1/tenant/users/user/feed";
 }

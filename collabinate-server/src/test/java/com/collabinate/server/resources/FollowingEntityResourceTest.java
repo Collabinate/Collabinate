@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.resources;
 
 import static org.junit.Assert.assertEquals;
 
@@ -15,6 +15,8 @@ import org.restlet.data.Status;
 import org.restlet.engine.Engine;
 import org.restlet.security.Authenticator;
 
+import com.collabinate.server.CollabinateComponent;
+import com.collabinate.server.GraphServer;
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 /**

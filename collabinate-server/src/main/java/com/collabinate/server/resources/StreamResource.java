@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.resources;
 
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
@@ -10,6 +10,10 @@ import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
+
+import com.collabinate.server.CollabinateReader;
+import com.collabinate.server.CollabinateWriter;
+import com.collabinate.server.StreamEntry;
 
 /**
  * Restful resource representing a series of stream entries for an entity.

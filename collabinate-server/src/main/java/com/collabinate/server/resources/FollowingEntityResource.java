@@ -1,10 +1,13 @@
-package com.collabinate.server;
+package com.collabinate.server.resources;
 
 import org.restlet.data.Status;
 import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
 import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
+
+import com.collabinate.server.CollabinateReader;
+import com.collabinate.server.CollabinateWriter;
 
 /**
  * Restful resource representing a follow relationship between a user and an
