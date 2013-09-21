@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.webserver;
 
 import org.restlet.security.SecretVerifier;
 import org.restlet.security.Verifier;

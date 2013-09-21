@@ -18,8 +18,8 @@ import org.restlet.data.Status;
 import org.restlet.engine.Engine;
 import org.restlet.security.Authenticator;
 
-import com.collabinate.server.CollabinateComponent;
 import com.collabinate.server.engine.GraphServer;
+import com.collabinate.server.webserver.CollabinateComponent;
 import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 /**

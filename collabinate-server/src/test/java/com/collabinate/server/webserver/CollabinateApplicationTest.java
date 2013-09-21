@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.webserver;
 
 import static org.junit.Assert.*;
 
@@ -6,6 +6,7 @@ import org.junit.Test;
 import org.restlet.Application;
 
 import com.collabinate.server.engine.GraphServer;
+import com.collabinate.server.webserver.CollabinateApplication;
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 

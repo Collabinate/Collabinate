@@ -1,9 +1,10 @@
-package com.collabinate.server;
+package com.collabinate.server.webserver;
 
 import org.restlet.Component;
 import org.restlet.data.Protocol;
 import org.restlet.security.Authenticator;
 
+import com.collabinate.server.Collabinate;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 

@@ -13,6 +13,8 @@ import org.restlet.security.ChallengeAuthenticator;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.collabinate.server.engine.GraphServer;
+import com.collabinate.server.webserver.CollabinateComponent;
+import com.collabinate.server.webserver.GraphVerifier;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;

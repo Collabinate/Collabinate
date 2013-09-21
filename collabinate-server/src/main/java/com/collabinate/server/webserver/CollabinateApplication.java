@@ -1,4 +1,4 @@
-package com.collabinate.server;
+package com.collabinate.server.webserver;
 
 import org.restlet.Application;
 import org.restlet.Restlet;
