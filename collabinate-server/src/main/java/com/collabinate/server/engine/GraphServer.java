@@ -39,6 +39,11 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	private PartitionIndexableGraph<IndexableGraph> graph;
 	
 	/**
+	 * The underlying graph implementation.
+	 */
+	private KeyIndexableGraph baseGraph;
+	
+	/**
 	 * Whether the server should automatically commit transactions.
 	 */
 	private boolean autoCommit = true;
@@ -61,6 +66,9 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 		if (!(graph instanceof IndexableGraph))
 			throw new IllegalArgumentException(
 					"graph must implement IndexableGraph.");
+		
+		// set the base graph
+		this.baseGraph = graph;
 		
 		// ensure we can provide IDs to the graph
 		KeyIndexableGraph idGraph;
@@ -91,9 +99,9 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 */
 	private void commit()
 	{
-		if (autoCommit && graph.getFeatures().supportsTransactions)
+		if (autoCommit && baseGraph.getFeatures().supportsTransactions)
 		{
-			((TransactionalGraph)graph).commit();
+			((TransactionalGraph)baseGraph).commit();
 		}
 	}
 	

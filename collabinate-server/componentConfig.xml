@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<component xmlns="http://www.restlet.org/schemas/2.0/Component">
+	<client protocol="FILE" />
+	<server protocol="HTTP" port="8182" />
+</component>

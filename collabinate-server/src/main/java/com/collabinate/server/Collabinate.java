@@ -82,6 +82,7 @@ public class Collabinate
 			System.out.println("Press Enter to quit");
 			System.console().readLine();
 			server.stop();
+			System.out.println("Server Stopped");
 		}
 		else
 		{

@@ -44,7 +44,7 @@ public class FollowingEntityResourceTest
 				{
 					return true;
 				}
-			}, 8182);
+			});
 	}
 	
 	@After

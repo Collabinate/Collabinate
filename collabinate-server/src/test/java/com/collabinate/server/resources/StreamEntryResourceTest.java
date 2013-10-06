@@ -47,7 +47,7 @@ public class StreamEntryResourceTest
 				{
 					return true;
 				}
-			}, 8182);
+			});
 	}
 	
 	@After

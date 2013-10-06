@@ -1,10 +1,13 @@
 package com.collabinate.server.webserver;
 
+import java.io.File;
+
 import org.restlet.Component;
-import org.restlet.data.Protocol;
+import org.restlet.data.MediaType;
+import org.restlet.engine.component.ComponentXmlParser;
+import org.restlet.representation.FileRepresentation;
 import org.restlet.security.Authenticator;
 
-import com.collabinate.server.Collabinate;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 
@@ -22,27 +25,28 @@ public class CollabinateComponent extends Component
 	public CollabinateComponent(CollabinateReader reader,
 			CollabinateWriter writer, Authenticator authenticator)
 	{
-		// the server is http on the configured port
-		this(reader, writer, authenticator, Collabinate.getConfiguration()
-				.getInt("collabinate.port"));
-	}
-	
-	public CollabinateComponent(CollabinateReader reader,
-			CollabinateWriter writer, Authenticator authenticator, int port)
-	{
+		File file = new File("componentConfig.xml");
+		FileRepresentation fileRepresentation = 
+				new FileRepresentation(file, MediaType.TEXT_XML);
+		ComponentXmlParser parser = new ComponentXmlParser(this, fileRepresentation);
+		parser.parse();
+		
 		if (null == reader)
 			throw new IllegalArgumentException("reader must not be null");
 		
 		if (null == writer)
 			throw new IllegalArgumentException("writer must not be null");
 		
-		setName("Collabinate");
-		getServers().add(Protocol.HTTP, port);
+		if (null == authenticator)
+			throw new IllegalArgumentException(
+					"authenticator must not be null");
 		
+		setName("Collabinate");
+
 		// use a child context with the authenticator to avoid warnings
 		authenticator.setContext(getContext().createChildContext());
 		
 		getDefaultHost().attachDefault(
-				new CollabinateApplication(reader, writer, authenticator));				
+				new CollabinateApplication(reader, writer, authenticator));
 	}
 }
