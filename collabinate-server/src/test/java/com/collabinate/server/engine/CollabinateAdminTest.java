@@ -1,5 +1,7 @@
 package com.collabinate.server.engine;
 
+import static org.junit.Assert.*;
+
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -29,9 +31,20 @@ public abstract class CollabinateAdminTest
 	}
 	
 	@Test
-	public void creating_new_tenant_should_succeed()
+	public void add_tenant_should_succeed()
 	{
-		Tenant tenant = admin.createTenant("tenant");
+		Tenant tenant = admin.addTenant("tenant", "tenant");
+		assertNotNull(tenant);
+		assertEquals(tenant.getId(), "tenant");
+		assertEquals(tenant.getName(), "tenant");
+	}
+	
+	@Test
+	public void get_tenant_should_return_correct_tenant()
+	{
+		admin.addTenant("tenant", "tenant");		
+		Tenant tenant = admin.getTenant("tenant");
+		assertEquals(tenant.getName(), "tenant");
 	}
 
 }

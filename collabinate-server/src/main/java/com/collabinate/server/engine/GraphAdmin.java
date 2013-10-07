@@ -2,6 +2,7 @@ package com.collabinate.server.engine;
 
 import com.collabinate.server.Tenant;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
+import com.tinkerpop.blueprints.Vertex;
 
 /**
  * An implementation of Administration against a graph database.
@@ -24,10 +25,31 @@ public class GraphAdmin implements CollabinateAdmin
 	}
 	
 	@Override
-	public Tenant createTenant(String tenantId)
+	public Tenant addTenant(String tenantId, String tenantName)
 	{
-		// TODO Auto-generated method stub
-		return null;
+		Tenant tenant = new Tenant(tenantId, tenantName);
+		
+		Vertex tenantVertex = graph.addVertex("_TENANT-" + tenantId);
+		
+		tenantVertex.setProperty("tenantId", tenantId);
+		tenantVertex.setProperty("tenantName", tenantName);
+		tenantVertex.setProperty("tenant", tenant);
+		
+		return tenant;
 	}
 
+	@Override
+	public Tenant getTenant(String tenantId)
+	{
+		Vertex tenantVertex = graph.getVertex("_TENANT-" + tenantId);
+		
+		Tenant tenant = null;
+		
+		if (null != tenantVertex)
+		{
+			tenant = (Tenant)tenantVertex.getProperty("tenant");
+		}
+		
+		return tenant;
+	}
 }

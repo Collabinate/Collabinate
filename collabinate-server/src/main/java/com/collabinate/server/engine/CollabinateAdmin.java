@@ -10,5 +10,20 @@ import com.collabinate.server.Tenant;
  */
 public interface CollabinateAdmin
 {
-	public Tenant createTenant(String tenantId);
+	/**
+	 * Adds a new tenant to the data store if it does not exist.
+	 * 
+	 * @param tenantId the ID of the new tenant, also used as the URL slug.
+	 * @param tenantName the display name of the tenant.
+	 * @return a tenant
+	 */
+	public Tenant addTenant(String tenantId, String tenantName);
+	
+	/**
+	 * Gets the tenant with the given ID.
+	 * 
+	 * @param tenantId the ID of the tenant to retrieve.
+	 * @return The tenant with the given ID, or null if none exists.
+	 */
+	public Tenant getTenant(String tenantId);
 }
