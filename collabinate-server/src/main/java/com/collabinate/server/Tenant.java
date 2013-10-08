@@ -1,7 +1,10 @@
 package com.collabinate.server;
 
-import java.util.HashMap;
-import java.util.Map;
+import java.math.BigInteger;
+import java.security.SecureRandom;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
 
 /**
  * Data that represents a tenant within the application.
@@ -13,7 +16,7 @@ public class Tenant
 {
 	private String tenantId;
 	private String tenantName;
-	private Map<String, byte[]> keys;
+	private List<String> keys;
 	
 	/**
 	 * Initializes a new tenant.
@@ -23,9 +26,14 @@ public class Tenant
 	 */
 	public Tenant(String tenantId, String tenantName)
 	{
+		if (null == tenantId)
+			throw new IllegalArgumentException("tenantId must not be null");
+		if (null == tenantName)
+			throw new IllegalArgumentException("tenantName must not be nul");
+		
 		this.tenantId = tenantId;
 		this.tenantName = tenantName;
-		keys = new HashMap<String, byte[]>();
+		keys = new ArrayList<String>();
 	}
 	
 	/**
@@ -49,12 +57,46 @@ public class Tenant
 	}
 	
 	/**
-	 * Gets the set of API keys and password hashes for the tenant.
+	 * Generates a new API key for the tenant.
 	 * 
-	 * @return A Map of the API keys to their hashed passwords.
+	 * @return A newly generated API key for the tenant.
 	 */
-	public Map<String, byte[]> getKeys()
+	public String generateKey()
 	{
-		return keys;
+		SecureRandom random = new SecureRandom();
+		String key = new BigInteger(130, random).toString(32);
+		keys.add(key);
+		return key;
+	}
+	
+	/**
+	 * Verifies that the tenant has the provided API key.
+	 * 
+	 * @param key the key to verify.
+	 * @return true if the key is valid for the tenant, otherwise false.
+	 */
+	public boolean verifyKey(String key)
+	{
+		return keys.contains(key);
+	}
+	
+	/**
+	 * Removes the given API key from the tenant.
+	 * 
+	 * @param key the key to remove.
+	 */
+	public void removeKey(String key)
+	{
+		keys.remove(key);
+	}
+	
+	/**
+	 * Provides a read-only view of the keys for the tenant.
+	 *  
+	 * @return A read-only List of the keys for the tenant.
+	 */
+	public List<String> getKeys()
+	{
+		return Collections.unmodifiableList(keys);
 	}
 }

@@ -25,31 +25,43 @@ public class GraphAdmin implements CollabinateAdmin
 	}
 	
 	@Override
-	public Tenant addTenant(String tenantId, String tenantName)
+	public void addTenant(Tenant tenant)
 	{
-		Tenant tenant = new Tenant(tenantId, tenantName);
+		Vertex tenantVertex = graph.getVertex(
+				getTenantVertexId(tenant.getId()));
 		
-		Vertex tenantVertex = graph.addVertex("_TENANT-" + tenantId);
-		
-		tenantVertex.setProperty("tenantId", tenantId);
-		tenantVertex.setProperty("tenantName", tenantName);
-		tenantVertex.setProperty("tenant", tenant);
-		
-		return tenant;
+		if (null == tenantVertex)
+		{
+			tenantVertex = graph.addVertex(getTenantVertexId(tenant.getId()));
+			
+			tenantVertex.setProperty(STRING_TENANTID, tenant.getId());
+			tenantVertex.setProperty(STRING_TENANTNAME, tenant.getName());
+			tenantVertex.setProperty(STRING_TENANT, tenant);
+		}
 	}
 
 	@Override
 	public Tenant getTenant(String tenantId)
 	{
-		Vertex tenantVertex = graph.getVertex("_TENANT-" + tenantId);
+		Vertex tenantVertex = graph.getVertex(getTenantVertexId(tenantId));
 		
 		Tenant tenant = null;
 		
 		if (null != tenantVertex)
 		{
-			tenant = (Tenant)tenantVertex.getProperty("tenant");
+			tenant = (Tenant)tenantVertex.getProperty(STRING_TENANT);
 		}
 		
 		return tenant;
 	}
+	
+	private String getTenantVertexId(String tenantId)
+	{
+		return STRING_TENANT_PREFIX + tenantId;
+	}
+	
+	private static final String STRING_TENANT_PREFIX = "_TENANT-";
+	private static final String STRING_TENANT = "tenant";
+	private static final String STRING_TENANTID = "tenantId";
+	private static final String STRING_TENANTNAME = "tenantName";
 }
