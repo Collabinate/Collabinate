@@ -31,16 +31,9 @@ public abstract class CollabinateAdminTest
 	}
 	
 	@Test
-	public void add_tenant_should_succeed()
-	{
-		Tenant tenant = admin.addTenant("tenant", "tenant");
-		assertNotNull(tenant);
-	}
-	
-	@Test
 	public void get_tenant_should_return_correct_tenant()
 	{
-		admin.addTenant("tenant", "tenant");		
+		admin.addTenant(new Tenant("tenant", "tenant"));		
 		Tenant tenant = admin.getTenant("tenant");
 		assertEquals("tenant", tenant.getId());
 		assertEquals("tenant", tenant.getName());
@@ -49,8 +42,11 @@ public abstract class CollabinateAdminTest
 	@Test
 	public void adding_existing_tenant_should_return_existing_tenant()
 	{
-		Tenant tenant1 = admin.addTenant("tenant", "tenant1");
-		Tenant tenant2 = admin.addTenant("tenant", "tenant2");
-		assertEquals(tenant1.getName(), tenant2.getName());
+		Tenant tenant1 = new Tenant("tenant", "tenant1");
+		Tenant tenant2 = new Tenant("tenant", "tenant2");
+		admin.addTenant(tenant1);
+		admin.addTenant(tenant2);
+		Tenant retrieved = admin.getTenant("tenant");
+		assertEquals(tenant1.getName(), retrieved.getName());
 	}
 }
