@@ -1,10 +1,6 @@
 package com.collabinate.server.webserver;
 
-import java.security.NoSuchAlgorithmException;
-import java.util.HashMap;
 import java.util.List;
-
-import javax.crypto.SecretKeyFactory;
 
 import org.restlet.Request;
 import org.restlet.Response;
@@ -15,7 +11,6 @@ import org.restlet.security.Verifier;
 
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.IndexableGraph;
-import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.util.wrappers.partition.PartitionIndexableGraph;
 
 /**
@@ -43,15 +38,15 @@ public class GraphVerifier implements Verifier
 		this.graph = new PartitionIndexableGraph<IndexableGraph>(
 				indexableGraph, "_tenant", "");
 		this.graph.addReadPartition("admin");
-		try
-		{
-			SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-		}
-		catch (NoSuchAlgorithmException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+//		try
+//		{
+//			SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
+//		}
+//		catch (NoSuchAlgorithmException e)
+//		{
+//			// TODO Auto-generated catch block
+//			e.printStackTrace();
+//		}
 	}
 
 	/**

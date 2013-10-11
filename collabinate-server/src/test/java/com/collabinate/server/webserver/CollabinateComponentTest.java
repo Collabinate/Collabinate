@@ -65,12 +65,21 @@ public class CollabinateComponentTest
 	}
 	
 	@Test
-	public void getting_root_resource_should_return_200()
+	public void getting_trace_resource_should_return_200()
 	{
-		Request request = new Request(Method.GET, "riap://application/");
+		Request request = new Request(Method.GET, "riap://application/trace");
 		Response response = component.handle(request);
 		
 		assertEquals(Status.SUCCESS_OK, response.getStatus());
+	}
+	
+	@Test
+	public void getting_empty_static_resource_should_return_204()
+	{
+		Request request = new Request(Method.GET, "riap://application/.static");
+		Response response = component.handle(request);
+		
+		assertEquals(Status.SUCCESS_NO_CONTENT, response.getStatus());
 	}
 	
 	@Test
