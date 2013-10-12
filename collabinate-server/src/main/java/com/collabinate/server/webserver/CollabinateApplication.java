@@ -11,6 +11,7 @@ import org.restlet.routing.Router;
 import org.restlet.routing.Template;
 import org.restlet.security.Authenticator;
 
+import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.collabinate.server.resources.FeedResource;
@@ -34,8 +35,11 @@ public class CollabinateApplication extends Application
 	/**
 	 * Sets the application properties.
 	 */
-	public CollabinateApplication(CollabinateReader reader, 
-			CollabinateWriter writer, Authenticator authenticator)
+	public CollabinateApplication(
+			CollabinateReader reader, 
+			CollabinateWriter writer,
+			CollabinateAdmin admin,
+			Authenticator authenticator)
 	{
 		if (null == reader)
 			throw new IllegalArgumentException("reader must not be null");

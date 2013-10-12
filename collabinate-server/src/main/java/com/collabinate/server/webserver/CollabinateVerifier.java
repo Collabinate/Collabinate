@@ -9,9 +9,7 @@ import org.restlet.data.ClientInfo;
 import org.restlet.security.User;
 import org.restlet.security.Verifier;
 
-import com.tinkerpop.blueprints.Graph;
-import com.tinkerpop.blueprints.IndexableGraph;
-import com.tinkerpop.blueprints.util.wrappers.partition.PartitionIndexableGraph;
+import com.collabinate.server.engine.CollabinateAdmin;
 
 /**
  * Verifier that uses tenants in a graph database to authenticate against.
@@ -22,22 +20,18 @@ import com.tinkerpop.blueprints.util.wrappers.partition.PartitionIndexableGraph;
 public class CollabinateVerifier implements Verifier
 {
 	/**
-	 * The graph database used for verification.
+	 * The admin engine used to perform verification.
 	 */
-	private PartitionIndexableGraph<IndexableGraph> graph;
-
+	CollabinateAdmin admin;
+	
 	/**
 	 * Initializes the verifier with the graph.
 	 * 
 	 * @param graph the database to authenticate against.
 	 */
-	public CollabinateVerifier(Graph graph)
+	public CollabinateVerifier(CollabinateAdmin admin)
 	{
-		// make the graph multi-tenant
-		IndexableGraph indexableGraph = (IndexableGraph)graph;
-		this.graph = new PartitionIndexableGraph<IndexableGraph>(
-				indexableGraph, "_tenant", "");
-		this.graph.addReadPartition("admin");
+		this.admin = admin;
 //		try
 //		{
 //			SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");

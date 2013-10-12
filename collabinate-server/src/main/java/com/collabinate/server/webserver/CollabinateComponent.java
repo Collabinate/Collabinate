@@ -8,6 +8,7 @@ import org.restlet.engine.component.ComponentXmlParser;
 import org.restlet.representation.FileRepresentation;
 import org.restlet.security.Authenticator;
 
+import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 
@@ -22,8 +23,11 @@ public class CollabinateComponent extends Component
 	/**
 	 * Set up the component
 	 */
-	public CollabinateComponent(CollabinateReader reader,
-			CollabinateWriter writer, Authenticator authenticator)
+	public CollabinateComponent(
+			CollabinateReader reader,
+			CollabinateWriter writer,
+			CollabinateAdmin admin,
+			Authenticator authenticator)
 	{
 		File file = new File("componentConfig.xml");
 		FileRepresentation fileRepresentation = 
@@ -47,6 +51,7 @@ public class CollabinateComponent extends Component
 		authenticator.setContext(getContext().createChildContext());
 		
 		getDefaultHost().attachDefault(
-				new CollabinateApplication(reader, writer, authenticator));
+				new CollabinateApplication(reader, writer, admin,
+						authenticator));
 	}
 }

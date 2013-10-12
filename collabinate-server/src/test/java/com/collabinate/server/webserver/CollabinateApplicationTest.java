@@ -24,7 +24,8 @@ public class CollabinateApplicationTest
 		KeyIndexableGraph graph = (KeyIndexableGraph)GraphFactory.open(
 				"src/test/resources/graph.properties");
 		GraphServer server = new GraphServer(graph);
-		Application app = new CollabinateApplication(server, server, null);
+		Application app = new CollabinateApplication(
+				server, server, null, null);
 		assertEquals("Collabinate", app.getName());
 		app.stop();
 		graph.shutdown();

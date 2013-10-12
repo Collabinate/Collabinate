@@ -10,8 +10,10 @@ import org.restlet.*;
 import org.restlet.data.ChallengeScheme;
 import org.restlet.security.ChallengeAuthenticator;
 
+import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
+import com.collabinate.server.engine.GraphAdmin;
 import com.collabinate.server.engine.GraphServer;
 import com.collabinate.server.webserver.CollabinateComponent;
 import com.collabinate.server.webserver.CollabinateVerifier;
@@ -28,6 +30,7 @@ public class Collabinate
 	private static Configuration configuration;
 	private static CollabinateReader reader;
 	private static CollabinateWriter writer;
+	private static CollabinateAdmin admin;
 	
 	public static void main(String[] args) throws Exception
 	{
@@ -53,6 +56,7 @@ public class Collabinate
 		GraphServer engine = new GraphServer(graph);
 		reader = engine;
 		writer = engine;
+		admin = new GraphAdmin(graph);
 		
 		// create the authenticator
 		ChallengeAuthenticator authenticator = new ChallengeAuthenticator(
@@ -60,11 +64,11 @@ public class Collabinate
 				false, // authentication is not optional
 				ChallengeScheme.HTTP_BASIC,
 				"Collabinate",
-				new CollabinateVerifier(graph));
+				new CollabinateVerifier(admin));
 		
 		// create the Restlet component and start it
 		CollabinateComponent server = new CollabinateComponent(reader, writer,
-				authenticator);
+				admin, authenticator);
 		server.start();	
 		
 		// output server startup time

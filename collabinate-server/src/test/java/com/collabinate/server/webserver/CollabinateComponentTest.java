@@ -38,7 +38,7 @@ public class CollabinateComponentTest
 				"src/test/resources/graph.properties");
 		GraphServer server = new GraphServer(graph);
 		Engine.setRestletLogLevel(Level.WARNING);
-		component = new CollabinateComponent(server, server,
+		component = new CollabinateComponent(server, server, null,
 			new Authenticator(null) {
 				@Override
 				protected boolean authenticate(Request request, Response response)
