@@ -19,7 +19,7 @@ import com.tinkerpop.blueprints.util.wrappers.partition.PartitionIndexableGraph;
  * @author mafuba
  * 
  */
-public class GraphVerifier implements Verifier
+public class CollabinateVerifier implements Verifier
 {
 	/**
 	 * The graph database used for verification.
@@ -31,7 +31,7 @@ public class GraphVerifier implements Verifier
 	 * 
 	 * @param graph the database to authenticate against.
 	 */
-	public GraphVerifier(Graph graph)
+	public CollabinateVerifier(Graph graph)
 	{
 		// make the graph multi-tenant
 		IndexableGraph indexableGraph = (IndexableGraph)graph;

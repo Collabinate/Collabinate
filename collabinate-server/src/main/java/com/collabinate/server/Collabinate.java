@@ -14,7 +14,7 @@ import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.collabinate.server.engine.GraphServer;
 import com.collabinate.server.webserver.CollabinateComponent;
-import com.collabinate.server.webserver.GraphVerifier;
+import com.collabinate.server.webserver.CollabinateVerifier;
 import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
@@ -60,7 +60,7 @@ public class Collabinate
 				false, // authentication is not optional
 				ChallengeScheme.HTTP_BASIC,
 				"Collabinate",
-				new GraphVerifier(graph));
+				new CollabinateVerifier(graph));
 		
 		// create the Restlet component and start it
 		CollabinateComponent server = new CollabinateComponent(reader, writer,

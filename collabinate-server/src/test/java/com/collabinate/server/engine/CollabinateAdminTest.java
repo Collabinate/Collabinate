@@ -40,7 +40,7 @@ public abstract class CollabinateAdminTest
 	}
 	
 	@Test
-	public void adding_existing_tenant_should_return_existing_tenant()
+	public void adding_existing_tenant_should_not_modify_existing_tenant()
 	{
 		Tenant tenant1 = new Tenant("tenant", "tenant1");
 		Tenant tenant2 = new Tenant("tenant", "tenant2");
