@@ -8,6 +8,7 @@ import org.restlet.Application;
 import org.restlet.Restlet;
 import org.restlet.resource.Directory;
 import org.restlet.routing.Router;
+import org.restlet.routing.Template;
 import org.restlet.security.Authenticator;
 
 import com.collabinate.server.engine.CollabinateReader;
@@ -51,29 +52,49 @@ public class CollabinateApplication extends Application
 	@Override
 	public Restlet createInboundRoot()
 	{
-		if (null == reader || null == writer)
+		if (null == reader || null == writer || null == authenticator)
 		{
 			throw new IllegalStateException(
-					"reader and writer must not be null");
+					"reader, writer, and authenticator must not be null");
 		}
 		getContext().getAttributes().put("collabinateReader", reader);
 		getContext().getAttributes().put("collabinateWriter", writer);
 		
-		Router router = new Router(getContext());
-		router.attach("/{apiVersion}/{tenantId}/entities/{entityId}/stream/{entryId}",
-				StreamEntryResource.class);
-		router.attach("/{apiVersion}/{tenantId}/entities/{entityId}/stream",
-				StreamResource.class);
-		router.attach(
-				"/{apiVersion}/{tenantId}/users/{userId}/following/{entityId}",
-				FollowingEntityResource.class);
-		router.attach("/{apiVersion}/{tenantId}/users/{userId}/feed",
-				FeedResource.class);
+		// primary router is the in-bound root - the first router
+		Router primaryRouter = new Router(getContext());
+
+		// normal resource paths go through the authenticator
+		primaryRouter.attach("/{apiVersion}/{tenantId}", authenticator)
+			.setMatchingMode(Template.MODE_STARTS_WITH);
 		
 		// trace resource for client debugging
-		router.attach("/trace", TraceResource.class);
+		primaryRouter.attach("/trace", TraceResource.class);
 		
 		// directory resource for static content
+		primaryRouter.attach("/", getStaticDirectoryResource());
+		
+		// resource router handles the routing for post-authentication resources
+		Router resourceRouter = new Router(getContext());
+		resourceRouter.attach("/entities/{entityId}/stream/{entryId}",
+				StreamEntryResource.class);
+		resourceRouter.attach("/entities/{entityId}/stream",
+				StreamResource.class);
+		resourceRouter.attach("/users/{userId}/following/{entityId}",
+				FollowingEntityResource.class);
+		resourceRouter.attach("/users/{userId}/feed", FeedResource.class);
+		
+		authenticator.setNext(resourceRouter);
+		
+		return primaryRouter;
+	}
+	
+	/**
+	 * Creates a directory resource used for static content.
+	 * 
+	 * @return A Directory used for static content.
+	 */
+	private Directory getStaticDirectoryResource()
+	{
 		URL staticFolderUrl;
 		try
 		{
@@ -81,12 +102,9 @@ public class CollabinateApplication extends Application
 		}
 		catch (MalformedURLException e)
 		{
-			throw new IllegalStateException("Could not find static content folder 'static'", e);
+			throw new IllegalStateException(
+					"Could not find static content folder 'static'", e);
 		}
-		Directory directory = new Directory(getContext(), staticFolderUrl.toString());
-		router.attach("/", directory);
-		
-		authenticator.setNext(router);
-		return authenticator;
+		return new Directory(getContext(), staticFolderUrl.toString());		
 	}
 }
