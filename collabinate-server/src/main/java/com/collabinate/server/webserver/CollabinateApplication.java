@@ -30,6 +30,7 @@ public class CollabinateApplication extends Application
 {
 	private CollabinateReader reader;
 	private CollabinateWriter writer;
+	private CollabinateAdmin admin;
 	private Authenticator authenticator;
 	
 	/**
@@ -50,6 +51,7 @@ public class CollabinateApplication extends Application
 		setName("Collabinate");
 		this.reader = reader;
 		this.writer = writer;
+		this.admin = admin;
 		this.authenticator = authenticator;
 	}
 	
@@ -63,6 +65,8 @@ public class CollabinateApplication extends Application
 		}
 		getContext().getAttributes().put("collabinateReader", reader);
 		getContext().getAttributes().put("collabinateWriter", writer);
+		if (null != admin)
+			getContext().getAttributes().put("collabinateAdmin", admin);
 		
 		// primary router is the in-bound root - the first router
 		Router primaryRouter = new Router(getContext());

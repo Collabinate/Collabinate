@@ -33,20 +33,20 @@ public abstract class CollabinateAdminTest
 	@Test
 	public void get_tenant_should_return_correct_tenant()
 	{
-		admin.addTenant(new Tenant("tenant", "tenant"));		
+		admin.putTenant(new Tenant("tenant", "tenant"));		
 		Tenant tenant = admin.getTenant("tenant");
 		assertEquals("tenant", tenant.getId());
 		assertEquals("tenant", tenant.getName());
 	}
 	
 	@Test
-	public void adding_existing_tenant_should_not_modify_existing_tenant()
+	public void putting_existing_tenant_should_modify_existing_tenant()
 	{
 		Tenant tenant1 = new Tenant("tenant", "tenant1");
 		Tenant tenant2 = new Tenant("tenant", "tenant2");
-		admin.addTenant(tenant1);
-		admin.addTenant(tenant2);
+		admin.putTenant(tenant1);
+		admin.putTenant(tenant2);
 		Tenant retrieved = admin.getTenant("tenant");
-		assertEquals(tenant1.getName(), retrieved.getName());
+		assertEquals(tenant2.getName(), retrieved.getName());
 	}
 }

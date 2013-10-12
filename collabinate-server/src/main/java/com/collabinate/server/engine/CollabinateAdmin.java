@@ -11,12 +11,12 @@ import com.collabinate.server.Tenant;
 public interface CollabinateAdmin
 {
 	/**
-	 * Adds a new tenant to the data store if it does not exist. If a tenant
-	 * with a matching ID already exists, no change is made.
+	 * Puts a new tenant in the data store if it does not exist. If a tenant
+	 * with a matching ID already exists, it is updated.
 	 * 
-	 * @param tenant the tenant to add.
+	 * @param tenant the tenant to put.
 	 */
-	public void addTenant(Tenant tenant);
+	public void putTenant(Tenant tenant);
 	
 	/**
 	 * Gets the tenant with the given ID.

@@ -2,7 +2,6 @@ package com.collabinate.server.webserver;
 
 import org.restlet.Request;
 import org.restlet.Response;
-import org.restlet.data.ChallengeResponse;
 import org.restlet.data.ClientInfo;
 import org.restlet.security.User;
 import org.restlet.security.Verifier;
@@ -10,7 +9,7 @@ import org.restlet.security.Verifier;
 import com.collabinate.server.engine.CollabinateAdmin;
 
 /**
- * Verifier that uses tenants in a graph database to authenticate against.
+ * Verifier that uses a CollabinateAdmin to authenticate against.
  * 
  * @author mafuba
  * 
@@ -23,52 +22,13 @@ public class CollabinateVerifier implements Verifier
 	CollabinateAdmin admin;
 	
 	/**
-	 * Initializes the verifier with the graph.
+	 * Initializes the verifier with the admin engine.
 	 * 
 	 * @param graph the database to authenticate against.
 	 */
 	public CollabinateVerifier(CollabinateAdmin admin)
 	{
 		this.admin = admin;
-//		try
-//		{
-//			SecretKeyFactory keyFactory = SecretKeyFactory.getInstance("PBKDF2WithHmacSHA1");
-//		}
-//		catch (NoSuchAlgorithmException e)
-//		{
-//			// TODO Auto-generated catch block
-//			e.printStackTrace();
-//		}
-	}
-
-	/**
-	 * Compares that two secrets are equal and not null.
-	 * 
-	 * @param secret1 The input secret.
-	 * @param secret2 The output secret.
-	 * @return True if both are equal.
-	 */
-	public static boolean compare(char[] secret1, char[] secret2)
-	{
-		boolean result = false;
-
-		if ((secret1 != null) && (secret2 != null))
-		{
-			// None is null
-			if (secret1.length == secret2.length)
-			{
-				boolean equals = true;
-
-				for (int i = 0; (i < secret1.length) && equals; i++)
-				{
-					equals = (secret1[i] == secret2[i]);
-				}
-
-				result = equals;
-			}
-		}
-
-		return result;
 	}
 
 	/**
@@ -79,23 +39,12 @@ public class CollabinateVerifier implements Verifier
 	 * @param response The response handled.
 	 * @return The {@link User} instance created.
 	 */
-	protected User createUser(String identifier, Request request,
+	private User createUser(String identifier, Request request,
 			Response response)
-	{
-		return createUser(identifier);
-	}
-
-	/**
-	 * Called back to create a new user when valid credentials are provided.
-	 * 
-	 * @param identifier The user identifier.
-	 * @return The {@link User} instance created.
-	 */
-	protected User createUser(String identifier)
 	{
 		return new User(identifier);
 	}
-	
+
 	/**
 	 * Returns the tenant identified in the URI.
 	 * 
@@ -103,46 +52,35 @@ public class CollabinateVerifier implements Verifier
 	 * @param response The response to inspect.
 	 * @return The tenant slug from the URI.
 	 */
-	protected String getTenantId(Request request, Response response)
+	private String getTenantId(Request request, Response response)
 	{
 		return (String)request.getAttributes().get("tenantId");
 	}
 
 	/**
-	 * Returns the user identifier.
+	 * Returns the API key contained in the user identifier.
 	 * 
 	 * @param request The request to inspect.
 	 * @param response The response to inspect.
-	 * @return The user identifier.
+	 * @return The API key.
 	 */
-	protected String getIdentifier(Request request, Response response)
+	private String getApiKey(Request request, Response response)
 	{
 		return request.getChallengeResponse().getIdentifier();
 	}
 
 	/**
-	 * Returns the secret provided by the user.
-	 * 
-	 * @param request The request to inspect.
-	 * @param response The response to inspect.
-	 * @return The secret provided by the user.
-	 */
-	protected char[] getSecret(Request request, Response response)
-	{
-		return request.getChallengeResponse().getSecret();
-	}
-
-	/**
-	 * Verifies that the proposed secret is correct for the specified request.
-	 * By default, it compares the inputSecret of the request's authentication
-	 * response with the one obtain by the {@link ChallengeResponse#getSecret()}
-	 * method and sets the {@link org.restlet.security.User} instance of the
-	 * request's {@link ClientInfo} if successful.
+	 * Verifies that the API key is correct for the specified request by
+	 * comparing the identifier portion of the request's authentication response
+	 * with the set of keys for the tenant as identified in the URL. Sets the 
+	 * {@link org.restlet.security.User} instance of the request's
+	 * {@link ClientInfo} if successful.
 	 * 
 	 * @param request The request to inspect.
 	 * @param response The response to inspect.
 	 * @return Result of the verification based on the RESULT_* constants.
 	 */
+	@Override
 	public int verify(Request request, Response response)
 	{
 		int result = RESULT_VALID;
@@ -154,14 +92,13 @@ public class CollabinateVerifier implements Verifier
 		else
 		{
 			String tenantId = getTenantId(request, response);
-			String identifier = getIdentifier(request, response);
-			char[] secret = getSecret(request, response);
-			result = verify(tenantId, identifier, secret);
+			String key = getApiKey(request, response);
+			result = verify(tenantId, key);
 
 			if (result == RESULT_VALID)
 			{
 				request.getClientInfo().setUser(
-						createUser(identifier, request, response));
+						createUser(tenantId, request, response));
 			}
 		}
 
@@ -169,19 +106,16 @@ public class CollabinateVerifier implements Verifier
 	}
 
 	/**
-	 * Verifies that the identifier/secret couple is valid. It throws an
-	 * IllegalArgumentException in case the identifier is either null or does
-	 * not identify a user.
+	 * Verifies that the API key is valid.
 	 * 
-	 * @param tenantId the URL slug for the tenant.
-	 * @param identifier The user identifier to match.
-	 * @param secret The provided secret to verify.
+	 * @param tenantId the ID (matching the URL slug) for the tenant.
+	 * @param key The API key to match.
 	 * @return Result of the verification based on the RESULT_* constants.
 	 */
-	public int verify(String tenantId, String identifier, char[] secret)
+	private int verify(String tenantId, String key)
 	{
 //		Tenant tenant = admin.getTenant(tenantId);
-//		if (tenant.verifyKey(identifier))
+//		if (null != tenant && tenant.verifyKey(key))
 			return RESULT_VALID;
 //		else
 //			return RESULT_INVALID;

@@ -25,7 +25,7 @@ public class GraphAdmin implements CollabinateAdmin
 	}
 	
 	@Override
-	public void addTenant(Tenant tenant)
+	public void putTenant(Tenant tenant)
 	{
 		Vertex tenantVertex = graph.getVertex(
 				getTenantVertexId(tenant.getId()));
@@ -33,11 +33,11 @@ public class GraphAdmin implements CollabinateAdmin
 		if (null == tenantVertex)
 		{
 			tenantVertex = graph.addVertex(getTenantVertexId(tenant.getId()));
-			
-			tenantVertex.setProperty(STRING_TENANTID, tenant.getId());
-			tenantVertex.setProperty(STRING_TENANTNAME, tenant.getName());
-			tenantVertex.setProperty(STRING_TENANT, tenant);
 		}
+		
+		tenantVertex.setProperty(STRING_TENANTID, tenant.getId());
+		tenantVertex.setProperty(STRING_TENANTNAME, tenant.getName());
+		tenantVertex.setProperty(STRING_TENANT, tenant);
 	}
 
 	@Override
