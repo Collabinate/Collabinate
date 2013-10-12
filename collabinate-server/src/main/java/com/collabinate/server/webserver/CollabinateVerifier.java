@@ -1,7 +1,5 @@
 package com.collabinate.server.webserver;
 
-import java.util.List;
-
 import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.data.ChallengeResponse;
@@ -98,12 +96,6 @@ public class CollabinateVerifier implements Verifier
 		return new User(identifier);
 	}
 	
-	private boolean isValidApiVersion(String version)
-	{
-		//TODO Make this better.
-		return version.equals("1");
-	}
-
 	/**
 	 * Returns the tenant identified in the URI.
 	 * 
@@ -111,13 +103,9 @@ public class CollabinateVerifier implements Verifier
 	 * @param response The response to inspect.
 	 * @return The tenant slug from the URI.
 	 */
-	protected String getTenant(Request request, Response response)
+	protected String getTenantId(Request request, Response response)
 	{
-		List<String> segments = request.getOriginalRef().getSegments();
-		if (segments.size() > 1 && isValidApiVersion(segments.get(0)))
-			return segments.get(1);
-		else
-			return null;
+		return (String)request.getAttributes().get("tenantId");
 	}
 
 	/**
@@ -165,10 +153,10 @@ public class CollabinateVerifier implements Verifier
 		}
 		else
 		{
-			String tenant = getTenant(request, response);
+			String tenantId = getTenantId(request, response);
 			String identifier = getIdentifier(request, response);
 			char[] secret = getSecret(request, response);
-			result = verify(tenant, identifier, secret);
+			result = verify(tenantId, identifier, secret);
 
 			if (result == RESULT_VALID)
 			{
@@ -192,19 +180,10 @@ public class CollabinateVerifier implements Verifier
 	 */
 	public int verify(String tenantId, String identifier, char[] secret)
 	{
-//		Vertex tenant = graph.getVertex("_TENANT-" + tenantId);
-//		HashMap map = tenant.getProperty("tokens");
-//		char[] storedSecret = (char[])map.get(identifier);
-//		if (compare(storedSecret, hash(secret, identifier)))
-//		{
+//		Tenant tenant = admin.getTenant(tenantId);
+//		if (tenant.verifyKey(identifier))
 			return RESULT_VALID;
-//		}
-//		
-//		return RESULT_INVALID;
+//		else
+//			return RESULT_INVALID;
 	}
-	
-//	private char[] hash(char[] secret, String salt)
-//	{
-//		
-//	}
 }
