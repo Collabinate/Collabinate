@@ -5,6 +5,8 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import org.restlet.Application;
+import org.restlet.Request;
+import org.restlet.Response;
 import org.restlet.Restlet;
 import org.restlet.resource.Directory;
 import org.restlet.routing.Router;
@@ -18,6 +20,7 @@ import com.collabinate.server.resources.FeedResource;
 import com.collabinate.server.resources.FollowingEntityResource;
 import com.collabinate.server.resources.StreamEntryResource;
 import com.collabinate.server.resources.StreamResource;
+import com.collabinate.server.resources.TenantResource;
 import com.collabinate.server.resources.TraceResource;
 
 /**
@@ -70,6 +73,15 @@ public class CollabinateApplication extends Application
 		
 		// primary router is the in-bound root - the first router
 		Router primaryRouter = new Router(getContext());
+		
+		// admin resources are handled specially
+		Authenticator adminAuthenticator = getAdminAuthenticator();
+		primaryRouter.attach("/{apiVersion}/admin", adminAuthenticator)
+			.setMatchingMode(Template.MODE_STARTS_WITH);
+		
+		Router adminRouter = new Router(getContext());
+		adminRouter.attach("/tenants/{tenantId}", TenantResource.class);
+		adminAuthenticator.setNext(adminRouter);
 
 		// normal resource paths go through the authenticator
 		primaryRouter.attach("/{apiVersion}/{tenantId}", authenticator)
@@ -96,6 +108,18 @@ public class CollabinateApplication extends Application
 		return primaryRouter;
 	}
 	
+	private Authenticator getAdminAuthenticator()
+	{
+		return new Authenticator(getContext()) {
+			
+			@Override
+			protected boolean authenticate(Request request, Response response)
+			{
+				return true;
+			}
+		};
+	}
+
 	/**
 	 * Creates a directory resource used for static content.
 	 * 
