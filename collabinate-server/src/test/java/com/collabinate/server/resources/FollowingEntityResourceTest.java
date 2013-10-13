@@ -2,22 +2,8 @@ package com.collabinate.server.resources;
 
 import static org.junit.Assert.assertEquals;
 
-import java.util.logging.Level;
-
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.restlet.Component;
-import org.restlet.Request;
-import org.restlet.Response;
-import org.restlet.data.Method;
 import org.restlet.data.Status;
-import org.restlet.engine.Engine;
-import org.restlet.security.Authenticator;
-
-import com.collabinate.server.engine.GraphServer;
-import com.collabinate.server.webserver.CollabinateComponent;
-import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 /**
  * Tests for the following entity resource.
@@ -25,101 +11,51 @@ import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
  * @author mafuba
  *
  */
-public class FollowingEntityResourceTest
-{
-	GraphServer server;
-	Component component;
-	TinkerGraph graph;
-	
-	@Before
-	public void setup()
-	{
-		graph = new TinkerGraph();
-		server = new GraphServer(graph);
-		Engine.setRestletLogLevel(Level.WARNING);
-		component = new CollabinateComponent(server, server, null,
-			new Authenticator(null) {
-				@Override
-				protected boolean authenticate(Request request, Response response)
-				{
-					return true;
-				}
-			});
-	}
-	
-	@After
-	public void teardown() throws Exception
-	{
-		if (component.isStarted())
-		{
-			component.stop();
-		}
-		
-		graph.clear();
-	}
-	
+public class FollowingEntityResourceTest extends GraphResourceTest
+{	
 	@Test
 	public void getting_not_followed_entity_should_return_404()
 	{
-		Request request = new Request(Method.GET, RESOURCE_PATH);
-		Response response = component.handle(request);
-		
-		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, response.getStatus());
+		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, get().getStatus());
 	}
 	
 	@Test
 	public void following_entity_should_return_201()
 	{
-		Request request = new Request(Method.PUT, RESOURCE_PATH);
-		Response response = component.handle(request);
-		
-		assertEquals(Status.SUCCESS_CREATED, response.getStatus());
+		assertEquals(Status.SUCCESS_CREATED, put().getStatus());
 	}
 	
 	@Test
 	public void getting_followed_entity_should_return_200()
 	{
-		Request request = new Request(Method.PUT, RESOURCE_PATH);
-		Response response = component.handle(request);
-		request = new Request(Method.GET, RESOURCE_PATH);
-		response = component.handle(request);
-		
-		assertEquals(Status.SUCCESS_OK, response.getStatus());
+		put();
+		assertEquals(Status.SUCCESS_OK, get().getStatus());
 	}
 	
 	@Test
 	public void unfollowing_entity_should_return_200()
 	{
-		Request request = new Request(Method.PUT, RESOURCE_PATH);
-		Response response = component.handle(request);
-		request = new Request(Method.DELETE, RESOURCE_PATH);
-		response = component.handle(request);
-		
-		assertEquals(Status.SUCCESS_OK, response.getStatus());
+		put();
+		assertEquals(Status.SUCCESS_OK, delete().getStatus());
 	}
 	
 	@Test
 	public void unfollowing_never_followed_entity_should_return_200()
 	{
-		Request request = new Request(Method.DELETE, RESOURCE_PATH);
-		Response response = component.handle(request);
-		
-		assertEquals(Status.SUCCESS_OK, response.getStatus());
+		assertEquals(Status.SUCCESS_OK, delete().getStatus());
 	}
 	
 	@Test
 	public void getting_unfollowed_entity_should_return_404()
 	{
-		Request request = new Request(Method.PUT, RESOURCE_PATH);
-		Response response = component.handle(request);
-		request = new Request(Method.DELETE, RESOURCE_PATH);
-		response = component.handle(request);
-		request = new Request(Method.GET, RESOURCE_PATH);
-		response = component.handle(request);
-		
-		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, response.getStatus());
+		put();
+		delete();
+		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, get().getStatus());
 	}
 
-	private static final String RESOURCE_PATH = 
-			"riap://application/1/tenant/users/user/following/entity";
+	@Override
+	protected String getResourcePath()
+	{
+		return "/1/tenant/users/user/following/entity";
+	}
 }

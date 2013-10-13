@@ -4,23 +4,11 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertThat;
 
-import java.util.logging.Level;
-
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
-import org.restlet.Component;
 import org.restlet.Request;
-import org.restlet.Response;
 import org.restlet.data.MediaType;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
-import org.restlet.engine.Engine;
-import org.restlet.security.Authenticator;
-
-import com.collabinate.server.engine.GraphServer;
-import com.collabinate.server.webserver.CollabinateComponent;
-import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
 
 /**
  * Tests for the Feed Resource
@@ -28,46 +16,12 @@ import com.tinkerpop.blueprints.impls.tg.TinkerGraph;
  * @author mafuba
  * 
  */
-public class FeedResourceTest
+public class FeedResourceTest extends GraphResourceTest
 {
-	GraphServer server;
-	Component component;
-	TinkerGraph graph;
-	
-	@Before
-	public void setup()
-	{
-		graph = new TinkerGraph();
-		server = new GraphServer(graph);
-		Engine.setRestletLogLevel(Level.WARNING);
-		component = new CollabinateComponent(server, server, null,
-			new Authenticator(null) {
-				@Override
-				protected boolean authenticate(Request request, Response response)
-				{
-					return true;
-				}
-			});
-	}
-	
-	@After
-	public void teardown() throws Exception
-	{
-		if (component.isStarted())
-		{
-			component.stop();
-		}
-		
-		graph.clear();
-	}
-	
 	@Test
 	public void get_empty_feed_should_get_empty_atom_feed()
 	{
-		Request request = new Request(Method.GET, RESOURCE_PATH);
-		Response response = component.handle(request);
-		
-		assertEquals(Status.SUCCESS_OK, response.getStatus());
+		assertEquals(Status.SUCCESS_OK, get().getStatus());
 	}
 	
 	@Test
@@ -96,15 +50,15 @@ public class FeedResourceTest
 		component.handle(request);
 		
 		// get the feed
-		request = new Request(Method.GET, RESOURCE_PATH);
-		Response response = component.handle(request);
-		
-		String responseText = response.getEntityAsText();
+		String responseText = get().getEntityAsText();
 		
 		assertThat(responseText, containsString(entityBody1));		
 		assertThat(responseText, containsString(entityBody2));		
 	}
 	
-	private static final String RESOURCE_PATH = 
-			"riap://application/1/tenant/users/user/feed";
+	@Override
+	protected String getResourcePath()
+	{
+		return "/1/tenant/users/user/feed";
+	}
 }
