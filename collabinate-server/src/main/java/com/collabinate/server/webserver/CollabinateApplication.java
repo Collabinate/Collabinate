@@ -20,6 +20,7 @@ import com.collabinate.server.resources.FeedResource;
 import com.collabinate.server.resources.FollowingEntityResource;
 import com.collabinate.server.resources.StreamEntryResource;
 import com.collabinate.server.resources.StreamResource;
+import com.collabinate.server.resources.TenantKeysResource;
 import com.collabinate.server.resources.TenantResource;
 import com.collabinate.server.resources.TraceResource;
 
@@ -81,6 +82,8 @@ public class CollabinateApplication extends Application
 		
 		Router adminRouter = new Router(getContext());
 		adminRouter.attach("/tenants/{tenantId}", TenantResource.class);
+		adminRouter.attach("/tenants/{tenantId}/keys",
+				TenantKeysResource.class);
 		adminAuthenticator.setNext(adminRouter);
 
 		// normal resource paths go through the authenticator
