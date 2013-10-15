@@ -48,6 +48,11 @@ public class StreamEntry
 	}
 	
 	/**
+	 * No-arg constructor for serialization.
+	 */
+	StreamEntry() { }
+	
+	/**
 	 * Get the identifier for the entry. This is unique among entries within the
 	 * stream to which this entry belongs.
 	 * 

@@ -37,6 +37,11 @@ public class Tenant
 	}
 	
 	/**
+	 * No-arg constructor for serialization.
+	 */
+	Tenant() { }
+	
+	/**
 	 * Gets the identifier for the tenant. This is unique for all tenants.
 	 * 
 	 * @return The unique identifier for the tenant.

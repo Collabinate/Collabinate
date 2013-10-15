@@ -1,8 +1,11 @@
 package com.collabinate.server.engine;
 
 import com.collabinate.server.Tenant;
+import com.google.gson.Gson;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
+import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 
 /**
  * An implementation of Administration against a graph database.
@@ -37,19 +40,28 @@ public class GraphAdmin implements CollabinateAdmin
 		
 		tenantVertex.setProperty(STRING_TENANTID, tenant.getId());
 		tenantVertex.setProperty(STRING_TENANTNAME, tenant.getName());
-		tenantVertex.setProperty(STRING_TENANT, tenant);
+		
+		Gson gson = new Gson();
+		String tenantJson = gson.toJson(tenant);
+		tenantVertex.setProperty(STRING_TENANT, tenantJson);
+		
+		//TODO: handle transactions correctly
+		if (graph instanceof Neo4jGraph)
+			((TransactionalGraph)graph).commit();
 	}
 
 	@Override
 	public Tenant getTenant(String tenantId)
 	{
 		Vertex tenantVertex = graph.getVertex(getTenantVertexId(tenantId));
-		
+
 		Tenant tenant = null;
 		
 		if (null != tenantVertex)
 		{
-			tenant = (Tenant)tenantVertex.getProperty(STRING_TENANT);
+			String tenantJson = (String)tenantVertex.getProperty(STRING_TENANT);
+			Gson gson = new Gson();
+			tenant = gson.fromJson(tenantJson, Tenant.class);
 		}
 		
 		return tenant;
