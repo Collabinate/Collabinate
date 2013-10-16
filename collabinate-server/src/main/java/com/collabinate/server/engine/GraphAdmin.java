@@ -44,10 +44,6 @@ public class GraphAdmin implements CollabinateAdmin
 		Gson gson = new Gson();
 		String tenantJson = gson.toJson(tenant);
 		tenantVertex.setProperty(STRING_TENANT, tenantJson);
-		
-		//TODO: handle transactions correctly
-		if (graph instanceof Neo4jGraph)
-			((TransactionalGraph)graph).commit();
 	}
 
 	@Override
