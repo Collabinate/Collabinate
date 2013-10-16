@@ -12,6 +12,7 @@ import org.restlet.data.Method;
 import org.restlet.engine.Engine;
 import org.restlet.security.Authenticator;
 
+import com.collabinate.server.engine.CollabinateGraph;
 import com.collabinate.server.engine.GraphAdmin;
 import com.collabinate.server.engine.GraphEngine;
 import com.collabinate.server.webserver.CollabinateComponent;
@@ -47,8 +48,9 @@ public abstract class GraphResourceTest
 	public void graphResourceSetup()
 	{
 		graph = new TinkerGraph();
-		server = new GraphEngine(graph);
-		admin = new GraphAdmin(graph);
+		CollabinateGraph collabinateGraph = CollabinateGraph.getInstance(graph);
+		server = new GraphEngine(collabinateGraph);
+		admin = new GraphAdmin(collabinateGraph);
 		Engine.setRestletLogLevel(Level.WARNING);
 		component = new CollabinateComponent(server, server, admin,
 			new Authenticator(null) {

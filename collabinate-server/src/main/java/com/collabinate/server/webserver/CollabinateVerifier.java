@@ -6,6 +6,7 @@ import org.restlet.data.ClientInfo;
 import org.restlet.security.User;
 import org.restlet.security.Verifier;
 
+import com.collabinate.server.Tenant;
 import com.collabinate.server.engine.CollabinateAdmin;
 
 /**
@@ -114,10 +115,10 @@ public class CollabinateVerifier implements Verifier
 	 */
 	private int verify(String tenantId, String key)
 	{
-//		Tenant tenant = admin.getTenant(tenantId);
-//		if (null != tenant && tenant.verifyKey(key))
+		Tenant tenant = admin.getTenant(tenantId);
+		if (null != tenant && tenant.verifyKey(key))
 			return RESULT_VALID;
-//		else
-//			return RESULT_INVALID;
+		else
+			return RESULT_INVALID;
 	}
 }

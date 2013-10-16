@@ -17,7 +17,7 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
  */
 public class GraphServerReaderTest extends CollabinateReaderTest
 {
-	private KeyIndexableGraph graph;
+	private CollabinateGraph graph;
 	private GraphEngine server;
 	
 	@Override
@@ -41,10 +41,11 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 	{
 		if (null == server)
 		{
-			graph = (KeyIndexableGraph)GraphFactory.open(
-					"src/test/resources/graph.properties");
+			graph = CollabinateGraph.getInstance(
+					(KeyIndexableGraph)GraphFactory.open(
+					"src/test/resources/graph.properties"));
+			graph.setAllowCommits(false);
 			server = new GraphEngine(graph);
-			server.setAutoCommit(false);
 		}
 		return server;
 	}

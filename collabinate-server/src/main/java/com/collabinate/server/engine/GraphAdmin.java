@@ -2,10 +2,7 @@ package com.collabinate.server.engine;
 
 import com.collabinate.server.Tenant;
 import com.google.gson.Gson;
-import com.tinkerpop.blueprints.KeyIndexableGraph;
-import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.Vertex;
-import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
 
 /**
  * An implementation of Administration against a graph database.
@@ -15,9 +12,9 @@ import com.tinkerpop.blueprints.impls.neo4j.Neo4jGraph;
  */
 public class GraphAdmin implements CollabinateAdmin
 {
-	private KeyIndexableGraph graph;
+	private CollabinateGraph graph;
 	
-	public GraphAdmin(KeyIndexableGraph graph)
+	public GraphAdmin(CollabinateGraph graph)
 	{
 		if (null == graph)
 		{
@@ -44,6 +41,8 @@ public class GraphAdmin implements CollabinateAdmin
 		Gson gson = new Gson();
 		String tenantJson = gson.toJson(tenant);
 		tenantVertex.setProperty(STRING_TENANT, tenantJson);
+		
+		graph.commit();
 	}
 
 	@Override
@@ -59,6 +58,8 @@ public class GraphAdmin implements CollabinateAdmin
 			Gson gson = new Gson();
 			tenant = gson.fromJson(tenantJson, Tenant.class);
 		}
+		
+		graph.commit();
 		
 		return tenant;
 	}

@@ -1,29 +1,19 @@
 package com.collabinate.server.engine;
 
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.util.AbstractMap;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Comparator;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.PriorityQueue;
-import java.util.Set;
 
 import org.joda.time.DateTime;
 
 import com.collabinate.server.StreamEntry;
+import com.collabinate.server.engine.CollabinateGraph.TenantMap;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
-import com.tinkerpop.blueprints.IndexableGraph;
-import com.tinkerpop.blueprints.KeyIndexableGraph;
-import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.Vertex;
-import com.tinkerpop.blueprints.util.io.graphml.GraphMLWriter;
-import com.tinkerpop.blueprints.util.wrappers.id.IdGraph;
-import com.tinkerpop.blueprints.util.wrappers.partition.PartitionIndexableGraph;
 
 /**
  * An implementation of both reader and writer backed by a graph database.
@@ -36,118 +26,22 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	/**
 	 * The graph database backing this instance.
 	 */
-	private PartitionIndexableGraph<IndexableGraph> graph;
+	private CollabinateGraph graph;
 	
-	/**
-	 * The underlying graph implementation.
-	 */
-	private KeyIndexableGraph baseGraph;
-	
-	/**
-	 * Whether the server should automatically commit transactions.
-	 */
-	private boolean autoCommit = true;
-		
 	/**
 	 * Ensures that the graph can have IDs assigned.
 	 * 
 	 * @param graph A Tinkerpop BluePrints graph to act as the store for the
 	 * server.
 	 */
-	public GraphEngine(final KeyIndexableGraph graph)
+	public GraphEngine(final CollabinateGraph graph)
 	{
 		if (null == graph)
 		{
 			throw new IllegalArgumentException("graph must not be null");
 		}
 		
-		// we need to go through hoops in the following to ensure that we end up
-		// with a graph that is both ID enabled and partitioned.
-		if (!(graph instanceof IndexableGraph))
-			throw new IllegalArgumentException(
-					"graph must implement IndexableGraph.");
-		
-		// set the base graph
-		this.baseGraph = graph;
-		
-		// ensure we can provide IDs to the graph
-		KeyIndexableGraph idGraph;
-		if (graph.getFeatures().ignoresSuppliedIds)
-			idGraph = new IdGraph<KeyIndexableGraph>(graph);
-		else
-			idGraph = graph;
-		
-		// make the graph multi-tenant
-		IndexableGraph indexableGraph = (IndexableGraph)idGraph;
-		this.graph = new PartitionIndexableGraph<IndexableGraph>(
-				indexableGraph, "_tenant", "");
-	}
-	
-	/**
-	 * Sets whether the server should automatically commit transactions.
-	 * 
-	 * @param autoCommit The setting for whether the server automatically
-	 * commits transactions. True by default.
-	 */
-	public void setAutoCommit(boolean autoCommit)
-	{
-		this.autoCommit = autoCommit;
-	}
-	
-	/**
-	 * Causes the graph database to commit the current transaction.
-	 */
-	private void commit()
-	{
-		if (autoCommit && baseGraph.getFeatures().supportsTransactions)
-		{
-			((TransactionalGraph)baseGraph).commit();
-		}
-	}
-	
-	/**
-	 * Uses the PartitionGraph to keep tenant data separate by setting the
-	 * current partition to the current tenant.
-	 * 
-	 * @param map A structure containing the data used to switch partitions.
-	 * @return The previous partition values, so they can be replaced later.
-	 */
-	private AbstractMap.SimpleImmutableEntry<String, Set<String>> 
-		setCurrentTenant(AbstractMap.SimpleImmutableEntry<
-				String, Set<String>>  map)
-	{
-		// capture the existing values so they can be returned
-		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedValues = 
-				new AbstractMap.SimpleImmutableEntry<String, Set<String>>(
-						graph.getWritePartition(),
-						graph.getReadPartitions());
-		
-		// switch out the partition to the values provided
-		for (String readPartition : savedValues.getValue())
-			graph.removeReadPartition(readPartition);
-		
-		for (String readPartition : map.getValue())
-			graph.addReadPartition(readPartition);
-		
-		graph.setWritePartition(map.getKey());
-		
-		// return the previous values for use in returning to previous state
-		return savedValues;
-	}
-	
-	/**
-	 * Builds the structure used to switch the partition to a single tenant.
-	 * 
-	 * @param tenantId The ID of the tenant for which to build the structure.
-	 * @return The structure used to switch to the given tenant.
-	 */
-	private AbstractMap.SimpleImmutableEntry<String, Set<String>>
-		getTenantMap(String tenantId)
-	{
-		Set<String> set = new HashSet<String>();
-		set.add(tenantId);
-		return new AbstractMap
-				.SimpleImmutableEntry<String, Set<String>>(tenantId, set);
+		this.graph = graph;
 	}
 	
 	@Override
@@ -170,8 +64,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 		
 		entityId = tenantId + "/" + entityId;
-		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
-			setCurrentTenant(getTenantMap(tenantId));
+		TenantMap savedTenant = graph.setCurrentTenant(
+				graph.getTenantMap(tenantId));
 		
 		Vertex entityVertex = getOrCreateEntityVertex(entityId);
 		
@@ -180,9 +74,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (insertStreamEntry(entityVertex, streamEntryVertex))
 			updateFeedPaths(tenantId, entityVertex);
 		
-		commit();
+		graph.commit();
 		
-		setCurrentTenant(savedTenant);
+		graph.setCurrentTenant(savedTenant);
 	}
 
 	/**
@@ -381,17 +275,17 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("entryId must not be null");
 		
 		entityId = tenantId + "/" + entityId;
-		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
-				setCurrentTenant(getTenantMap(tenantId));
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(tenantId));
 
 		Vertex entityVertex = getOrCreateEntityVertex(entityId);
 				
 		if (removeStreamEntry(entityVertex, entryId))
 			updateFeedPaths(tenantId, entityVertex);
 		
-		commit();
+		graph.commit();
 		
-		setCurrentTenant(savedTenant);
+		graph.setCurrentTenant(savedTenant);
 	}
 	
 	/**
@@ -447,8 +341,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			long startIndex, int entriesToReturn)
 	{
 		entityId = tenantId + "/" + entityId;
-		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
-				setCurrentTenant(getTenantMap(tenantId));
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(tenantId));
 
 		Vertex entity = graph.getVertex(entityId);
 		if (null == entity)
@@ -480,9 +374,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			streamPosition++;
 		}
 		
-		commit();
+		graph.commit();
 		
-		setCurrentTenant(savedTenant);
+		graph.setCurrentTenant(savedTenant);
 
 		// we only have the vertices, the actual entries need to be created
 		return deserializeStreamEntries(streamVertices);
@@ -567,8 +461,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
-		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
-				setCurrentTenant(getTenantMap(tenantId));
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(tenantId));
 
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
@@ -577,9 +471,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		insertFeedEntity(user, entity);
 		
-		commit();
+		graph.commit();
 		
-		setCurrentTenant(savedTenant);
+		graph.setCurrentTenant(savedTenant);
 	}
 	
 	@Override
@@ -603,8 +497,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
-		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
-				setCurrentTenant(getTenantMap(tenantId));
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(tenantId));
 
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
@@ -635,9 +529,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			previousEntity.addEdge(feedLabel, nextEntity);
 		}
 		
-		commit();
+		graph.commit();
 
-		setCurrentTenant(savedTenant);
+		graph.setCurrentTenant(savedTenant);
 	}
 	
 	@Override
@@ -646,8 +540,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	{
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
-		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
-				setCurrentTenant(getTenantMap(tenantId));
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(tenantId));
 
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
@@ -656,14 +550,14 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
-				commit();
+				graph.commit();
 				return true;
 			}
 		}
 
-		commit();
+		graph.commit();
 		
-		setCurrentTenant(savedTenant);
+		graph.setCurrentTenant(savedTenant);
 
 		return false;
 	}
@@ -735,8 +629,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		// http://www.rene-pickhardt.de/graphity-an-efficient-graph-model-for-retrieving-the-top-k-news-feeds-for-users-in-social-networks/
 		
 		userId = tenantId + "/" + userId;
-		AbstractMap.SimpleImmutableEntry<String, Set<String>> savedTenant =
-				setCurrentTenant(getTenantMap(tenantId));
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(tenantId));
 
 		// we order stream entries by their date
 		StreamEntryDateComparator comparator = new StreamEntryDateComparator();
@@ -817,35 +711,13 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			}
 		}
 
-		commit();
+		graph.commit();
 		
-		setCurrentTenant(savedTenant);
+		graph.setCurrentTenant(savedTenant);
 
 		return deserializeStreamEntries(streamEntries);
 	}
 
-	/**
-	 * Outputs the graph to a GraphML file.
-	 * 
-	 * @param fileName The file to which the data will be written.
-	 */
-	public void exportGraph(String fileName)
-	{
-		try
-		{
-			GraphMLWriter writer = new GraphMLWriter(graph);
-			writer.setNormalize(true);
-			FileOutputStream file = new FileOutputStream(fileName);
-			writer.outputGraph(file);
-			file.flush();
-			file.close();
-		}
-		catch (IOException exc)
-		{
-			// TODO: handle
-		}
-	}
-	
 	/**
 	 * Retrieves an adjacent entity in a path of entities for a feed, where the
 	 * entities are ordered by their newest stream entry.

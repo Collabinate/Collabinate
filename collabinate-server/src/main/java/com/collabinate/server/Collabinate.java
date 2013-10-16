@@ -11,6 +11,7 @@ import org.restlet.data.ChallengeScheme;
 import org.restlet.security.ChallengeAuthenticator;
 
 import com.collabinate.server.engine.CollabinateAdmin;
+import com.collabinate.server.engine.CollabinateGraph;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.collabinate.server.engine.GraphAdmin;
@@ -49,7 +50,8 @@ public class Collabinate
 		if (!(configuredGraph instanceof KeyIndexableGraph))
 			throw new IllegalStateException(
 					"Configured graph is not a KeyIndexableGraph");
-		KeyIndexableGraph graph = (KeyIndexableGraph)configuredGraph;
+		CollabinateGraph graph = CollabinateGraph.getInstance(
+				(KeyIndexableGraph)configuredGraph);
 		registerShutdownHook(graph);
 		
 		// create the engine

@@ -14,13 +14,15 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
  */
 public class GraphAdminTest extends CollabinateAdminTest
 {
-	private KeyIndexableGraph graph;
+	private CollabinateGraph graph;
 	
 	@Override
 	CollabinateAdmin getAdmin()
 	{
-		graph = (KeyIndexableGraph)GraphFactory.open(
-				"src/test/resources/graph.properties");
+		graph = CollabinateGraph.getInstance(
+				(KeyIndexableGraph)GraphFactory.open(
+				"src/test/resources/graph.properties"));
+		graph.setAllowCommits(false);
 		return new GraphAdmin(graph);
 	}
 

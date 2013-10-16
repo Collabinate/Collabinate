@@ -16,17 +16,16 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
  */
 public class GraphServerWriterTest extends CollabinateWriterTest
 {
-	private KeyIndexableGraph graph;
+	private CollabinateGraph graph;
 	
 	@Override
 	CollabinateWriter getWriter()
 	{
-		graph = (KeyIndexableGraph)GraphFactory.open(
-				"src/test/resources/graph.properties");
-		GraphEngine server = new GraphEngine(graph);
-		server.setAutoCommit(false);
-		return server;
-		
+		graph = CollabinateGraph.getInstance(
+				(KeyIndexableGraph)GraphFactory.open(
+				"src/test/resources/graph.properties"));
+		graph.setAllowCommits(false);
+		return new GraphEngine(graph);
 	}
 	
 	@After
