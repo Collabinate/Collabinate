@@ -4,7 +4,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import com.collabinate.server.engine.CollabinateWriter;
-import com.collabinate.server.engine.GraphServer;
+import com.collabinate.server.engine.GraphEngine;
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 
@@ -23,7 +23,7 @@ public class GraphServerWriterTest extends CollabinateWriterTest
 	{
 		graph = (KeyIndexableGraph)GraphFactory.open(
 				"src/test/resources/graph.properties");
-		GraphServer server = new GraphServer(graph);
+		GraphEngine server = new GraphEngine(graph);
 		server.setAutoCommit(false);
 		return server;
 		
@@ -40,6 +40,6 @@ public class GraphServerWriterTest extends CollabinateWriterTest
 	public void should_not_allow_null_graph()
 	{
 		exception.expect(IllegalArgumentException.class);
-		new GraphServer(null);
+		new GraphEngine(null);
 	}
 }

@@ -31,7 +31,7 @@ import com.tinkerpop.blueprints.util.wrappers.partition.PartitionIndexableGraph;
  * @author mafuba
  * 
  */
-public class GraphServer implements CollabinateReader, CollabinateWriter
+public class GraphEngine implements CollabinateReader, CollabinateWriter
 {
 	/**
 	 * The graph database backing this instance.
@@ -54,7 +54,7 @@ public class GraphServer implements CollabinateReader, CollabinateWriter
 	 * @param graph A Tinkerpop BluePrints graph to act as the store for the
 	 * server.
 	 */
-	public GraphServer(final KeyIndexableGraph graph)
+	public GraphEngine(final KeyIndexableGraph graph)
 	{
 		if (null == graph)
 		{

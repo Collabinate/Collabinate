@@ -15,7 +15,7 @@ import org.restlet.data.Status;
 import org.restlet.engine.Engine;
 import org.restlet.security.Authenticator;
 
-import com.collabinate.server.engine.GraphServer;
+import com.collabinate.server.engine.GraphEngine;
 import com.collabinate.server.webserver.CollabinateComponent;
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
@@ -36,7 +36,7 @@ public class CollabinateComponentTest
 	{
 		graph = (KeyIndexableGraph)GraphFactory.open(
 				"src/test/resources/graph.properties");
-		GraphServer server = new GraphServer(graph);
+		GraphEngine server = new GraphEngine(graph);
 		Engine.setRestletLogLevel(Level.WARNING);
 		component = new CollabinateComponent(server, server, null,
 			new Authenticator(null) {

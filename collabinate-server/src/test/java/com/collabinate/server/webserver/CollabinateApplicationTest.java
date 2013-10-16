@@ -5,7 +5,7 @@ import static org.junit.Assert.*;
 import org.junit.Test;
 import org.restlet.Application;
 
-import com.collabinate.server.engine.GraphServer;
+import com.collabinate.server.engine.GraphEngine;
 import com.collabinate.server.webserver.CollabinateApplication;
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
@@ -23,7 +23,7 @@ public class CollabinateApplicationTest
 	{
 		KeyIndexableGraph graph = (KeyIndexableGraph)GraphFactory.open(
 				"src/test/resources/graph.properties");
-		GraphServer server = new GraphServer(graph);
+		GraphEngine server = new GraphEngine(graph);
 		Application app = new CollabinateApplication(
 				server, server, null, null);
 		assertEquals("Collabinate", app.getName());

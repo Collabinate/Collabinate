@@ -14,7 +14,7 @@ import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.collabinate.server.engine.GraphAdmin;
-import com.collabinate.server.engine.GraphServer;
+import com.collabinate.server.engine.GraphEngine;
 import com.collabinate.server.webserver.CollabinateComponent;
 import com.collabinate.server.webserver.CollabinateVerifier;
 import com.tinkerpop.blueprints.Graph;
@@ -53,7 +53,7 @@ public class Collabinate
 		registerShutdownHook(graph);
 		
 		// create the engine
-		GraphServer engine = new GraphServer(graph);
+		GraphEngine engine = new GraphEngine(graph);
 		reader = engine;
 		writer = engine;
 		admin = new GraphAdmin(graph);

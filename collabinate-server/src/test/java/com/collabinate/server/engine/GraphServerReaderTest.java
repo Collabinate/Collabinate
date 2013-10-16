@@ -5,7 +5,7 @@ import org.junit.Test;
 
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
-import com.collabinate.server.engine.GraphServer;
+import com.collabinate.server.engine.GraphEngine;
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 
@@ -18,7 +18,7 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
 public class GraphServerReaderTest extends CollabinateReaderTest
 {
 	private KeyIndexableGraph graph;
-	private GraphServer server;
+	private GraphEngine server;
 	
 	@Override
 	CollabinateReader getReader()
@@ -37,13 +37,13 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 	 * 
 	 * @return The server to use.
 	 */
-	private GraphServer getServer()
+	private GraphEngine getServer()
 	{
 		if (null == server)
 		{
 			graph = (KeyIndexableGraph)GraphFactory.open(
 					"src/test/resources/graph.properties");
-			server = new GraphServer(graph);
+			server = new GraphEngine(graph);
 			server.setAutoCommit(false);
 		}
 		return server;
@@ -60,6 +60,6 @@ public class GraphServerReaderTest extends CollabinateReaderTest
 	public void should_not_allow_null_graph()
 	{
 		exception.expect(IllegalArgumentException.class);
-		new GraphServer(null);
+		new GraphEngine(null);
 	}
 }
