@@ -9,6 +9,8 @@ import org.restlet.data.MediaType;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
 
+import com.google.gson.JsonParser;
+
 /**
  * Tests for the Stream Resource
  * 
@@ -38,12 +40,20 @@ public class StreamResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void item_added_to_stream_should_have_entity_in_response_body()
+	public void item_added_to_stream_should_have_entity_in_post_response_body()
 	{
 		String entityBody = "TEST";
 		Response response = post(entityBody, MediaType.TEXT_PLAIN);
 		
 		assertEquals(entityBody, response.getEntityAsText());
+	}
+	
+	@Test
+	public void stream_should_be_json_object()
+	{
+		post("TEST", MediaType.TEXT_PLAIN);
+		// parser will throw if result is not json
+		new JsonParser().parse(get().getEntityAsText());
 	}
 	
 	@Test

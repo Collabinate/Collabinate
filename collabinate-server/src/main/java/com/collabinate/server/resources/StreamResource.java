@@ -3,10 +3,6 @@ package com.collabinate.server.resources;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
-import org.restlet.ext.atom.Content;
-import org.restlet.ext.atom.Entry;
-import org.restlet.ext.atom.Feed;
-import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
@@ -14,6 +10,7 @@ import org.restlet.resource.ServerResource;
 import com.collabinate.server.StreamEntry;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
+import com.google.common.base.Joiner;
 
 /**
  * Restful resource representing a series of stream entries for an entity.
@@ -26,8 +23,8 @@ public class StreamResource extends ServerResource
 	// TODO: some much heavier content processing is going to need to happen
 	// here to handle different XML and JSON representations of different
 	// stream types (e.g. activity streams, OData, raw)
-	@Get
-	public Feed getStream()
+	@Get("json")
+	public String getStream()
 	{
 		// extract necessary information from the context
 		CollabinateReader reader = (CollabinateReader)getContext()
@@ -40,29 +37,9 @@ public class StreamResource extends ServerResource
 		int count = null == countString ? DEFAULT_COUNT : 
 			Integer.parseInt(countString);
 		
-		// build a new Atom feed
-		Feed feed = new Feed();
-		feed.setTitle(entityId);
-		
-		// loop over the stream entries for the entity and add them
-		for (StreamEntry entry : 
-			reader.getStream(tenantId, entityId, start, count))
-		{
-			Entry atomEntry = new Entry();
-			atomEntry.setId(entry.getId());
-			atomEntry.setPublished(entry.getTime().toDate());
-			
-			Content content = new Content();
-			StringRepresentation representation = 
-					new StringRepresentation(entry.getContent().toCharArray());
-			content.setInlineContent(representation);
-			
-			atomEntry.setContent(content);
-			
-			feed.getEntries().add(atomEntry);
-		}
-		
-		return feed;
+		return "{\"items\":[" + Joiner.on(',')
+				.join(reader.getStream(tenantId, entityId, start, count))
+				+ "]}";
 	}
 	
 	@Post

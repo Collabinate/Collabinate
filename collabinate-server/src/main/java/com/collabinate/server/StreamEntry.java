@@ -84,4 +84,10 @@ public class StreamEntry
 	{
 		return content;
 	}
+	
+	@Override
+	public String toString()
+	{
+		return getContent();
+	}
 }
