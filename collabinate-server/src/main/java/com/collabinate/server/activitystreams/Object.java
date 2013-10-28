@@ -1,6 +1,7 @@
 package com.collabinate.server.activitystreams;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 
 /**
  * Represents an Activity Streams object serialization.
@@ -11,8 +12,8 @@ import org.joda.time.DateTime;
  */
 public class Object
 {
-	private String id;
-	private DateTime published;
+	protected String id;
+	protected String published;
 	
 	/**
 	 * No-arg constructor for serialization.
@@ -41,6 +42,6 @@ public class Object
 	 */
 	public DateTime getPublished()
 	{
-		return published;
+		return new DateTime(published, DateTimeZone.UTC);
 	}
 }

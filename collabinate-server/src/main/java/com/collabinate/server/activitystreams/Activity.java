@@ -9,7 +9,14 @@ package com.collabinate.server.activitystreams;
  */
 public class Activity extends Object
 {
-	private String actor;
+	protected String actor;
+	
+	public Activity(String id, String published, String actor)
+	{
+		this.id = id;
+		this.published = published;
+		this.actor = actor;
+	}
 	
 	/**
 	 * No-arg constructor for serialization.

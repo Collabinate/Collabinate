@@ -3,12 +3,18 @@ package com.collabinate.server.resources;
 import static org.hamcrest.CoreMatchers.*;
 import static org.junit.Assert.*;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+import org.joda.time.format.ISODateTimeFormat;
 import org.junit.Test;
 import org.restlet.Response;
 import org.restlet.data.MediaType;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
 
+import com.collabinate.server.activitystreams.Activity;
+import com.collabinate.server.activitystreams.Collection;
+import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 
 /**
@@ -64,6 +70,44 @@ public class StreamResourceTest extends GraphResourceTest
 		
 		assertThat(get().getEntityAsText(), containsString(entityBody));		
 	}
+	
+	@Test
+	public void activity_stream_date_in_post_should_be_used_in_stream()
+	{
+		DateTime dateTime = new DateTime(1977, 5, 13, 5, 13, DateTimeZone.UTC);
+		String dateString = dateTime.toString(ISODateTimeFormat.dateTime());
+		Activity activity = new Activity(null, dateString, null);
+		String entityBody = new Gson().toJson(activity);
+		
+		post(entityBody, MediaType.APPLICATION_JSON);
+		
+		Collection stream = (new Gson())
+				.fromJson(get().getEntityAsText(), Collection.class);
+		
+		assertEquals(dateTime, stream.getItems()[0].getPublished());
+	}
+	
+	@Test
+	public void stream_entries_should_appear_in_correct_date_order()
+	{
+		DateTime dateTime1 = new DateTime(1977, 5, 13, 5, 13, DateTimeZone.UTC);
+		String dateString1 = dateTime1.toString(ISODateTimeFormat.dateTime());
+		Activity activity1 = new Activity(null, dateString1, null);
+		String entityBody1 = new Gson().toJson(activity1);
+
+		DateTime dateTime2 = new DateTime(1973, 6, 28, 6, 28, DateTimeZone.UTC);
+		String dateString2 = dateTime2.toString(ISODateTimeFormat.dateTime());
+		Activity activity2 = new Activity(null, dateString2, null);
+		String entityBody2 = new Gson().toJson(activity2);
+		
+		post(entityBody1, MediaType.APPLICATION_JSON);
+		post(entityBody2, MediaType.APPLICATION_JSON);
+		
+		Collection stream = (new Gson())
+				.fromJson(get().getEntityAsText(), Collection.class);
+		
+		assertEquals(dateTime1, stream.getItems()[0].getPublished());
+}
 	
 	@Override
 	protected String getResourcePath()
