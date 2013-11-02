@@ -1,6 +1,7 @@
 package com.collabinate.server.resources;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
@@ -47,7 +48,7 @@ public class StreamResource extends ServerResource
 	}
 	
 	@Post
-	public void addEntry(String entryContent)
+	public void addEntry(String originalContent)
 	{
 		CollabinateWriter writer = (CollabinateWriter)getContext()
 				.getAttributes().get("collabinateWriter");
@@ -58,12 +59,41 @@ public class StreamResource extends ServerResource
 		
 		String entity = getAttribute("entityId");
 		
+		StreamEntry entry = getEntry(originalContent, entity);
+		
+		writer.addStreamEntry(getAttribute("tenantId"), entity, entry);
+		
+		// if there is no request entity return empty string with text type
+		if (null != originalContent)
+			getResponse().setEntity(originalContent, 
+					getRequest().getEntity().getMediaType());
+		else
+			getResponse().setEntity("", MediaType.TEXT_PLAIN);
+		
+		setLocationRef(new Reference(getReference()).addSegment(entry.getId()));
+		setStatus(Status.SUCCESS_CREATED);
+	}
+	
+	private StreamEntry getEntry(String originalContent, String entity)
+	{
 		Gson gson = new Gson();
+		boolean useOriginalContent = false;
 		Activity activity = null;
+		String id = null;
+		DateTime published = DateTime.now(DateTimeZone.UTC);
 		
 		try
 		{
-			activity = gson.fromJson(entryContent, Activity.class);
+			activity = gson.fromJson(originalContent, Activity.class);
+			
+			if (null != activity &&
+					null != activity.getPublished() &&
+					null != activity.getActor())
+			{
+				useOriginalContent = true;
+				id = activity.getId();
+				published = activity.getPublished();
+			}
 		}
 		catch (JsonSyntaxException e)
 		{
@@ -71,31 +101,15 @@ public class StreamResource extends ServerResource
 		
 		if (null == activity)
 		{
-			activity = new Activity(
-					(String)null,
-					DateTime.now(),
-					entity);
+			activity = new Activity(id, published, entity);
 			
-			activity.setContent(entryContent);
+			activity.setContent(originalContent);
 		}
 		
-		StreamEntry entry = new StreamEntry(
-				activity.getId(),
-				activity.getPublished(),
-				gson.toJson(activity));
+		String entryContent = useOriginalContent ? 
+				originalContent : gson.toJson(activity);
 		
-		writer.addStreamEntry(getAttribute("tenantId"), 
-				getAttribute("entityId"), entry);
-		
-		// if there is no request entity return empty string with text type
-		if (null != entryContent)
-			getResponse().setEntity(entryContent, 
-					getRequest().getEntity().getMediaType());
-		else
-			getResponse().setEntity("", MediaType.TEXT_PLAIN);
-		
-		setLocationRef(new Reference(getReference()).addSegment(entry.getId()));
-		setStatus(Status.SUCCESS_CREATED);
+		return new StreamEntry(id, published, entryContent);		
 	}
 	
 	private static final int DEFAULT_COUNT = 20;

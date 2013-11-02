@@ -13,6 +13,12 @@ import org.joda.time.format.ISODateTimeFormat;
 public class Activity extends ActivityStreamsObject
 {
 	protected ActivityStreamsObject actor;
+	protected ActivityStreamsObject generator;
+	protected ActivityStreamsObject object;
+	protected ActivityStreamsObject provider;
+	protected ActivityStreamsObject target;
+	protected String title;
+	protected String verb;
 	
 	public Activity(String id, DateTime published, String actor)
 	{

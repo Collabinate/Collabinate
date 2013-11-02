@@ -12,10 +12,18 @@ import org.joda.time.format.ISODateTimeFormat;
  */
 public class ActivityStreamsObject
 {
+	protected ActivityStreamsObject[] attachments;
+	protected ActivityStreamsObject author;
 	protected String content;
 	protected String displayName;
+	protected String[] downstreamDuplicates;
 	protected String id;
+	protected String objectType;
 	protected String published;
+	protected String summary;
+	protected String updated;
+	protected String[] upstreamDuplicates;
+	protected String url;
 	
 	/**
 	 * No-arg constructor for serialization.
