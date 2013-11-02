@@ -31,14 +31,22 @@ public abstract class GraphResourceTest
 	 * The graph used to back the server and admin.
 	 */
 	protected TinkerGraph graph;
+	
+	/**
+	 * The collabinate graph wrapping the graph store.
+	 */
+	protected CollabinateGraph collabinateGraph;
+	
 	/**
 	 * The CollabinateServer used for the resources.
 	 */
 	protected GraphEngine server;
+	
 	/**
 	 * The CollabinateAdmin used for the resources.
 	 */
 	protected GraphAdmin admin;
+	
 	/**
 	 * The restlet component used for testing.
 	 */
@@ -48,7 +56,7 @@ public abstract class GraphResourceTest
 	public void graphResourceSetup()
 	{
 		graph = new TinkerGraph();
-		CollabinateGraph collabinateGraph = CollabinateGraph.getInstance(graph);
+		collabinateGraph = CollabinateGraph.getInstance(graph);
 		server = new GraphEngine(collabinateGraph);
 		admin = new GraphAdmin(collabinateGraph);
 		Engine.setRestletLogLevel(Level.WARNING);
@@ -230,5 +238,15 @@ public abstract class GraphResourceTest
 	protected Response delete(String params)
 	{
 		return getResponse(getRequest(Method.DELETE, params));
+	}
+	
+	/**
+	 * Outputs the graph to a GraphML file. Useful for debugging.
+	 * 
+	 * @param fileName
+	 */
+	protected void exportGraph(String fileName)
+	{
+		collabinateGraph.exportGraph(fileName);
 	}
 }

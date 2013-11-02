@@ -1,5 +1,6 @@
 package com.collabinate.server.resources;
 
+import org.joda.time.DateTime;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
@@ -8,9 +9,12 @@ import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
 import com.collabinate.server.StreamEntry;
+import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.google.common.base.Joiner;
+import com.google.gson.Gson;
+import com.google.gson.JsonSyntaxException;
 
 /**
  * Restful resource representing a series of stream entries for an entity.
@@ -52,17 +56,43 @@ public class StreamResource extends ServerResource
 			throw new IllegalStateException(
 					"Context does not contain a CollabinateWriter");
 		
-		StreamEntry entry = new StreamEntry(null, null, entryContent);
+		String entity = getAttribute("entityId");
+		
+		Gson gson = new Gson();
+		Activity activity = null;
+		
+		try
+		{
+			activity = gson.fromJson(entryContent, Activity.class);
+		}
+		catch (JsonSyntaxException e)
+		{
+		}
+		
+		if (null == activity)
+		{
+			activity = new Activity(
+					(String)null,
+					DateTime.now(),
+					entity);
+			
+			activity.setContent(entryContent);
+		}
+		
+		StreamEntry entry = new StreamEntry(
+				activity.getId(),
+				activity.getPublished(),
+				gson.toJson(activity));
 		
 		writer.addStreamEntry(getAttribute("tenantId"), 
 				getAttribute("entityId"), entry);
 		
 		// if there is no request entity return empty string with text type
 		if (null != entryContent)
-			getResponse().setEntity(entry.getContent(), 
+			getResponse().setEntity(entryContent, 
 					getRequest().getEntity().getMediaType());
 		else
-			getResponse().setEntity(entry.getContent(), MediaType.TEXT_PLAIN);
+			getResponse().setEntity("", MediaType.TEXT_PLAIN);
 		
 		setLocationRef(new Reference(getReference()).addSegment(entry.getId()));
 		setStatus(Status.SUCCESS_CREATED);

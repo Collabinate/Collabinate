@@ -1,5 +1,8 @@
 package com.collabinate.server.activitystreams;
 
+import org.joda.time.DateTime;
+import org.joda.time.format.ISODateTimeFormat;
+
 /**
  * Represents an Activity Streams Activity serialization.
  * http://activitystrea.ms/specs/json/1.0/#activity
@@ -9,13 +12,16 @@ package com.collabinate.server.activitystreams;
  */
 public class Activity extends Object
 {
-	protected String actor;
+	protected Object actor;
 	
-	public Activity(String id, String published, String actor)
+	public Activity(String id, DateTime published, String actor)
 	{
 		this.id = id;
-		this.published = published;
-		this.actor = actor;
+		this.published = published.toString(
+				ISODateTimeFormat.basicDateTime().withZoneUTC());
+		Object actorObject = new Object();
+		actorObject.setDisplayName(actor);
+		this.actor = actorObject;
 	}
 	
 	/**
@@ -29,7 +35,7 @@ public class Activity extends Object
 	 * 
 	 * @return The entity that performed the activity.
 	 */
-	public String getActor()
+	public Object getActor()
 	{
 		return actor;
 	}
