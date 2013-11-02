@@ -10,16 +10,16 @@ import org.joda.time.format.ISODateTimeFormat;
  * @author mafuba
  *
  */
-public class Activity extends Object
+public class Activity extends ActivityStreamsObject
 {
-	protected Object actor;
+	protected ActivityStreamsObject actor;
 	
 	public Activity(String id, DateTime published, String actor)
 	{
 		this.id = id;
 		this.published = published.toString(
 				ISODateTimeFormat.basicDateTime().withZoneUTC());
-		Object actorObject = new Object();
+		ActivityStreamsObject actorObject = new ActivityStreamsObject();
 		actorObject.setDisplayName(actor);
 		this.actor = actorObject;
 	}
@@ -35,7 +35,7 @@ public class Activity extends Object
 	 * 
 	 * @return The entity that performed the activity.
 	 */
-	public Object getActor()
+	public ActivityStreamsObject getActor()
 	{
 		return actor;
 	}

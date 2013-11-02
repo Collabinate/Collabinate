@@ -12,7 +12,7 @@ import org.restlet.data.Method;
 import org.restlet.data.Status;
 
 import com.collabinate.server.activitystreams.Activity;
-import com.collabinate.server.activitystreams.Collection;
+import com.collabinate.server.activitystreams.ActivityStreamsCollection;
 import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 
@@ -79,8 +79,8 @@ public class StreamResourceTest extends GraphResourceTest
 		
 		post(entityBody, MediaType.APPLICATION_JSON);
 		
-		Collection stream = (new Gson())
-				.fromJson(get().getEntityAsText(), Collection.class);
+		ActivityStreamsCollection stream = (new Gson()).fromJson(
+				get().getEntityAsText(), ActivityStreamsCollection.class);
 		
 		assertEquals(dateTime, stream.getItems()[0].getPublished());
 	}
@@ -99,8 +99,8 @@ public class StreamResourceTest extends GraphResourceTest
 		post(entityBody1, MediaType.APPLICATION_JSON);
 		post(entityBody2, MediaType.APPLICATION_JSON);
 		
-		Collection stream = (new Gson())
-				.fromJson(get().getEntityAsText(), Collection.class);
+		ActivityStreamsCollection stream = (new Gson()).fromJson(
+				get().getEntityAsText(), ActivityStreamsCollection.class);
 		
 		assertEquals(dateTime1, stream.getItems()[0].getPublished());
 }

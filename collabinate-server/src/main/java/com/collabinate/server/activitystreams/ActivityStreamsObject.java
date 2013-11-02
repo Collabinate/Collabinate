@@ -10,7 +10,7 @@ import org.joda.time.format.ISODateTimeFormat;
  * @author mafuba
  *
  */
-public class Object
+public class ActivityStreamsObject
 {
 	protected String content;
 	protected String displayName;
@@ -20,7 +20,7 @@ public class Object
 	/**
 	 * No-arg constructor for serialization.
 	 */
-	Object() { }
+	ActivityStreamsObject() { }
 
 	/**
 	 * Sets a natural-language description of the object encoded as a single

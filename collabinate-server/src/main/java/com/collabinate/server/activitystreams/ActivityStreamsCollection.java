@@ -7,16 +7,16 @@ package com.collabinate.server.activitystreams;
  * @author mafuba
  *
  */
-public class Collection
+public class ActivityStreamsCollection
 {
 	private Integer totalItems;
-	private Object[] items;
+	private ActivityStreamsObject[] items;
 	private String url;
 	
 	/**
 	 * No-arg constructor for serialization.
 	 */
-	Collection() { }
+	ActivityStreamsCollection() { }
 	
 	/**
 	 * Non-negative integer specifying the total number of activities within the
@@ -38,7 +38,7 @@ public class Collection
 	 * 
 	 * @return An array containing a listing of Objects of any object type.
 	 */
-	public Object[] getItems()
+	public ActivityStreamsObject[] getItems()
 	{
 		return items;
 	}
