@@ -1,6 +1,7 @@
 package com.collabinate.server.engine;
 
 import com.collabinate.server.Tenant;
+import com.collabinate.server.engine.CollabinateGraph.TenantMap;
 import com.google.gson.Gson;
 import com.tinkerpop.blueprints.Vertex;
 
@@ -27,6 +28,9 @@ public class GraphAdmin implements CollabinateAdmin
 	@Override
 	public void putTenant(Tenant tenant)
 	{
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(ADMIN_TENANT));
+		
 		Vertex tenantVertex = graph.getVertex(
 				getTenantVertexId(tenant.getId()));
 		
@@ -43,11 +47,16 @@ public class GraphAdmin implements CollabinateAdmin
 		tenantVertex.setProperty(STRING_TENANT, tenantJson);
 		
 		graph.commit();
+		
+		graph.setCurrentTenant(savedTenant);
 	}
 
 	@Override
 	public Tenant getTenant(String tenantId)
 	{
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(ADMIN_TENANT));
+		
 		Vertex tenantVertex = graph.getVertex(getTenantVertexId(tenantId));
 
 		Tenant tenant = null;
@@ -61,6 +70,8 @@ public class GraphAdmin implements CollabinateAdmin
 		
 		graph.commit();
 		
+		graph.setCurrentTenant(savedTenant);
+
 		return tenant;
 	}
 	
@@ -73,4 +84,5 @@ public class GraphAdmin implements CollabinateAdmin
 	private static final String STRING_TENANT = "tenant";
 	private static final String STRING_TENANTID = "tenantId";
 	private static final String STRING_TENANTNAME = "tenantName";
+	private static final String ADMIN_TENANT = "ADMIN";
 }
