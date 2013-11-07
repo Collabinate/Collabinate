@@ -16,6 +16,7 @@ import org.restlet.security.Authenticator;
 import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
+import com.collabinate.server.resources.DatabaseExportResource;
 import com.collabinate.server.resources.FeedResource;
 import com.collabinate.server.resources.FollowingEntityResource;
 import com.collabinate.server.resources.StreamEntryResource;
@@ -81,6 +82,7 @@ public class CollabinateApplication extends Application
 			.setMatchingMode(Template.MODE_STARTS_WITH);
 		
 		Router adminRouter = new Router(getContext());
+		adminRouter.attach("/database/export", DatabaseExportResource.class);
 		adminRouter.attach("/tenants/{tenantId}", TenantResource.class);
 		adminRouter.attach("/tenants/{tenantId}/keys",
 				TenantKeysResource.class);

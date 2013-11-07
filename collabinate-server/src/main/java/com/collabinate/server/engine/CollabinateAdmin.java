@@ -25,4 +25,14 @@ public interface CollabinateAdmin
 	 * @return The tenant with the given ID, or null if none exists.
 	 */
 	public Tenant getTenant(String tenantId);
+	
+	/**
+	 * Gets the underlying data store as a string.
+	 * 
+	 * CAUTION: this can be large, and should not be used for large production
+	 * data.
+	 * 
+	 * @return The service data store as a string.
+	 */
+	public String exportDatabase();
 }

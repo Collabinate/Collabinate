@@ -75,6 +75,12 @@ public class GraphAdmin implements CollabinateAdmin
 		return tenant;
 	}
 	
+	@Override
+	public String exportDatabase()
+	{
+		return graph.exportGraph();
+	}
+	
 	private String getTenantVertexId(String tenantId)
 	{
 		return STRING_TENANT_PREFIX + tenantId;

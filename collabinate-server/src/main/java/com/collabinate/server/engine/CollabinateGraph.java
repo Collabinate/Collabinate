@@ -1,7 +1,9 @@
 package com.collabinate.server.engine;
 
+import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.AbstractMap;
 import java.util.HashSet;
 import java.util.Set;
@@ -144,6 +146,26 @@ public class CollabinateGraph extends PartitionIndexableGraph<IndexableGraph>
 		if (allowCommits && baseGraph.getFeatures().supportsTransactions)
 		{
 			((TransactionalGraph)baseGraph).commit();
+		}
+	}
+	
+	/**
+	 * Outputs the graph to GraphML.
+	 * 
+	 * @return A String containing the GraphML for the database.
+	 */
+	public String exportGraph()
+	{
+		ByteArrayOutputStream stream = new ByteArrayOutputStream();
+		try
+		{
+			GraphMLWriter.outputGraph(this, stream);
+			return stream.toString(StandardCharsets.UTF_8.name());
+		}
+		catch (Exception e)
+		{
+			//TODO: handle
+			return null;
 		}
 	}
 	
