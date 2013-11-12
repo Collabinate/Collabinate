@@ -1,5 +1,11 @@
 package com.collabinate.server.activitystreams;
 
+import com.google.gson.JsonArray;
+import com.google.gson.JsonElement;
+import com.google.gson.JsonObject;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonParser;
+
 /**
  * Represents an Activity Streams collection serialization.
  * http://activitystrea.ms/specs/json/1.0/#collection
@@ -9,48 +15,96 @@ package com.collabinate.server.activitystreams;
  */
 public class ActivityStreamsCollection
 {
-	private Integer totalItems;
-	private ActivityStreamsObject[] items;
-	private String url;
+	/**
+	 * The internal representation of the object as JSON.
+	 */
+	protected JsonObject jsonObject;
 	
 	/**
-	 * No-arg constructor for serialization.
+	 * Default constructor. Creates the collection with an empty items array.
 	 */
-	ActivityStreamsCollection() { }
-	
-	/**
-	 * Non-negative integer specifying the total number of activities within the
-	 * stream. The Stream serialization MAY contain a count property.
-	 * 
-	 * @return Non-negative integer specifying the total number of activities
-	 * within the stream.
-	 */
-	public Integer getTotalItems()
+	public ActivityStreamsCollection()
 	{
-		return totalItems;
+		jsonObject = new JsonObject();
+		
+		ensureDefaultFields();
 	}
 	
 	/**
-	 * An array containing a listing of Objects of any object type. If used in
-	 * combination with the url property, the items array can be used to provide
-	 * a subset of the objects that may be found in the resource identified by
-	 * the url.
+	 * Creates a collection from the given json. If the json is not valid, the
+	 * string will be added to a "content" property in the collection. If the
+	 * json does not contain an "items" property or it is not an array, an items
+	 * array will be added.
 	 * 
-	 * @return An array containing a listing of Objects of any object type.
+	 * @param json The json representation of the collection to create.
 	 */
-	public ActivityStreamsObject[] getItems()
+	public ActivityStreamsCollection(String json)
 	{
-		return items;
+		if (null != json)
+		{
+			JsonParser parser = new JsonParser();
+			try
+			{
+				JsonElement element = parser.parse(json);
+				if (element.isJsonObject())
+					jsonObject = element.getAsJsonObject();
+			}
+			catch (JsonParseException e) { }
+		}
+		
+		if (null == jsonObject)
+		{
+			jsonObject = new JsonObject();
+			jsonObject.addProperty(CONTENT, json);
+		}
+		
+		ensureDefaultFields();
 	}
 	
 	/**
-	 * An IRI [RFC3987] referencing a JSON document containing the full listing
-	 * of objects in the collection.
-	 * 
-	 * @return An IRI [RFC3987].
+	 * Provides a means of ensuring that all required fields for the collection
+	 * are in place. Called in the constructor. By default only the items
+	 * property is required in the base ActivityStreamsCollection.
 	 */
-	public String getUrl()
+	protected void ensureDefaultFields()
 	{
-		return url;
+		if (!jsonObject.has(ITEMS) || !jsonObject.get(ITEMS).isJsonArray())
+		{
+			JsonArray items = new JsonArray();
+			jsonObject.add(ITEMS, items);
+		}
 	}
+
+	/**
+	 * Returns the activity contained at the given index in the items property
+	 * of the collection.
+	 * 
+	 * @return The activity at the given index.
+	 */
+	public Activity get(int index)
+	{
+		return new Activity(jsonObject.getAsJsonArray(ITEMS)
+				.get(index).toString());
+	}
+	
+	/**
+	 * Adds the given activity to the collection.
+	 * 
+	 * @param activity The activity to add.
+	 */
+	public void add(Activity activity)
+	{
+		JsonParser parser = new JsonParser();
+		jsonObject.getAsJsonArray(ITEMS)
+			.add(parser.parse(activity.toString()));
+	}
+	
+	@Override
+	public String toString()
+	{
+		return jsonObject.toString();
+	}
+	
+	protected static final String ITEMS = "items";
+	protected static final String CONTENT = "content";
 }

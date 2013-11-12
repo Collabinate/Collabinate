@@ -1,7 +1,9 @@
 package com.collabinate.server.activitystreams;
 
 import org.joda.time.DateTime;
-import org.joda.time.format.ISODateTimeFormat;
+import org.joda.time.DateTimeZone;
+
+import com.google.gson.JsonElement;
 
 /**
  * Represents an Activity Streams Activity serialization.
@@ -12,37 +14,70 @@ import org.joda.time.format.ISODateTimeFormat;
  */
 public class Activity extends ActivityStreamsObject
 {
-	protected ActivityStreamsObject actor;
-	protected ActivityStreamsObject generator;
-	protected ActivityStreamsObject object;
-	protected ActivityStreamsObject provider;
-	protected ActivityStreamsObject target;
-	protected String title;
-	protected String verb;
-	
-	public Activity(String id, DateTime published, String actor)
+	/**
+	 * Constructor for a default activity.
+	 */
+	public Activity()
 	{
-		this.id = id;
-		this.published = published.toString(
-				ISODateTimeFormat.basicDateTime().withZoneUTC());
-		ActivityStreamsObject actorObject = new ActivityStreamsObject();
-		actorObject.setDisplayName(actor);
-		this.actor = actorObject;
+		super();
 	}
 	
 	/**
-	 * No-arg constructor for serialization.
+	 * Constructs a new Activity from the given string. If the string contains a
+	 * JSON object, it will be used as the base of the object. If the string is
+	 * not a valid JSON object, it will instead be added to the content property
+	 * of a new ActivityStreams JSON object representation.
+	 * 
+	 * @param content
 	 */
-	Activity() { }
+	public Activity(String content)
+	{
+		super(content);
+	}
+	
+	@Override
+	protected void ensureDefaultFields()
+	{
+		// test for published
+		if (null == getPublished())
+		{
+			setPublished(DateTime.now(DateTimeZone.UTC));
+		}
+		
+		// test for actor
+		if (null == getActor())
+		{
+			setActor(new ActivityStreamsObject());
+		}
+	}
 	
 	/**
-	 * Describes the entity that performed the activity. An activity MUST
-	 * contain one actor property whose value is a single Object.
+	 * Gets the entity that performed the activity. An activity MUST contain one
+	 * actor property whose value is a single Object.
 	 * 
 	 * @return The entity that performed the activity.
 	 */
 	public ActivityStreamsObject getActor()
 	{
-		return actor;
+		JsonElement element = jsonObject.get(ACTOR);
+		if (null != element && element.isJsonObject())
+		{
+			return new ActivityStreamsObject(element.toString());
+		}
+		
+		return null;
 	}
+	
+	/**
+	 * Sets the entity that performed the activity. An activity MUST contain one
+	 * actor property whose value is a single Object.
+	 * 
+	 * @return The entity that performed the activity.
+	 */
+	public void setActor(ActivityStreamsObject actor)
+	{
+		jsonObject.add(ACTOR, actor.jsonObject);
+	}
+
+	protected static final String ACTOR = "actor";
 }

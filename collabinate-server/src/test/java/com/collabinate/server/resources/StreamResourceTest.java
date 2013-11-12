@@ -13,7 +13,6 @@ import org.restlet.data.Status;
 
 import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.activitystreams.ActivityStreamsCollection;
-import com.google.gson.Gson;
 import com.google.gson.JsonParser;
 
 /**
@@ -74,35 +73,36 @@ public class StreamResourceTest extends GraphResourceTest
 	public void activity_stream_date_in_post_should_be_used_in_stream()
 	{
 		DateTime dateTime = new DateTime(1977, 5, 13, 5, 13, DateTimeZone.UTC);
-		Activity activity = new Activity(null, dateTime, null);
-		String entityBody = new Gson().toJson(activity);
+		Activity activity = new Activity();
+		activity.setPublished(dateTime);
+		String entityBody = activity.toString();
 		
 		post(entityBody, MediaType.APPLICATION_JSON);
 		
-		ActivityStreamsCollection stream = (new Gson()).fromJson(
-				get().getEntityAsText(), ActivityStreamsCollection.class);
+		ActivityStreamsCollection stream = 
+				new ActivityStreamsCollection(get().getEntityAsText());
 		
-		assertEquals(dateTime, stream.getItems()[0].getPublished());
+		assertEquals(dateTime, stream.get(0).getPublished());
 	}
 	
 	@Test
 	public void stream_entries_should_appear_in_correct_date_order()
 	{
 		DateTime dateTime1 = new DateTime(1977, 5, 13, 5, 13, DateTimeZone.UTC);
-		Activity activity1 = new Activity(null, dateTime1, null);
-		String entityBody1 = new Gson().toJson(activity1);
+		Activity activity1 = new Activity();
+		activity1.setPublished(dateTime1);
 
 		DateTime dateTime2 = new DateTime(1973, 6, 28, 6, 28, DateTimeZone.UTC);
-		Activity activity2 = new Activity(null, dateTime2, null);
-		String entityBody2 = new Gson().toJson(activity2);
+		Activity activity2 = new Activity();
+		activity2.setPublished(dateTime2);
 		
-		post(entityBody1, MediaType.APPLICATION_JSON);
-		post(entityBody2, MediaType.APPLICATION_JSON);
+		post(activity1.toString(), MediaType.APPLICATION_JSON);
+		post(activity2.toString(), MediaType.APPLICATION_JSON);
 		
-		ActivityStreamsCollection stream = (new Gson()).fromJson(
-				get().getEntityAsText(), ActivityStreamsCollection.class);
+		ActivityStreamsCollection stream = 
+				new ActivityStreamsCollection(get().getEntityAsText());
 		
-		assertEquals(dateTime1, stream.getItems()[0].getPublished());
+		assertEquals(dateTime1, stream.get(0).getPublished());
 }
 	
 	@Override
