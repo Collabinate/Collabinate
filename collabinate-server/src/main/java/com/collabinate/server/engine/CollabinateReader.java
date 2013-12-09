@@ -3,6 +3,7 @@ package com.collabinate.server.engine;
 import java.util.List;
 
 import com.collabinate.server.StreamEntry;
+import com.collabinate.server.activitystreams.ActivityStreamsObject;
 
 /**
  * The interface for a Collabinate server that performs read (retrieval)
@@ -16,6 +17,7 @@ public interface CollabinateReader
 	/**
 	 * Retrieves a collection of entries for an entity, with paging ability. 
 	 * 
+	 * @param tenantId the tenant for which the request is processed.
 	 * @param entityId The ID of the entity for which to retrieve a stream.
 	 * @param startIndex The zero-based index of the first element to retrieve.
 	 * @param entriesToReturn The maximum number of stream entries to retrieve.
@@ -28,6 +30,7 @@ public interface CollabinateReader
 	 * Retrieves a collection of stream entries for the entities that a user
 	 * follows, in chronological order.
 	 * 
+	 * @param tenantId the tenant for which the request is processed.
 	 * @param userId The ID of the user for which to retrieve a feed.
 	 * @param startIndex The zero-based index of the first element to retrieve.
 	 * @param entriesToReturn The maximum number of feed entries to retrieve.
@@ -39,6 +42,7 @@ public interface CollabinateReader
 	/**
 	 * Retrieves a boolean value for whether a user is following an entity.
 	 * 
+	 * @param tenantId the tenant for which the request is processed.
 	 * @param userId The ID of the user for which to determine if an entity is
 	 * followed
 	 * @param entityId The ID of the entity to check if the user is following.
@@ -46,4 +50,15 @@ public interface CollabinateReader
 	 */
 	public Boolean isUserFollowingEntity(String tenantId, String userId,
 			String entityId);
+	
+	/**
+	 * Retrieves the collection of entities followed by a user.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param userId the ID of the user for which to retrieve the followed
+	 * entities.
+	 * @return A collection of entities followed by the user
+	 */
+	public List<ActivityStreamsObject> getFollowing(String tenantId,
+			String userId);
 }

@@ -10,6 +10,7 @@ import java.util.PriorityQueue;
 import org.joda.time.DateTime;
 
 import com.collabinate.server.StreamEntry;
+import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.collabinate.server.engine.CollabinateGraph.TenantMap;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
@@ -573,6 +574,35 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		graph.setCurrentTenant(savedTenant);
 
 		return false;
+	}
+
+	@Override
+	public List<ActivityStreamsObject> getFollowing(String tenantId,
+			String userId)
+	{
+		userId = tenantId + "/" + userId;
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(tenantId));
+
+		Vertex user = getOrCreateEntityVertex(userId);
+		List<ActivityStreamsObject> following =
+				new ArrayList<ActivityStreamsObject>();
+		
+		// find all the followed entities and add them to the following list
+		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
+		{
+			ActivityStreamsObject entity = new ActivityStreamsObject();
+			// remove the tenant id from the entity id before adding
+			entity.setId(edge.getVertex(Direction.IN).getId().toString()
+					.replaceFirst(tenantId + "/", ""));
+			following.add(entity);
+		}
+
+		graph.commit();
+		
+		graph.setCurrentTenant(savedTenant);
+
+		return following;
 	}
 
 	/**

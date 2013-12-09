@@ -16,14 +16,7 @@ import org.restlet.security.Authenticator;
 import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
-import com.collabinate.server.resources.DatabaseExportResource;
-import com.collabinate.server.resources.FeedResource;
-import com.collabinate.server.resources.FollowingEntityResource;
-import com.collabinate.server.resources.StreamEntryResource;
-import com.collabinate.server.resources.StreamResource;
-import com.collabinate.server.resources.TenantKeysResource;
-import com.collabinate.server.resources.TenantResource;
-import com.collabinate.server.resources.TraceResource;
+import com.collabinate.server.resources.*;
 
 /**
  * Main Restlet application
@@ -104,6 +97,8 @@ public class CollabinateApplication extends Application
 				StreamEntryResource.class);
 		resourceRouter.attach("/entities/{entityId}/stream",
 				StreamResource.class);
+		resourceRouter.attach("/users/{userId}/following",
+				FollowingResource.class);
 		resourceRouter.attach("/users/{userId}/following/{entityId}",
 				FollowingEntityResource.class);
 		resourceRouter.attach("/users/{userId}/feed", FeedResource.class);
