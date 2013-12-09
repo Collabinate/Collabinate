@@ -494,6 +494,15 @@ public abstract class CollabinateReaderTest
 	}
 	
 	@Test
+	public void follow_same_entity_twice_should_not_cause_problem_reading_feed()
+	{
+		writer.followEntity("c", "user", "entity");
+		writer.followEntity("c", "user", "entity");
+		
+		reader.getFeed("c", "user", 0, 20);
+	}
+	
+	@Test
 	public void streams_for_the_same_entityId_for_different_tenants_should_be_different()
 	{
 		writer.addStreamEntry("c1", "entity", new StreamEntry("1", null, null));

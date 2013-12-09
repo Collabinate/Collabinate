@@ -464,12 +464,25 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		TenantMap savedTenant =
 				graph.setCurrentTenant(graph.getTenantMap(tenantId));
 
+		boolean alreadyFollowed = false;
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		
-		user.addEdge(STRING_FOLLOWS, entity);
+		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
+		{
+			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
+			{
+				alreadyFollowed = true;
+				break;
+			}
+		}
 		
-		insertFeedEntity(user, entity);
+		if (!alreadyFollowed)
+		{
+			user.addEdge(STRING_FOLLOWS, entity);
+			
+			insertFeedEntity(user, entity);
+		}
 		
 		graph.commit();
 		
