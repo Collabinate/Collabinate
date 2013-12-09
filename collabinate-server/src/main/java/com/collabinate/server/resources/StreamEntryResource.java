@@ -6,6 +6,7 @@ import org.restlet.ext.atom.Content;
 import org.restlet.ext.atom.Entry;
 import org.restlet.ext.atom.Feed;
 import org.restlet.representation.StringRepresentation;
+import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
 import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
@@ -118,5 +119,23 @@ public class StreamEntryResource extends ServerResource
 			getResponse().setEntity(entry.getContent(), MediaType.TEXT_PLAIN);
 		
 		setStatus(Status.SUCCESS_OK);
+	}
+	
+	@Delete
+	public void deleteEntry()
+	{
+		// extract necessary information from the context
+		String tenantId = getAttribute("tenantId");
+		String entityId = getAttribute("entityId");
+		String entryId = getAttribute("entryId");
+		CollabinateWriter writer = (CollabinateWriter)getContext()
+				.getAttributes().get("collabinateWriter");
+		
+		if (null == writer)
+			throw new IllegalStateException(
+					"Context does not contain a CollabinateWriter");
+		
+		// remove any existing entry
+		writer.deleteStreamEntry(tenantId, entityId, entryId);
 	}
 }

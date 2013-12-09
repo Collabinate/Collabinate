@@ -34,6 +34,20 @@ public class StreamEntryResourceTest extends GraphResourceTest
 		put("test", MediaType.TEXT_PLAIN);
 		assertThat(get().getEntityAsText(), containsString("test"));		
 	}
+	
+	@Test
+	public void delete_nonexistent_entry_should_return_200()
+	{
+		assertEquals(Status.SUCCESS_OK, delete().getStatus());
+	}
+	
+	@Test
+	public void get_deleted_entry_should_return_404()
+	{
+		put();
+		delete();
+		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, get().getStatus());
+	}
 
 	@Override
 	protected String getResourcePath()
