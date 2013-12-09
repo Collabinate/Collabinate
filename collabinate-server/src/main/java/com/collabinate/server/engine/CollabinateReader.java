@@ -57,8 +57,19 @@ public interface CollabinateReader
 	 * @param tenantId the tenant for which the request is processed.
 	 * @param userId the ID of the user for which to retrieve the followed
 	 * entities.
-	 * @return A collection of entities followed by the user
+	 * @return A collection of entities followed by the given user.
 	 */
 	public List<ActivityStreamsObject> getFollowing(String tenantId,
 			String userId);
+	
+	/**
+	 * Retrieves the collection of users that follow an entity.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param entityId the ID of the entity for which the followers will be
+	 * retrieved.
+	 * @return A collection of users following the given entity.
+	 */
+	public List<ActivityStreamsObject> getFollowers(String tenantId,
+			String entityId);
 }

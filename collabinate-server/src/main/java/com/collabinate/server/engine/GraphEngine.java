@@ -604,6 +604,35 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 
 		return following;
 	}
+	
+	@Override
+	public List<ActivityStreamsObject> getFollowers(String tenantId,
+			String entityId)
+	{
+		entityId = tenantId + "/" + entityId;
+		TenantMap savedTenant =
+				graph.setCurrentTenant(graph.getTenantMap(tenantId));
+
+		Vertex entity = getOrCreateEntityVertex(entityId);
+		List<ActivityStreamsObject> followers =
+				new ArrayList<ActivityStreamsObject>();
+		
+		// find all the following users and add them to the followers list
+		for (Edge edge : entity.getEdges(Direction.IN, STRING_FOLLOWS))
+		{
+			ActivityStreamsObject user = new ActivityStreamsObject();
+			// remove the tenant id from the user id before adding
+			user.setId(edge.getVertex(Direction.OUT).getId().toString()
+					.replaceFirst(tenantId + "/", ""));
+			followers.add(user);
+		}
+
+		graph.commit();
+		
+		graph.setCurrentTenant(savedTenant);
+
+		return followers;
+	}
 
 	/**
 	 * Inserts an entity into the feed for a user.
