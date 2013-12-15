@@ -3,7 +3,6 @@ package com.collabinate.server.resources;
 import static org.junit.Assert.*;
 
 import java.io.StringReader;
-import java.net.URL;
 
 import javax.xml.XMLConstants;
 import javax.xml.transform.Source;
@@ -36,7 +35,6 @@ public class DatabaseExportResourceTest extends GraphResourceTest
 		assertTrue(isValidGraphml(get().getEntityAsText()));
 	}
 	
-	//TODO: put the graphml schema in a local file to speed the test up
 	private boolean isValidGraphml(String graphMl)
 	{
 		SchemaFactory factory = SchemaFactory
@@ -44,7 +42,8 @@ public class DatabaseExportResourceTest extends GraphResourceTest
 		Schema schema;
 		try
 		{
-			schema = factory.newSchema(new URL(GRAPHML_SCHEMA_URL));
+			schema = factory.newSchema(getClass().getClassLoader()
+					.getResource(GRAPHML_SCHEMA_FILE));
 		}
 		catch (Exception e)
 		{
@@ -76,6 +75,5 @@ public class DatabaseExportResourceTest extends GraphResourceTest
 		return "/1/admin/database/export";
 	}
 	
-	private static final String GRAPHML_SCHEMA_URL = 
-			"http://graphml.graphdrawing.org/xmlns/1.0/graphml-structure.xsd";
+	private static final String GRAPHML_SCHEMA_FILE = "graphml-structure.xsd";
 }
