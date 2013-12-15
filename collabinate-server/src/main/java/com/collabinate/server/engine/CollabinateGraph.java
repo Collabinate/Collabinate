@@ -164,7 +164,7 @@ public class CollabinateGraph extends PartitionIndexableGraph<IndexableGraph>
 		}
 		catch (Exception e)
 		{
-			//TODO: handle
+			e.printStackTrace();
 			return null;
 		}
 	}
@@ -185,9 +185,9 @@ public class CollabinateGraph extends PartitionIndexableGraph<IndexableGraph>
 			file.flush();
 			file.close();
 		}
-		catch (IOException exc)
+		catch (IOException e)
 		{
-			// TODO: handle
+			e.printStackTrace();
 		}
 	}
 	
