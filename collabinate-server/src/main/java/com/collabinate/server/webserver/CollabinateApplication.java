@@ -81,6 +81,8 @@ public class CollabinateApplication extends Application
 		Router adminRouter = new Router(getContext());
 		adminRouter.attach("/database/export", DatabaseExportResource.class);
 		adminRouter.attach("/tenants/{tenantId}", TenantResource.class);
+		adminRouter.attach("/tenants/{tenantId}/keys/{key}",
+				TenantKeyResource.class);
 		adminRouter.attach("/tenants/{tenantId}/keys",
 				TenantKeysResource.class);
 		adminAuthenticator.setNext(adminRouter);

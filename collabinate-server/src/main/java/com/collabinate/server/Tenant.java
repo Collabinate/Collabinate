@@ -96,6 +96,17 @@ public class Tenant
 	}
 	
 	/**
+	 * Adds the given API key to the tenant if it does not already exist.
+	 * 
+	 * @param key
+	 */
+	public void addKey(String key)
+	{
+		if (!keys.contains(key))
+			keys.add(key);
+	}
+	
+	/**
 	 * Provides a read-only view of the keys for the tenant.
 	 *  
 	 * @return A read-only List of the keys for the tenant.
