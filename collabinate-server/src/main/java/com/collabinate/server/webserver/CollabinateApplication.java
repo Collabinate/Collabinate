@@ -8,11 +8,15 @@ import org.restlet.Application;
 import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.Restlet;
+import org.restlet.data.ChallengeScheme;
 import org.restlet.resource.Directory;
 import org.restlet.routing.Router;
 import org.restlet.routing.Template;
 import org.restlet.security.Authenticator;
+import org.restlet.security.ChallengeAuthenticator;
+import org.restlet.security.SecretVerifier;
 
+import com.collabinate.server.Collabinate;
 import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
@@ -110,16 +114,45 @@ public class CollabinateApplication extends Application
 		return primaryRouter;
 	}
 	
+	/**
+	 * Provides an authenticator for administration resources.
+	 * 
+	 * @return An authenticator for securing administration resources.
+	 */
 	private Authenticator getAdminAuthenticator()
 	{
-		return new Authenticator(getContext()) {
-			
-			@Override
-			protected boolean authenticate(Request request, Response response)
-			{
-				return true;
-			}
-		};
+		final String adminUsername = Collabinate.getConfiguration()
+				.getString("adminUsername", "");
+		final String adminPassword = Collabinate.getConfiguration()
+				.getString("adminPassword", "");
+		
+		// only authenticate if the admin credentials are configured
+		if (adminUsername.equals(""))
+		{
+			return new Authenticator(null) {
+				@Override
+				protected boolean authenticate(Request request, Response response)
+				{
+					return true;
+				}
+			};
+		}
+		
+		return new ChallengeAuthenticator(
+				getContext(),
+				false,
+				ChallengeScheme.HTTP_BASIC,
+				"Collabinate",
+				new SecretVerifier() {
+					
+					@Override
+					public int verify(String identifier, char[] secret)
+					{
+						return ((adminUsername.equals(identifier)) &&
+								compare(adminPassword.toCharArray(), secret)) ?
+									RESULT_VALID : RESULT_INVALID;
+					}
+				});
 	}
 
 	/**
