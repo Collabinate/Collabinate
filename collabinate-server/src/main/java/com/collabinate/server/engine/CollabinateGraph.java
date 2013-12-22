@@ -159,7 +159,7 @@ public class CollabinateGraph extends PartitionIndexableGraph<IndexableGraph>
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		try
 		{
-			GraphMLWriter.outputGraph(this, stream);
+			GraphMLWriter.outputGraph(baseGraph, stream);
 			return stream.toString(StandardCharsets.UTF_8.name());
 		}
 		catch (Exception e)
@@ -178,7 +178,7 @@ public class CollabinateGraph extends PartitionIndexableGraph<IndexableGraph>
 	{
 		try
 		{
-			GraphMLWriter writer = new GraphMLWriter(this);
+			GraphMLWriter writer = new GraphMLWriter(baseGraph);
 			writer.setNormalize(true);
 			FileOutputStream file = new FileOutputStream(fileName);
 			writer.outputGraph(file);
