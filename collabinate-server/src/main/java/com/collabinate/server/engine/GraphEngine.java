@@ -82,12 +82,13 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * @param entityId The ID of the entity for which to retrieve a vertex.
 	 * @return The vertex for the given entity.
 	 */
-	private Vertex getOrCreateEntityVertex(final String entityId)
+	private synchronized Vertex getOrCreateEntityVertex(final String entityId)
 	{
 		Vertex entityVertex = graph.getVertex(entityId);
 		if (null == entityVertex)
 		{
 			entityVertex = graph.addVertex(entityId);
+			graph.commit();
 		}
 		return entityVertex;
 	}
