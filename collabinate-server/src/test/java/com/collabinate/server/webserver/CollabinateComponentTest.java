@@ -38,7 +38,7 @@ public class CollabinateComponentTest
 		graph = (KeyIndexableGraph)GraphFactory.open(
 				"src/test/resources/graph.properties");
 		GraphEngine server = new GraphEngine(
-				CollabinateGraph.getInstance(graph));
+				new CollabinateGraph(graph));
 		Engine.setRestletLogLevel(Level.WARNING);
 		component = new CollabinateComponent(server, server, null,
 			new Authenticator(null) {

@@ -50,7 +50,7 @@ public class Collabinate
 		if (!(configuredGraph instanceof KeyIndexableGraph))
 			throw new IllegalStateException(
 					"Configured graph is not a KeyIndexableGraph");
-		CollabinateGraph graph = CollabinateGraph.getInstance(
+		CollabinateGraph graph = new CollabinateGraph(
 				(KeyIndexableGraph)configuredGraph);
 		registerShutdownHook(graph);
 		

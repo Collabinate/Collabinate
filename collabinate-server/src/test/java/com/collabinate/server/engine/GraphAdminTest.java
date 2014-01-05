@@ -19,7 +19,7 @@ public class GraphAdminTest extends CollabinateAdminTest
 	@Override
 	CollabinateAdmin getAdmin()
 	{
-		graph = CollabinateGraph.getInstance(
+		graph = new CollabinateGraph(
 				(KeyIndexableGraph)GraphFactory.open(
 				"src/test/resources/graph.properties"));
 		graph.setAllowCommits(false);

@@ -11,7 +11,6 @@ import org.joda.time.DateTime;
 
 import com.collabinate.server.StreamEntry;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
-import com.collabinate.server.engine.CollabinateGraph.TenantMap;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
@@ -46,7 +45,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public synchronized void addStreamEntry(String tenantId, String entityId,
+	public void addStreamEntry(String tenantId, String entityId,
 			StreamEntry streamEntry)
 	{
 		if (null == tenantId)
@@ -65,8 +64,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 		
 		entityId = tenantId + "/" + entityId;
-		TenantMap savedTenant = graph.setCurrentTenant(
-				graph.getTenantMap(tenantId));
 		
 		Vertex entityVertex = getOrCreateEntityVertex(entityId);
 		
@@ -75,9 +72,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (insertStreamEntry(entityVertex, streamEntryVertex))
 			updateFeedPaths(tenantId, entityVertex);
 		
-		graph.commit();
-		
-		graph.setCurrentTenant(savedTenant);
+		graph.commit();		
 	}
 
 	/**
@@ -263,7 +258,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public synchronized void deleteStreamEntry(String tenantId, String entityId,
+	public void deleteStreamEntry(String tenantId, String entityId,
 			String entryId)
 	{
 		if (null == tenantId)
@@ -276,17 +271,13 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("entryId must not be null");
 		
 		entityId = tenantId + "/" + entityId;
-		TenantMap savedTenant =
-				graph.setCurrentTenant(graph.getTenantMap(tenantId));
-
+		
 		Vertex entityVertex = getOrCreateEntityVertex(entityId);
 				
 		if (removeStreamEntry(entityVertex, entryId))
 			updateFeedPaths(tenantId, entityVertex);
 		
 		graph.commit();
-		
-		graph.setCurrentTenant(savedTenant);
 	}
 	
 	/**
@@ -338,13 +329,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public synchronized List<StreamEntry> getStream(String tenantId, String entityId,
+	public List<StreamEntry> getStream(String tenantId, String entityId,
 			long startIndex, int entriesToReturn)
 	{
 		entityId = tenantId + "/" + entityId;
-		TenantMap savedTenant =
-				graph.setCurrentTenant(graph.getTenantMap(tenantId));
-
+		
 		Vertex entity = graph.getVertex(entityId);
 		if (null == entity)
 		{
@@ -377,8 +366,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		graph.commit();
 		
-		graph.setCurrentTenant(savedTenant);
-
 		// we only have the vertices, the actual entries need to be created
 		return deserializeStreamEntries(streamVertices);
 	}
@@ -442,7 +429,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public synchronized void followEntity(String tenantId, String userId,
+	public void followEntity(String tenantId, String userId,
 			String entityId)
 	{
 		if (null == tenantId)
@@ -462,9 +449,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
-		TenantMap savedTenant =
-				graph.setCurrentTenant(graph.getTenantMap(tenantId));
-
+		
 		boolean alreadyFollowed = false;
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
@@ -486,12 +471,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 		
 		graph.commit();
-		
-		graph.setCurrentTenant(savedTenant);
 	}
 	
 	@Override
-	public synchronized void unfollowEntity(String tenantId, String userId,
+	public void unfollowEntity(String tenantId, String userId,
 			String entityId)
 	{
 		if (null == tenantId)
@@ -511,9 +494,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
-		TenantMap savedTenant =
-				graph.setCurrentTenant(graph.getTenantMap(tenantId));
-
+		
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		String feedLabel = getFeedLabel(getIdString(user));
@@ -544,19 +525,15 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 		
 		graph.commit();
-
-		graph.setCurrentTenant(savedTenant);
 	}
 	
 	@Override
-	public synchronized Boolean isUserFollowingEntity(String tenantId, String userId,
+	public Boolean isUserFollowingEntity(String tenantId, String userId,
 			String entityId)
 	{
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
-		TenantMap savedTenant =
-				graph.setCurrentTenant(graph.getTenantMap(tenantId));
-
+		
 		Vertex user = getOrCreateEntityVertex(userId);
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		
@@ -568,11 +545,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				return true;
 			}
 		}
-
+		
 		graph.commit();
 		
-		graph.setCurrentTenant(savedTenant);
-
 		return false;
 	}
 
@@ -581,9 +556,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			String userId)
 	{
 		userId = tenantId + "/" + userId;
-		TenantMap savedTenant =
-				graph.setCurrentTenant(graph.getTenantMap(tenantId));
-
+		
 		Vertex user = getOrCreateEntityVertex(userId);
 		List<ActivityStreamsObject> following =
 				new ArrayList<ActivityStreamsObject>();
@@ -600,8 +573,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 
 		graph.commit();
 		
-		graph.setCurrentTenant(savedTenant);
-
 		return following;
 	}
 	
@@ -610,9 +581,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			String entityId)
 	{
 		entityId = tenantId + "/" + entityId;
-		TenantMap savedTenant =
-				graph.setCurrentTenant(graph.getTenantMap(tenantId));
-
+		
 		Vertex entity = getOrCreateEntityVertex(entityId);
 		List<ActivityStreamsObject> followers =
 				new ArrayList<ActivityStreamsObject>();
@@ -629,8 +598,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 
 		graph.commit();
 		
-		graph.setCurrentTenant(savedTenant);
-
 		return followers;
 	}
 
@@ -694,16 +661,14 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public synchronized List<StreamEntry> getFeed(String tenantId, String userId,
+	public List<StreamEntry> getFeed(String tenantId, String userId,
 			long startIndex, int entriesToReturn)
 	{
 		// this method represents the core of the Graphity algorithm
 		// http://www.rene-pickhardt.de/graphity-an-efficient-graph-model-for-retrieving-the-top-k-news-feeds-for-users-in-social-networks/
 		
 		userId = tenantId + "/" + userId;
-		TenantMap savedTenant =
-				graph.setCurrentTenant(graph.getTenantMap(tenantId));
-
+		
 		// we order stream entries by their date
 		StreamEntryDateComparator comparator = new StreamEntryDateComparator();
 		
@@ -782,11 +747,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				}
 			}
 		}
-
+		
 		graph.commit();
 		
-		graph.setCurrentTenant(savedTenant);
-
 		return deserializeStreamEntries(streamEntries);
 	}
 

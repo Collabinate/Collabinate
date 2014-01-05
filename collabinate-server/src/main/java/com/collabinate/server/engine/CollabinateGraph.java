@@ -4,27 +4,28 @@ import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
-import java.util.AbstractMap;
-import java.util.HashSet;
 import java.util.Set;
 
-import com.tinkerpop.blueprints.IndexableGraph;
+import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.Element;
+import com.tinkerpop.blueprints.Features;
+import com.tinkerpop.blueprints.GraphQuery;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
+import com.tinkerpop.blueprints.Parameter;
 import com.tinkerpop.blueprints.TransactionalGraph;
+import com.tinkerpop.blueprints.Vertex;
 import com.tinkerpop.blueprints.util.io.graphml.GraphMLWriter;
 import com.tinkerpop.blueprints.util.wrappers.id.IdGraph;
-import com.tinkerpop.blueprints.util.wrappers.partition.PartitionIndexableGraph;
 
 /**
  * Wrapper for the graph storage used by the engine classes. Ensures that the
- * graph is an ID graph, is key indexable, and is partition ready. Also contains
- * utilities to manage setting the tenant partitions, as well as auto committing
- * when calling commit.
+ * graph is an ID graph and is key indexable. Also enables auto committing
+ * transactions when calling commit.
  * 
  * @author mafuba
  *
  */
-public class CollabinateGraph extends PartitionIndexableGraph<IndexableGraph>
+public class CollabinateGraph implements KeyIndexableGraph
 {
 	/**
 	 * The underlying graph implementation.
@@ -32,100 +33,47 @@ public class CollabinateGraph extends PartitionIndexableGraph<IndexableGraph>
 	private KeyIndexableGraph baseGraph;
 	
 	/**
+	 * The graph that allows IDs.
+	 */
+	private KeyIndexableGraph graph;
+	
+	/**
 	 * Whether the graph should commit transactions.
 	 */
 	private boolean allowCommits = true;
 	
 	/**
-	 * Creates a PartitionIndexableGraph{IndexableGraph} while maintaining
-	 * a reference to the baseGraph.
+	 * Whether the graph supports transactions.
+	 */
+	private boolean supportsTransactions = false;
+	
+	/**
+	 * Creates the internally used graph while maintaining a reference to the
+	 * base graph.
 	 * 
 	 * @param baseGraph The base graph to maintain a reference to.
-	 * @param baseIndexableGraph The indexable graph to wrap with partitions.
-	 * @param writeGraphKey The write graph key for the partition graph.
-	 * @param readWriteGraph The read write graph key for the partition graph.
 	 */
-	public CollabinateGraph(KeyIndexableGraph baseGraph,
-			IndexableGraph baseIndexableGraph,
-			String writeGraphKey, String readWriteGraph)
+	public CollabinateGraph(KeyIndexableGraph baseGraph)
 	{
-		super(baseIndexableGraph, writeGraphKey, readWriteGraph);
-		
-		this.baseGraph = baseGraph;
-	}
-
-	/**
-	 * Creates an instance of a CollabinateGraph from the given
-	 * KeyIndexableGraph.
-	 * 
-	 * @param graph The graph to wrap with a CollabinateGraph.
-	 * @return A CollabinateGraph that wraps the given graph.
-	 */
-	public static CollabinateGraph getInstance(KeyIndexableGraph graph)
-	{
-		if (null == graph)
+		if (null == baseGraph)
 		{
-			throw new IllegalArgumentException("graph must not be null");
+			throw new IllegalArgumentException("baseGraph must not be null");
 		}
 		
-		// we need to go through hoops in the following to ensure that we end up
-		// with a graph that is both ID enabled and partitioned.
-		if (!(graph instanceof IndexableGraph))
-			throw new IllegalArgumentException(
-					"graph must implement IndexableGraph.");
+		this.baseGraph = baseGraph;
 		
 		// ensure we can provide IDs to the graph
 		KeyIndexableGraph idGraph;
-		if (graph.getFeatures().ignoresSuppliedIds)
-			idGraph = new IdGraph<KeyIndexableGraph>(graph);
+		if (baseGraph.getFeatures().ignoresSuppliedIds)
+			idGraph = new IdGraph<KeyIndexableGraph>(baseGraph);
 		else
-			idGraph = graph;
+			idGraph = baseGraph;
 		
-		// make the graph multi-tenant
-		IndexableGraph indexableGraph = (IndexableGraph)idGraph;
+		this.graph = idGraph;
 		
-		return new CollabinateGraph(graph, indexableGraph, "_tenant", "");
-	}
-	
-	/**
-	 * Uses the PartitionGraph to keep tenant data separate by setting the
-	 * current partition to the current tenant.
-	 * 
-	 * @param map A structure containing the data used to switch partitions.
-	 * @return The previous partition values, so they can be replaced later.
-	 */
-	public TenantMap setCurrentTenant(TenantMap map)
-	{
-		// capture the existing values so they can be returned
-		TenantMap savedValues = 
-				new TenantMap(getWritePartition(),getReadPartitions());
-		
-		// switch out the partition to the values provided
-		for (String readPartition : savedValues.getValue())
-			removeReadPartition(readPartition);
-		
-		for (String readPartition : map.getValue())
-			addReadPartition(readPartition);
-		
-		setWritePartition(map.getKey());
-		
-		// return the previous values for use in returning to previous state
-		return savedValues;
+		supportsTransactions = graph.getFeatures().supportsTransactions;
 	}
 
-	/**
-	 * Builds the structure used to switch the partition to a single tenant.
-	 * 
-	 * @param tenantId The ID of the tenant for which to build the structure.
-	 * @return The structure used to switch to the given tenant.
-	 */
-	public TenantMap getTenantMap(String tenantId)
-	{
-		Set<String> set = new HashSet<String>();
-		set.add(tenantId);
-		return new TenantMap(tenantId, set);
-	}
-	
 	/**
 	 * Sets whether the graph should commit transactions.
 	 * 
@@ -143,9 +91,9 @@ public class CollabinateGraph extends PartitionIndexableGraph<IndexableGraph>
 	 */
 	public void commit()
 	{
-		if (allowCommits && baseGraph.getFeatures().supportsTransactions)
+		if (allowCommits && supportsTransactions)
 		{
-			((TransactionalGraph)baseGraph).commit();
+			((TransactionalGraph)graph).commit();
 		}
 	}
 	
@@ -190,28 +138,104 @@ public class CollabinateGraph extends PartitionIndexableGraph<IndexableGraph>
 			e.printStackTrace();
 		}
 	}
-	
-	/**
-	 * Structure for holding read and write partitions for a graph.
-	 * 
-	 * @author mafuba
-	 *
-	 */
-	public class TenantMap extends
-		AbstractMap.SimpleImmutableEntry<String, Set<String>>
-	{
-		private static final long serialVersionUID = 2898214691112356328L;
 
-		/**
-		 * Constructor.
-		 * 
-		 * @param writeValue The write partition.
-		 * @param readValues The set of read partitions.
-		 */
-		public TenantMap(String writeValue, Set<String> readValues)
-		{
-			super(writeValue, readValues);
-		}
-		
+	@Override
+	public Features getFeatures()
+	{
+		return graph.getFeatures();
+	}
+
+	@Override
+	public Vertex addVertex(Object id)
+	{
+		return graph.addVertex(id);
+	}
+
+	@Override
+	public Vertex getVertex(Object id)
+	{
+		return graph.getVertex(id);
+	}
+
+	@Override
+	public void removeVertex(Vertex vertex)
+	{
+		graph.removeVertex(vertex);
+	}
+
+	@Override
+	public Iterable<Vertex> getVertices()
+	{
+		return graph.getVertices();
+	}
+
+	@Override
+	public Iterable<Vertex> getVertices(String key, Object value)
+	{
+		return graph.getVertices(key, value);
+	}
+
+	@Override
+	public Edge addEdge(Object id, Vertex outVertex, Vertex inVertex,
+			String label)
+	{
+		return graph.addEdge(id, outVertex, inVertex, label);
+	}
+
+	@Override
+	public Edge getEdge(Object id)
+	{
+		return graph.getEdge(id);
+	}
+
+	@Override
+	public void removeEdge(Edge edge)
+	{
+		graph.removeEdge(edge);
+	}
+
+	@Override
+	public Iterable<Edge> getEdges()
+	{
+		return graph.getEdges();
+	}
+
+	@Override
+	public Iterable<Edge> getEdges(String key, Object value)
+	{
+		return graph.getEdges(key, value);
+	}
+
+	@Override
+	public GraphQuery query()
+	{
+		return graph.query();
+	}
+
+	@Override
+	public void shutdown()
+	{
+		graph.shutdown();
+	}
+
+	@Override
+	public <T extends Element> void dropKeyIndex(String key,
+			Class<T> elementClass)
+	{
+		graph.dropKeyIndex(key, elementClass);
+	}
+
+	@Override
+	public <T extends Element> void createKeyIndex(String key,
+			Class<T> elementClass,
+			@SuppressWarnings("rawtypes") Parameter... indexParameters)
+	{
+		graph.createKeyIndex(key, elementClass, indexParameters);		
+	}
+
+	@Override
+	public <T extends Element> Set<String> getIndexedKeys(Class<T> elementClass)
+	{
+		return graph.getIndexedKeys(elementClass);
 	}
 }

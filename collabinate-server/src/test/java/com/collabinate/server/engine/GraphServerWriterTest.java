@@ -21,7 +21,7 @@ public class GraphServerWriterTest extends CollabinateWriterTest
 	@Override
 	CollabinateWriter getWriter()
 	{
-		graph = CollabinateGraph.getInstance(
+		graph = new CollabinateGraph(
 				(KeyIndexableGraph)GraphFactory.open(
 				"src/test/resources/graph.properties"));
 		graph.setAllowCommits(false);

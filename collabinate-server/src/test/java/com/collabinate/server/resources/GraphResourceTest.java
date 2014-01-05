@@ -56,7 +56,7 @@ public abstract class GraphResourceTest
 	public void graphResourceSetup()
 	{
 		graph = new TinkerGraph();
-		collabinateGraph = CollabinateGraph.getInstance(graph);
+		collabinateGraph = new CollabinateGraph(graph);
 		server = new GraphEngine(collabinateGraph);
 		admin = new GraphAdmin(collabinateGraph);
 		Engine.setRestletLogLevel(Level.WARNING);

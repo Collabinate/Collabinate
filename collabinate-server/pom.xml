@@ -4,7 +4,7 @@
 	<groupId>com.collabinate.server</groupId>
 	<artifactId>collabinate-server</artifactId>
 	<packaging>jar</packaging>
-	<version>0.4.1</version>
+	<version>0.4.2</version>
 	<name>collabinate-server</name>
 	<url>http://maven.apache.org</url>
 	<properties>
