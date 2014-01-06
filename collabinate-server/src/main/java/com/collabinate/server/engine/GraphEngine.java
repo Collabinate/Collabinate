@@ -65,11 +65,13 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		entityId = tenantId + "/" + entityId;
 		
-		Vertex entityVertex = getOrCreateEntityVertex(entityId);
+		Vertex entityVertex = getOrCreateEntityVertex(entityId, tenantId);
 		
-		Vertex streamEntryVertex = serializeStreamEntry(streamEntry);
+		Vertex streamEntryVertex = serializeStreamEntry(streamEntry, tenantId);
 		
-		if (insertStreamEntry(entityVertex, streamEntryVertex))
+		if (insertStreamEntry(entityVertex, streamEntryVertex, tenantId))
+			// if the inserted stream entry is first in its stream, it may have
+			// changed the entity order for feed paths
 			updateFeedPaths(tenantId, entityVertex);
 		
 		graph.commit();		
@@ -80,14 +82,17 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * matching entity cannot be found, the vertex is created.
 	 * 
 	 * @param entityId The ID of the entity for which to retrieve a vertex.
+	 * @param tenantId The ID of the tenant to add to the vertex upon creation.
 	 * @return The vertex for the given entity.
 	 */
-	private synchronized Vertex getOrCreateEntityVertex(final String entityId)
+	private synchronized Vertex getOrCreateEntityVertex(final String entityId,
+			final String tenantId)
 	{
 		Vertex entityVertex = graph.getVertex(entityId);
 		if (null == entityVertex)
 		{
 			entityVertex = graph.addVertex(entityId);
+			entityVertex.setProperty(STRING_TENANT_ID, tenantId);
 			graph.commit();
 		}
 		return entityVertex;
@@ -97,12 +102,15 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * Creates a new vertex representation of a given stream entry.
 	 * 
 	 * @param streamEntry The stream entry to be represented.
+	 * @param tenantId The tenant for the entry.
 	 * @return A vertex that represents the given stream entry.
 	 */
-	private Vertex serializeStreamEntry(final StreamEntry streamEntry)
+	private Vertex serializeStreamEntry(final StreamEntry streamEntry,
+			final String tenantId)
 	{
 		Vertex streamEntryVertex = graph.addVertex(null);
-		streamEntryVertex.setProperty(STRING_ID, streamEntry.getId());
+		streamEntryVertex.setProperty(STRING_TENANT_ID, tenantId);
+		streamEntryVertex.setProperty(STRING_ENTRY_ID, streamEntry.getId());
 		streamEntryVertex.setProperty(STRING_TIME, 
 				streamEntry.getTime().toString());
 		streamEntryVertex.setProperty(STRING_CONTENT, streamEntry.getContent());
@@ -115,11 +123,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * 
 	 * @param entity The vertex representing the entity.
 	 * @param addedStreamEntry The stream entry to add to the stream.
+	 * @param tenantId The tenant for the entity.
 	 * @return true if the added stream entry is the newest (first) in the
 	 * stream, otherwise false.
 	 */
 	private boolean insertStreamEntry(final Vertex entity,
-			final Vertex addedStreamEntry)
+			final Vertex addedStreamEntry, final String tenantId)
 	{
 		if (null == entity)
 		{
@@ -137,7 +146,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		Edge currentStreamEdge = getStreamEntryEdge(entity);
 		Vertex currentStreamEntry = getNextStreamEntry(entity);
 		Vertex previousStreamEntry = entity;
-		int position = 0;		
+		int position = 0;
 		
 		// advance along the stream path, comparing each stream entry to the
 		// new entry
@@ -152,14 +161,16 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		// add a stream edge between the previous entry (the one that is newer
 		// than the added one, or the entity if there are none) and the new one.
-		previousStreamEntry.addEdge(STRING_STREAM_ENTRY, addedStreamEntry);
+		previousStreamEntry.addEdge(STRING_STREAM_ENTRY, addedStreamEntry)
+			.setProperty(STRING_TENANT_ID, tenantId);
 		
 		// if there are one or more entries that are older than the added one,
 		// add an edge between the added one and the next older one, and delete
 		// the edge between the that one and the previous (next newer) one.
 		if (null != currentStreamEdge)
 		{
-			addedStreamEntry.addEdge(STRING_STREAM_ENTRY, currentStreamEntry);
+			addedStreamEntry.addEdge(STRING_STREAM_ENTRY, currentStreamEntry)
+				.setProperty(STRING_TENANT_ID, tenantId);
 			currentStreamEdge.remove();
 		}
 		
@@ -273,9 +284,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		entityId = tenantId + "/" + entityId;
 		
-		Vertex entityVertex = getOrCreateEntityVertex(entityId);
+		Vertex entityVertex = getOrCreateEntityVertex(entityId, tenantId);
 				
-		if (removeStreamEntry(entityVertex, entryId))
+		if (removeStreamEntry(entityVertex, entryId, entityId))
+			// if the deleted stream entry was first in its stream, it may have
+			// changed the entity order for feed paths
 			updateFeedPaths(tenantId, entityVertex);
 		
 		graph.commit();
@@ -288,10 +301,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * 
 	 * @param entityVertex The vertex representing the entity.
 	 * @param entryId The ID of the stream entry to delete from the stream.
+	 * @param entityId The entity for the stream.
 	 * @return true if the deleted stream entry was the newest (first) in the
 	 * stream, otherwise false.
 	 */
-	private boolean removeStreamEntry(Vertex entityVertex, String entryId)
+	private boolean removeStreamEntry(Vertex entityVertex, String entryId,
+			String entityId)
 	{
 		if (null == entityVertex)
 			throw new IllegalArgumentException("entityVertex must not be null");
@@ -308,13 +323,14 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			// if a match is found, remove it and make a new edge from the
 			// previous entry to the following entry (if one exists)
-			if (entryId.equals(currentStreamEntry.getProperty(STRING_ID)))
+			if (entryId.equals(currentStreamEntry.getProperty(STRING_ENTRY_ID)))
 			{
 				Vertex followingEntry = getNextStreamEntry(currentStreamEntry);
 				currentStreamEntry.remove();
 				if (null != followingEntry)
 					previousStreamEntry.addEdge(STRING_STREAM_ENTRY,
-							followingEntry);
+							followingEntry).setProperty(
+									STRING_TENANT_ID, entityId);
 				currentStreamEntry = null;
 			}
 			// if no match, proceed along the stream updating the pointers
@@ -421,7 +437,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 */
 	private StreamEntry deserializeStreamEntry(final Vertex streamEntryVertex)
 	{
-		String id = (String)streamEntryVertex.getProperty(STRING_ID);
+		String id = (String)streamEntryVertex.getProperty(STRING_ENTRY_ID);
 		DateTime time = DateTime.parse((String) streamEntryVertex
 				.getProperty(STRING_TIME));
 		String content = (String)streamEntryVertex.getProperty(STRING_CONTENT);
@@ -452,8 +468,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		userId = tenantId + "/" + userId;
 		
 		boolean alreadyFollowed = false;
-		Vertex user = getOrCreateEntityVertex(userId);
-		Vertex entity = getOrCreateEntityVertex(entityId);
+		Vertex user = getOrCreateEntityVertex(userId, tenantId);
+		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
 		
 		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
 		{
@@ -466,9 +482,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		if (!alreadyFollowed)
 		{
-			user.addEdge(STRING_FOLLOWS, entity);
+			user.addEdge(STRING_FOLLOWS, entity)
+				.setProperty(STRING_TENANT_ID, tenantId);
 			
-			insertFeedEntity(user, entity);
+			insertFeedEntity(user, entity, tenantId);
 		}
 		
 		graph.commit();
@@ -496,8 +513,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
 		
-		Vertex user = getOrCreateEntityVertex(userId);
-		Vertex entity = getOrCreateEntityVertex(entityId);
+		Vertex user = getOrCreateEntityVertex(userId, tenantId);
+		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
 		String feedLabel = getFeedLabel(getIdString(user));
 		
 		// remove the follow relationship
@@ -522,7 +539,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		// replace the missing edge for the feed if necessary
 		if (null != nextEntity)
 		{
-			previousEntity.addEdge(feedLabel, nextEntity);
+			previousEntity.addEdge(feedLabel, nextEntity)
+				.setProperty(STRING_TENANT_ID, tenantId);
 		}
 		
 		graph.commit();
@@ -535,8 +553,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
 		
-		Vertex user = getOrCreateEntityVertex(userId);
-		Vertex entity = getOrCreateEntityVertex(entityId);
+		Vertex user = getOrCreateEntityVertex(userId, tenantId);
+		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
 		
 		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
 		{
@@ -558,7 +576,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	{
 		userId = tenantId + "/" + userId;
 		
-		Vertex user = getOrCreateEntityVertex(userId);
+		Vertex user = getOrCreateEntityVertex(userId, tenantId);
 		List<ActivityStreamsObject> following =
 				new ArrayList<ActivityStreamsObject>();
 		
@@ -583,7 +601,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	{
 		entityId = tenantId + "/" + entityId;
 		
-		Vertex entity = getOrCreateEntityVertex(entityId);
+		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
 		List<ActivityStreamsObject> followers =
 				new ArrayList<ActivityStreamsObject>();
 		
@@ -607,9 +625,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * 
 	 * @param user The user whose feed will be updated.
 	 * @param newEntity the entity to add to the user's feed.
+	 * @param tenantId the tenant for the feed.
 	 * @return true if the entity is first in the feed, otherwise false.
 	 */
-	private boolean insertFeedEntity(final Vertex user, final Vertex newEntity)
+	private boolean insertFeedEntity(final Vertex user, final Vertex newEntity,
+			final String tenantId)
 	{
 		if (null == user)
 		{
@@ -647,13 +667,15 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 		
 		// add an edge from the previous entity to the new one
-		previousFeedEntity.addEdge(feedLabel, newEntity);
+		previousFeedEntity.addEdge(feedLabel, newEntity)
+			.setProperty(STRING_TENANT_ID, tenantId);
 		
 		// if there are following entities, add an edge from the new one to the
 		// following one
 		if (null != currentFeedEdge)
 		{
-			newEntity.addEdge(feedLabel, currentFeedEntity);
+			newEntity.addEdge(feedLabel, currentFeedEntity)
+				.setProperty(STRING_TENANT_ID, tenantId);
 			currentFeedEdge.remove();
 		}
 		
@@ -686,7 +708,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		// entities that have already been reached
 		Vertex topOfQueue = null;
 		
-		Vertex user = getOrCreateEntityVertex(userId);
+		Vertex user = getOrCreateEntityVertex(userId, tenantId);
 		String feedLabel = getFeedLabel(getIdString(user));
 		Vertex entity = getNextFeedEntity(feedLabel, user, Direction.OUT);
 		
@@ -866,7 +888,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 	}
 	
-	private static final String STRING_ID = "ID";
+	private static final String STRING_ENTRY_ID = "EntryID";
+	private static final String STRING_TENANT_ID = "TenantID";
 	private static final String STRING_TIME = "Time";
 	private static final String STRING_CONTENT = "Content";
 	private static final String STRING_FOLLOWS = "Follows";
