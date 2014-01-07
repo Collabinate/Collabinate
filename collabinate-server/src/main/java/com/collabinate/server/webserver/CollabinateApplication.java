@@ -111,7 +111,10 @@ public class CollabinateApplication extends Application
 				FollowingEntityResource.class);
 		resourceRouter.attach("/users/{userId}/feed", FeedResource.class);
 		
-		authenticator.setNext(resourceRouter);
+		// add a filter for checking and adding necessary headers before the
+		// resources and after authentication
+		Restlet headerFilter = new HeaderFilter(getContext(), resourceRouter);
+		authenticator.setNext(headerFilter);
 		
 		return primaryRouter;
 	}
