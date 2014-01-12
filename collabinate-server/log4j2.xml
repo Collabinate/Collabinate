@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Configuration status="WARN">
+  <Appenders>
+    <RandomAccessFile
+        name="File" 
+        fileName="Collabinate.log"
+        immediateFlush="false"
+        append="false">
+      <PatternLayout pattern="%d %p %c{1.} [%t] %m %ex%n"/>
+    </RandomAccessFile>
+    <RandomAccessFile
+        name="FileRaw" 
+        fileName="Collabinate.log"
+        immediateFlush="false"
+        append="false">
+      <PatternLayout pattern="%m %ex%n"/>
+    </RandomAccessFile>
+    <Console name="Console" target="SYSTEM_OUT">
+      <PatternLayout pattern="%msg%n"/>
+    </Console>
+  </Appenders>
+  <Loggers>
+    <Root level="info">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="File"/>
+    </Root>
+    <Logger name="LogService" level="info" additivity="false">
+      <AppenderRef ref="Console"/>
+      <AppenderRef ref="FileRaw"/>
+    </Logger>
+    <Logger name="org.eclipse.jetty" level="warn"/>
+  </Loggers>
+</Configuration>

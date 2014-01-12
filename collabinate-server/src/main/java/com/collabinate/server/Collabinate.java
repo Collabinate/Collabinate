@@ -9,6 +9,8 @@ import org.apache.commons.configuration.DefaultConfigurationBuilder;
 import org.restlet.*;
 import org.restlet.data.ChallengeScheme;
 import org.restlet.security.ChallengeAuthenticator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateGraph;
@@ -23,7 +25,7 @@ import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 
 /**
- * Main Collabinate entry point.
+ * Main Collabinate Server entry point.
  * 
  */
 public class Collabinate
@@ -33,17 +35,38 @@ public class Collabinate
 	private static CollabinateWriter writer;
 	private static CollabinateAdmin admin;
 	
-	public static void main(String[] args) throws Exception
+	static
 	{
+		// Set up log4j2 logging before logger is created.
+		System.setProperty("log4j.configurationFile", "log4j2.xml");
+		System.setProperty("Log4jContextSelector",
+			"org.apache.logging.log4j.core.async.AsyncLoggerContextSelector");
+	}
+	
+	/**
+	 * Static logger for main application.
+	 */
+	private static final Logger logger =
+			LoggerFactory.getLogger(Collabinate.class);
+	
+	public static void main(String[] args) throws Exception
+	{		
 		// track server startup time
 		long startTime = System.currentTimeMillis();
 		
-		//load configuration
+		// output non-logged startup message
+		System.out.println("Collabinate Server starting...");
+		
+		// set up logging
+		System.setProperty("org.restlet.engine.loggerFacadeClass",
+				"org.restlet.ext.slf4j.Slf4jLoggerFacade");
+		
+		// load configuration
 		String version = getConfiguration().getString(
 				"collabinate.version", "Unknown");
 		String build = getConfiguration().getString("collabinate.build", "");
-		System.out.println("Collabinate Server Version " + 
-				version + (build.equals("") ? "" : ("+" + build)));
+		logger.info("Collabinate Server version {}{}",
+				version, build.equals("") ? "" : ("+" + build));
 		
 		// connect to the data store
 		Graph configuredGraph = GraphFactory.open("graph.properties");
@@ -75,7 +98,8 @@ public class Collabinate
 		
 		// output server startup time
 		long totalStartTime = System.currentTimeMillis() - startTime;
-		System.out.println(String.format("Server started in %1$d milliseconds",
+		logger.info(String.format(
+				"Collabinate Server started in %1$d milliseconds",
 				totalStartTime));
 		quit(server);
 	}
@@ -85,10 +109,11 @@ public class Collabinate
 		Console console = System.console();
 		if (null != console)
 		{
+			// if the system can be stopped via the console, let the user know
 			System.out.println("Press Enter to quit");
 			System.console().readLine();
+			logger.info("Collabinate Server shutting down...");
 			server.stop();
-			System.out.println("Server Stopped");
 		}
 		else
 		{
@@ -125,6 +150,11 @@ public class Collabinate
 		return configuration;
 	}
 	
+	/**
+	 * Registers a shutdown hook for clean graph shutdown.
+	 * 
+	 * @param graph The graph that needs clean shutdown upon system shutdown.
+	 */
 	private static void registerShutdownHook(final Graph graph)
 	{
 		Runtime.getRuntime().addShutdownHook(new Thread()
@@ -133,6 +163,7 @@ public class Collabinate
 			public void run()
 			{
 				graph.shutdown();
+				System.out.println("Collabinate Server shutdown complete.");
 			}
 		});
 	}

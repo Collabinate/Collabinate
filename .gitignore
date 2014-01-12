@@ -5,3 +5,5 @@ Thumbs.db
 .settings/
 target/
 neo/
+collabinate-server/Collabinate-Test.log
+collabinate-server/Collabinate.log

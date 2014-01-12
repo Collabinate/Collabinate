@@ -6,7 +6,45 @@
 	<packaging>jar</packaging>
 	<version>0.4.4</version>
 	<name>collabinate-server</name>
-	<url>http://maven.apache.org</url>
+	<url>https://github.com/Collabinate/Collabinate</url>
+	<inceptionYear>2012</inceptionYear>
+	<organization>
+		<name>Collabinate</name>
+		<url>http://www.collabinate.com</url>
+	</organization>
+	<licenses>
+		<license>
+			<name>GNU Affero General Public License</name>
+			<url>http://www.gnu.org/licenses/agpl-3.0.html</url>
+			<distribution>manual</distribution>
+		</license>
+		<license>
+			<name>Collabinate</name>
+			<url>http://www.collabinate.com</url>
+			<distribution>manual</distribution>
+			<comments>Please contact Collabinate to obtain a commercial license</comments>
+		</license>
+	</licenses>
+	<developers>
+		<developer>
+			<id>mafuba</id>
+			<name>Jack Jones</name>
+			<email>jack@collabinate.com</email>
+			<url>http://www.collabinate.com</url>
+			<organization>Collabinate</organization>
+			<organizationUrl>http://www.collabinate.com</organizationUrl>
+			<roles>
+				<role>Founder</role>
+				<role>Architect</role>
+				<role>Lead Developer</role>
+			</roles>
+			<timezone>America/Toronto</timezone>
+		</developer>
+	</developers>
+	<scm>
+		<connection>scm:git:git://github.com/Collabinate/Collabinate.git</connection>
+		<url>https://github.com/Collabinate/Collabinate</url>
+	</scm>
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 	</properties>
@@ -19,8 +57,35 @@
 			<name>Public online Restlet repository</name>
 			<url>http://maven.restlet.org</url>
 		</repository>
+		<repository>
+			<id>sonatype-nexus-snapshots</id>
+			<name>Sonatype Nexus Snapshots</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots</url>
+		</repository>
 	</repositories>
 	<dependencies>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-slf4j-impl</artifactId>
+			<version>2.0-beta9</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.logging.log4j</groupId>
+			<artifactId>log4j-core</artifactId>
+			<version>2.0-beta9</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>com.lmax</groupId>
+			<artifactId>disruptor</artifactId>
+			<version>3.2.0</version>
+			<scope>runtime</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>jcl-over-slf4j</artifactId>
+			<version>1.7.5</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -31,59 +96,89 @@
 			<groupId>com.google.guava</groupId>
 			<artifactId>guava</artifactId>
 			<version>15.0</version>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>joda-time</groupId>
 			<artifactId>joda-time</artifactId>
 			<version>2.3</version>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.restlet.jse</groupId>
 			<artifactId>org.restlet</artifactId>
 			<version>2.1.6</version>
-			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.restlet.jse</groupId>
+			<artifactId>org.restlet.ext.slf4j</artifactId>
+			<version>2.1.6</version>
 		</dependency>
 		<dependency>
 			<groupId>org.restlet.jse</groupId>
 			<artifactId>org.restlet.ext.jetty</artifactId>
 			<version>2.1.6</version>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.restlet.jse</groupId>
 			<artifactId>org.restlet.ext.atom</artifactId>
 			<version>2.1.6</version>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>org.restlet.jse</groupId>
 			<artifactId>org.restlet.ext.jackson</artifactId>
 			<version>2.1.6</version>
-			<scope>compile</scope>
 		</dependency>
 		<dependency>
 			<groupId>com.google.code.gson</groupId>
 			<artifactId>gson</artifactId>
 			<version>2.2.4</version>
-			<scope>compile</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j</artifactId>
+			<version>1.9.5</version>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-ha</artifactId>
+			<version>1.9.5</version>
+			<exclusions>
+				<exclusion>
+					<groupId>ch.qos.logback</groupId>
+					<artifactId>logback-classic</artifactId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.neo4j</groupId>
+			<artifactId>neo4j-management</artifactId>
+			<version>1.9.5</version>
 		</dependency>
 		<dependency>
 			<groupId>com.tinkerpop.blueprints</groupId>
 			<artifactId>blueprints-neo4j-graph</artifactId>
-			<version>2.4.0</version>
-			<scope>compile</scope>
+			<version>2.5.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-configuration</groupId>
 			<artifactId>commons-configuration</artifactId>
 			<version>1.10</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>	
 		<dependency>
 			<groupId>commons-beanutils</groupId>
 			<artifactId>commons-beanutils</artifactId>
 			<version>1.8.3</version>
+			<exclusions>
+				<exclusion>
+					<groupId>commons-logging</groupId>
+					<artifactId>commons-logging</artifactId>
+				</exclusion>
+			</exclusions>
 		</dependency>
 		<dependency>
 			<groupId>commons-collections</groupId>
