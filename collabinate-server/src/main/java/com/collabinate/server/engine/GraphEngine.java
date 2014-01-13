@@ -8,6 +8,8 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 import org.joda.time.DateTime;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.collabinate.server.StreamEntry;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
@@ -23,6 +25,11 @@ import com.tinkerpop.blueprints.Vertex;
  */
 public class GraphEngine implements CollabinateReader, CollabinateWriter
 {
+	/**
+	 * Logger instance.
+	 */
+	private final Logger logger = LoggerFactory.getLogger(GraphEngine.class);
+	
 	/**
 	 * The graph database backing this instance.
 	 */
@@ -213,11 +220,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			if (edges.hasNext())
 			{
-				throw new IllegalStateException(
-					"Multiple outgoing edges with label: \"" +
-					edgeLabel +
-					"\" for vertex: " +
-					node.getId());
+				logger.error("Multiple outgoing edges with label: \"{}\" " +
+					" for vertex: {}", edgeLabel, node.getId());
 			}
 		}
 		
@@ -808,10 +812,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			if (vertices.hasNext())
 			{
-				throw new IllegalStateException(
-					"Multiple feed edges for vertex: " +
-					vertex.getId() + " with feedLabel: " +
-					feedLabel);
+				logger.error("Multiple feed edges for vertex: {} " +
+						"with feedLabel: {}", vertex.getId(), feedLabel);
 			}
 		}
 		
