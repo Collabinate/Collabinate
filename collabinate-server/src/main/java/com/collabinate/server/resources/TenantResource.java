@@ -23,14 +23,22 @@ public class TenantResource extends ServerResource
 				.getAttributes().get("collabinateAdmin");
 		String tenantId = getAttribute("tenantId");
 		String tenantName = getQueryValue("name");
+		String tenantKey = getQueryValue("key");
 		
 		// set defaults for values not provided
 		if (null == tenantName || "" == tenantName)
 			tenantName = tenantId;
 		
-		// put the tenant
+		// create the tenant
 		Tenant tenant = new Tenant(tenantId, tenantName);
-		tenant.generateKey();
+		
+		// add or generate the initial key
+		if (null == tenantKey || "" == tenantKey)
+			tenant.generateKey();
+		else
+			tenant.addKey(tenantKey);
+		
+		// put the tenant
 		admin.putTenant(tenant);
 		
 		setStatus(Status.SUCCESS_CREATED);

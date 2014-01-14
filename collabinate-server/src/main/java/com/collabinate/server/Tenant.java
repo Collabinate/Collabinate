@@ -1,10 +1,9 @@
 package com.collabinate.server;
 
-import java.math.BigInteger;
-import java.security.SecureRandom;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.UUID;
 
 /**
  * Data that represents a tenant within the application.
@@ -68,8 +67,7 @@ public class Tenant
 	 */
 	public String generateKey()
 	{
-		SecureRandom random = new SecureRandom();
-		String key = new BigInteger(130, random).toString(32);
+		String key = UUID.randomUUID().toString();
 		keys.add(key);
 		return key;
 	}
