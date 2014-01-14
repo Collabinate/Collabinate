@@ -6,6 +6,7 @@ import static org.junit.Assert.*;
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.junit.Test;
+import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.data.MediaType;
 import org.restlet.data.Method;
@@ -67,6 +68,32 @@ public class StreamResourceTest extends GraphResourceTest
 		post(entityBody, MediaType.TEXT_PLAIN);
 		
 		assertThat(get().getEntityAsText(), containsString(entityBody));		
+	}
+	
+	@Test
+	public void activity_should_use_given_id()
+	{
+		String entityBody = "{\"id\":\"TEST\"}";
+		post(entityBody, MediaType.TEXT_PLAIN);
+		
+		ActivityStreamsCollection stream =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals("TEST", stream.get(0).getId());
+	}
+	
+	@Test
+	public void individual_activity_should_be_retrievable_via_given_id()
+	{
+		String entityBody = "{\"id\":\"test\",\"actor\":{\"id\":\"foo\"}}";
+		post(entityBody, MediaType.TEXT_PLAIN);
+		
+		Request request = new Request(Method.GET,
+				"riap://application/1/tenant/entities/entity/stream/test");
+		Activity activity = new Activity(
+				component.handle(request).getEntityAsText());
+
+		assertEquals("foo", activity.getActor().getId());
 	}
 	
 	@Test

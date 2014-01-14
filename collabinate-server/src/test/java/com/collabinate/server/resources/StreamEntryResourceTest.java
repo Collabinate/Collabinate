@@ -8,6 +8,8 @@ import org.junit.Test;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
 
+import com.google.gson.JsonParser;
+
 /**
  * Tests for the Stream Entry Resource
  * 
@@ -33,6 +35,14 @@ public class StreamEntryResourceTest extends GraphResourceTest
 	{
 		put("test", MediaType.TEXT_PLAIN);
 		assertThat(get().getEntityAsText(), containsString("test"));		
+	}
+	
+	@Test
+	public void activity_should_be_json_object()
+	{
+		put("test", MediaType.TEXT_PLAIN);
+		// parser will throw if result is not json
+		new JsonParser().parse(get().getEntityAsText());
 	}
 	
 	@Test

@@ -2,10 +2,6 @@ package com.collabinate.server.resources;
 
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
-import org.restlet.ext.atom.Content;
-import org.restlet.ext.atom.Entry;
-import org.restlet.ext.atom.Feed;
-import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
 import org.restlet.resource.Put;
@@ -23,36 +19,14 @@ import com.collabinate.server.engine.CollabinateWriter;
  */
 public class StreamEntryResource extends ServerResource
 {
-	@Get
-	public Feed getStreamEntry()
+	@Get("json")
+	public String getStreamEntry()
 	{
-		// extract necessary information from the context
-		String entityId = getAttribute("entityId");
-
 		StreamEntry matchingEntry = findMatchingEntry();
 		
 		if (null != matchingEntry)
 		{
-			// build a new Atom feed
-			Feed feed = new Feed();
-			feed.setTitle(entityId);
-			
-			// create the atom entry
-			Entry atomEntry = new Entry();
-			atomEntry.setId(matchingEntry.getId());
-			atomEntry.setPublished(matchingEntry.getTime().toDate());
-			
-			Content content = new Content();
-			StringRepresentation representation = 
-					new StringRepresentation(matchingEntry.getContent()
-							.toCharArray());
-			content.setInlineContent(representation);
-			
-			atomEntry.setContent(content);
-			
-			feed.getEntries().add(atomEntry);
-
-			return feed;
+			return matchingEntry.getContent();
 		}
 		else
 		{
