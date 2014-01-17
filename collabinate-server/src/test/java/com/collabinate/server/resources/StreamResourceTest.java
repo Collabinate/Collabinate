@@ -50,7 +50,25 @@ public class StreamResourceTest extends GraphResourceTest
 		String entityBody = "TEST";
 		Response response = post(entityBody, MediaType.TEXT_PLAIN);
 		
-		assertEquals(entityBody, response.getEntityAsText());
+		assertThat(response.getEntityAsText(), containsString(entityBody));
+	}
+	
+	@Test
+	public void post_response_body_should_be_json()
+	{
+		String entityBody = "TEST,";
+		Response response = post(entityBody, MediaType.TEXT_PLAIN);
+		
+		new JsonParser().parse(response.getEntityAsText());
+	}
+	
+	@Test
+	public void post_response_body_should_contain_added_fields()
+	{
+		String entityBody = "TEST";
+		Response response = post(entityBody, MediaType.TEXT_PLAIN);
+		
+		assertThat(response.getEntityAsText(), containsString("\"id\""));
 	}
 	
 	@Test
@@ -94,6 +112,17 @@ public class StreamResourceTest extends GraphResourceTest
 				component.handle(request).getEntityAsText());
 
 		assertEquals("foo", activity.getActor().getId());
+	}
+	
+	@Test
+	public void posted_raw_text_should_have_id_in_activity_when_retrieved()
+	{
+		post("test", MediaType.TEXT_PLAIN);
+		
+		ActivityStreamsCollection stream =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertNotNull(stream.get(0).getId());
 	}
 	
 	@Test

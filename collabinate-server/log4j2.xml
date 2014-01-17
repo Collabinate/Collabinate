@@ -5,7 +5,7 @@
         name="File" 
         fileName="Collabinate.log"
         immediateFlush="false"
-        append="false">
+        append="true">
       <PatternLayout pattern="%d %p %c{1.} [%t] %m %ex%n"/>
     </RandomAccessFile>
     <RandomAccessFile

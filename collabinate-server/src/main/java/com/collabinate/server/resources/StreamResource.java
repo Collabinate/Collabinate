@@ -1,5 +1,7 @@
 package com.collabinate.server.resources;
 
+import java.util.UUID;
+
 import org.joda.time.DateTime;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
@@ -45,8 +47,11 @@ public class StreamResource extends ServerResource
 	}
 	
 	@Post
-	public void addEntry(String content)
+	public void addEntry(String entryContent)
 	{
+		// extract necessary information from the context
+		String tenantId = getAttribute("tenantId");
+		String entityId = getAttribute("entityId");
 		CollabinateWriter writer = (CollabinateWriter)getContext()
 				.getAttributes().get("collabinateWriter");
 		
@@ -54,19 +59,22 @@ public class StreamResource extends ServerResource
 			throw new IllegalStateException(
 					"Context does not contain a CollabinateWriter");
 		
-		String entity = getAttribute("entityId");
-		
-		Activity activity = new Activity(content);
+		Activity activity = new Activity(entryContent);
 		String id = activity.getId();
+		if (null == id || id.equals(""))
+		{
+			id = generateId();
+			activity.setId(id);
+		}
 		DateTime published = activity.getPublished();
 		
 		StreamEntry entry = new StreamEntry(id, published, activity.toString());
 		
-		writer.addStreamEntry(getAttribute("tenantId"), entity, entry);
+		writer.addStreamEntry(tenantId, entityId, entry);
 		
 		// if there is no request entity return empty string with text type
-		if (null != content)
-			getResponse().setEntity(content, 
+		if (null != entryContent)
+			getResponse().setEntity(activity.toString(), 
 					getRequest().getEntity().getMediaType());
 		else
 			getResponse().setEntity("", MediaType.TEXT_PLAIN);
@@ -75,5 +83,18 @@ public class StreamResource extends ServerResource
 		setStatus(Status.SUCCESS_CREATED);
 	}
 	
+	/**
+	 * Generates an ID for an activity.
+	 * 
+	 * @return A globally unique URI acceptable for use in an activity ID.
+	 */
+	private String generateId()
+	{
+		// TODO: allow this to be configured
+		return "tag:collabinate.com:" + UUID.randomUUID().toString();
+	}
+	
 	private static final int DEFAULT_COUNT = 20;
 }
+
+
