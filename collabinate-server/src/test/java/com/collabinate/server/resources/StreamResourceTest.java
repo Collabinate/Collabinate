@@ -8,9 +8,11 @@ import org.joda.time.DateTimeZone;
 import org.junit.Test;
 import org.restlet.Request;
 import org.restlet.Response;
+import org.restlet.data.Conditions;
 import org.restlet.data.MediaType;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
+import org.restlet.data.Tag;
 
 import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.activitystreams.ActivityStreamsCollection;
@@ -25,9 +27,45 @@ import com.google.gson.JsonParser;
 public class StreamResourceTest extends GraphResourceTest
 {
 	@Test
-	public void get_empty_stream_should_get_empty_atom_feed()
+	public void get_empty_stream_should_return_200()
 	{
 		assertEquals(Status.SUCCESS_OK, get().getStatus());
+	}
+	
+	@Test
+	public void get_should_return_json_content_type()
+	{
+		assertEquals(MediaType.APPLICATION_JSON,
+				get().getEntity().getMediaType());
+	}
+	
+	@Test
+	public void get_response_should_contain_etag_header()
+	{
+		assertTrue(null != get().getEntity().getTag());
+	}
+	
+	@Test
+	public void etag_should_change_when_stream_changes()
+	{
+		Tag tag1 = get().getEntity().getTag();
+		post("TEST", MediaType.TEXT_PLAIN);
+		Tag tag2 = get().getEntity().getTag();
+		
+		assertNotEquals(tag1, tag2);
+	}
+	
+	@Test
+	public void matching_etag_should_return_304()
+	{
+		Tag etag = get().getEntity().getTag();
+		Request request = getRequest(Method.GET, null);
+		Conditions conditions = new Conditions();
+		conditions.getNoneMatch().add(etag);
+		request.setConditions(conditions);
+		
+		assertEquals(Status.REDIRECTION_NOT_MODIFIED,
+				getResponse(request).getStatus());
 	}
 	
 	@Test

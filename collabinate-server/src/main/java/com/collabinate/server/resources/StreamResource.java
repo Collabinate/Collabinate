@@ -6,6 +6,9 @@ import org.joda.time.DateTime;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
+import org.restlet.data.Tag;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
@@ -15,6 +18,7 @@ import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.google.common.base.Joiner;
+import com.google.common.hash.Hashing;
 
 /**
  * Restful resource representing a series of stream entries for an entity.
@@ -24,11 +28,8 @@ import com.google.common.base.Joiner;
  */
 public class StreamResource extends ServerResource
 {
-	// TODO: some much heavier content processing is going to need to happen
-	// here to handle different XML and JSON representations of different
-	// stream types (e.g. activity streams, OData, raw)
 	@Get("json")
-	public String getStream()
+	public Representation getStream()
 	{
 		// extract necessary information from the context
 		CollabinateReader reader = (CollabinateReader)getContext()
@@ -41,9 +42,17 @@ public class StreamResource extends ServerResource
 		int count = null == countString ? DEFAULT_COUNT : 
 			Integer.parseInt(countString);
 		
-		return "{\"items\":[" + Joiner.on(',')
+		String result = "{\"items\":[" + Joiner.on(',')
 				.join(reader.getStream(tenantId, entityId, start, count))
 				+ "]}";
+		
+		Representation representation = new StringRepresentation(
+				result, MediaType.APPLICATION_JSON);
+		representation.setTag(new Tag(Hashing.murmur3_128().hashUnencodedChars(
+				result+tenantId+entityId+startString+countString)
+				.toString(), false));
+		
+		return representation;
 	}
 	
 	@Post
