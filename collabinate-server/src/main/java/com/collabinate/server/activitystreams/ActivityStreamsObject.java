@@ -105,18 +105,7 @@ public class ActivityStreamsObject
 	 */
 	public String getId()
 	{
-		String id = null;
-		JsonElement element = jsonObject.get(ID);
-		if (null != element)
-		{
-			try 
-			{
-				id = element.getAsString();
-			}
-			catch (ClassCastException | IllegalStateException e) { }
-		}
-		
-		return id;
+		return getStringValue(ID);
 	}
 	
 	/**
@@ -169,15 +158,62 @@ public class ActivityStreamsObject
 		jsonObject.addProperty(PUBLISHED, dateTime.toString(
 				ISODateTimeFormat.dateTime().withZoneUTC()));
 	}
+
+	/**
+	 * Gets an identifier for finding objects within the Collabinate system.
+	 * Typically used in situations where there are conflicts between internal
+	 * and external IDs.
+	 * 
+	 * @return The string identifier used to find the object in Collabinate.
+	 */
+	public String getCollabinateObjectId()
+	{
+		return getStringValue(COLLABINATE_OBJECT_ID);
+	}
+	
+	/**
+	 * Sets an identifier for finding objects within the Collabinate system.
+	 * Typically used in situations where there are conflicts between internal
+	 * and external IDs.
+	 * 
+	 * @param id The string identifier used to find the object in Collabinate.
+	 */
+	public void setCollabinateObjectId(String id)
+	{
+		jsonObject.addProperty(COLLABINATE_OBJECT_ID, id);
+	}
 	
 	@Override
 	public String toString()
 	{
 		return jsonObject.toString();
 	}
+	
+	/**
+	 * Gets a string value from the json.
+	 * 
+	 * @param key The key of the value to retrieve.
+	 * @return The value of the given string key, or null if it does not exist.
+	 */
+	protected String getStringValue(String key)
+	{
+		String value = null;
+		JsonElement element = jsonObject.get(key);
+		if (null != element)
+		{
+			try 
+			{
+				value = element.getAsString();
+			}
+			catch (ClassCastException | IllegalStateException e) { }
+		}
+		
+		return value;
+	}
 
 	protected static final String ID = "id";
 	protected static final String CONTENT = "content";
 	protected static final String DISPLAY_NAME = "displayName";
 	protected static final String PUBLISHED = "published";
+	protected static final String COLLABINATE_OBJECT_ID = "collabinateObjectId";
 }

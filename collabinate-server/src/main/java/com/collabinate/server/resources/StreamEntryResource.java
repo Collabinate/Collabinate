@@ -1,15 +1,21 @@
 package com.collabinate.server.resources;
 
+import org.joda.time.DateTime;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
+import org.restlet.data.Tag;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
 import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
 
 import com.collabinate.server.StreamEntry;
+import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
+import com.google.common.hash.Hashing;
 
 /**
  * Restful resource representing a single stream entry for an entity.
@@ -20,13 +26,26 @@ import com.collabinate.server.engine.CollabinateWriter;
 public class StreamEntryResource extends ServerResource
 {
 	@Get("json")
-	public String getStreamEntry()
+	public Representation getStreamEntry()
 	{
-		StreamEntry matchingEntry = findMatchingEntry();
+		// extract necessary information from the context
+		String tenantId = getAttribute("tenantId");
+		String entityId = getAttribute("entityId");
+		String entryId = getAttribute("entryId");
+
+		StreamEntry matchingEntry = 
+				findMatchingEntry(tenantId, entityId, entryId);
 		
 		if (null != matchingEntry)
 		{
-			return matchingEntry.getContent();
+			Representation representation = new StringRepresentation(
+					matchingEntry.getContent(), MediaType.APPLICATION_JSON);
+			representation.setTag(
+				new Tag(Hashing.murmur3_128().hashUnencodedChars(
+				matchingEntry.getContent()+tenantId+entityId+entryId)
+				.toString(), false));
+			
+			return representation;
 		}
 		else
 		{
@@ -40,12 +59,10 @@ public class StreamEntryResource extends ServerResource
 	 * request.
 	 * @return
 	 */
-	private StreamEntry findMatchingEntry()
+	private StreamEntry findMatchingEntry(
+			String tenantId, String entityId, String entryId)
 	{
 		// extract necessary information from the context
-		String tenantId = getAttribute("tenantId");
-		String entityId = getAttribute("entityId");
-		String entryId = getAttribute("entryId");
 		CollabinateReader reader = (CollabinateReader)getContext()
 				.getAttributes().get("collabinateReader");
 		
@@ -81,16 +98,37 @@ public class StreamEntryResource extends ServerResource
 		// remove any existing entry
 		writer.deleteStreamEntry(tenantId, entityId, entryId);
 		
+		// create an activity from the given content
+		Activity activity = new Activity(entryContent);
+		
+		// ensure the activity has an id - set to given id if not
+		String id = activity.getId();
+		if (null == id || id.equals(""))
+		{
+			id = entryId;
+			activity.setId(id);
+		}
+		
+		// deal with id differences
+		if (!entryId.equals(id))
+		{
+			// this is tricky - we will use the URL entry ID
+			// for access, with the activity ID still in the
+			// object,  so make access easier the URL ID will
+			// be stored as a "collabinateObjectId"
+			activity.setCollabinateObjectId(entryId);
+		}
+		
+		// pull the existing or created date from the activity
+		DateTime published = activity.getPublished();
+		
 		// create and add new entry
-		StreamEntry entry = new StreamEntry(entryId, null, entryContent);
+		StreamEntry entry =
+				new StreamEntry(entryId, published, activity.toString());
 		writer.addStreamEntry(tenantId, entityId, entry);
 		
-		// if there is no request entity return empty string with text type
-		if (null != entryContent)
-			getResponse().setEntity(entry.getContent(), 
-					getRequest().getEntity().getMediaType());
-		else
-			getResponse().setEntity(entry.getContent(), MediaType.TEXT_PLAIN);
+		// return the entry in the response body
+		getResponse().setEntity(entry.getContent(), MediaType.APPLICATION_JSON);
 		
 		setStatus(Status.SUCCESS_OK);
 	}

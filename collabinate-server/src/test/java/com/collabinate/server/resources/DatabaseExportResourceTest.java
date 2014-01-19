@@ -12,6 +12,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.junit.Test;
+import org.restlet.data.MediaType;
 import org.restlet.data.Status;
 
 /**
@@ -27,6 +28,13 @@ public class DatabaseExportResourceTest extends GraphResourceTest
 	public void export_should_return_200()
 	{
 		assertEquals(Status.SUCCESS_OK, get().getStatus());
+	}
+	
+	@Test
+	public void export_should_have_xml_content_type()
+	{
+		assertEquals(MediaType.APPLICATION_XML,
+				get().getEntity().getMediaType());
 	}
 	
 	@Test

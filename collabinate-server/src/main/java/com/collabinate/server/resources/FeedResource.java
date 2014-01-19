@@ -1,10 +1,15 @@
 package com.collabinate.server.resources;
 
+import org.restlet.data.MediaType;
+import org.restlet.data.Tag;
+import org.restlet.representation.Representation;
+import org.restlet.representation.StringRepresentation;
 import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import com.collabinate.server.engine.CollabinateReader;
 import com.google.common.base.Joiner;
+import com.google.common.hash.Hashing;
 
 /**
  * Restful resource representing the collection of stream entries for all
@@ -15,11 +20,8 @@ import com.google.common.base.Joiner;
  */
 public class FeedResource extends ServerResource
 {
-	// TODO: some much heavier content processing is going to need to happen
-	// here to handle different XML and JSON representations of different
-	// feed types (e.g. activity streams, OData, raw)
 	@Get("json")
-	public String getFeed()
+	public Representation getFeed()
 	{
 		// extract necessary information from the context
 		CollabinateReader reader = (CollabinateReader)getContext()
@@ -32,9 +34,17 @@ public class FeedResource extends ServerResource
 		int count = null == countString ? DEFAULT_COUNT : 
 			Integer.parseInt(countString);
 		
-		return "{\"items\":[" + Joiner.on(',')
+		String result = "{\"items\":[" + Joiner.on(',')
 				.join(reader.getFeed(tenantId, userId, start, count))
 				+ "]}";
+		
+		Representation representation = new StringRepresentation(
+				result, MediaType.APPLICATION_JSON);
+		representation.setTag(new Tag(Hashing.murmur3_128().hashUnencodedChars(
+				result+tenantId+userId+startString+countString)
+				.toString(), false));
+		
+		return representation;
 	}
 	
 	private static final int DEFAULT_COUNT = 20;

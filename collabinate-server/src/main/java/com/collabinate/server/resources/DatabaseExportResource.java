@@ -14,7 +14,7 @@ import com.collabinate.server.engine.CollabinateAdmin;
  */
 public class DatabaseExportResource extends ServerResource
 {
-	@Get
+	@Get("xml")
 	public String exportDatabase()
 	{
 		// extract necessary information from the context

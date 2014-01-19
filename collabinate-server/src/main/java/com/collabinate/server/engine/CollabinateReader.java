@@ -2,6 +2,8 @@ package com.collabinate.server.engine;
 
 import java.util.List;
 
+import org.joda.time.DateTime;
+
 import com.collabinate.server.StreamEntry;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
 
@@ -40,15 +42,17 @@ public interface CollabinateReader
 			long startIndex, int entriesToReturn);
 	
 	/**
-	 * Retrieves a boolean value for whether a user is following an entity.
+	 * Retrieves a DateTime value for when a user followed an entity, or null if
+	 * the user does not follow the entity.
 	 * 
 	 * @param tenantId the tenant for which the request is processed.
-	 * @param userId The ID of the user for which to determine if an entity is
-	 * followed
-	 * @param entityId The ID of the entity to check if the user is following.
-	 * @return True if the given user follows the given entity, otherwise false.
+	 * @param userId The ID of the user for which to determine when an entity
+	 * was followed.
+	 * @param entityId The ID of the entity to check when the user followed.
+	 * @return The DateTime of the start of the follow relationship if the given
+	 * user follows the given entity, otherwise null.
 	 */
-	public Boolean isUserFollowingEntity(String tenantId, String userId,
+	public DateTime getDateTimeUserFollowedEntity(String tenantId, String userId,
 			String entityId);
 	
 	/**

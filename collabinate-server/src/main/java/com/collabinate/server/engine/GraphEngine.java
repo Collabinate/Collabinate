@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.PriorityQueue;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -257,8 +258,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		for (Vertex user : users)
 		{
 			userId = getIdString(user);
-			unfollowEntity(tenantId, userId, entityId);
-			followEntity(tenantId, userId, entityId);
+			DateTime followed = unfollowEntity(tenantId, userId, entityId);
+			followEntity(tenantId, userId, entityId, followed);
 		}
 	}
 	
@@ -451,7 +452,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 
 	@Override
 	public void followEntity(String tenantId, String userId,
-			String entityId)
+			String entityId, DateTime followed)
 	{
 		if (null == tenantId)
 		{
@@ -466,6 +467,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (null == entityId)
 		{
 			throw new IllegalArgumentException("entityId must not be null");
+		}
+		
+		if (null == followed)
+		{
+			followed = DateTime.now(DateTimeZone.UTC);
 		}
 		
 		entityId = tenantId + "/" + entityId;
@@ -486,8 +492,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		if (!alreadyFollowed)
 		{
-			user.addEdge(STRING_FOLLOWS, entity)
-				.setProperty(STRING_TENANT_ID, tenantId);
+			Edge followEdge = user.addEdge(STRING_FOLLOWS, entity);
+			followEdge.setProperty(STRING_TENANT_ID, tenantId);
+			followEdge.setProperty(STRING_TIME, followed);
 			
 			insertFeedEntity(user, entity, tenantId);
 		}
@@ -496,7 +503,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public void unfollowEntity(String tenantId, String userId,
+	public DateTime unfollowEntity(String tenantId, String userId,
 			String entityId)
 	{
 		if (null == tenantId)
@@ -520,12 +527,14 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		Vertex user = getOrCreateEntityVertex(userId, tenantId);
 		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
 		String feedLabel = getFeedLabel(getIdString(user));
+		DateTime followed = null;
 		
 		// remove the follow relationship
 		for (Edge edge: entity.getEdges(Direction.IN, STRING_FOLLOWS))
 		{
 			if (edge.getVertex(Direction.OUT).getId().equals(
 					user.getId()))
+				followed = edge.getProperty(STRING_TIME);
 				edge.remove();
 		}
 		
@@ -548,10 +557,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 		
 		graph.commit();
+		return followed;
 	}
 	
 	@Override
-	public Boolean isUserFollowingEntity(String tenantId, String userId,
+	public DateTime getDateTimeUserFollowedEntity(String tenantId, String userId,
 			String entityId)
 	{
 		entityId = tenantId + "/" + entityId;
@@ -565,13 +575,13 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
 				graph.commit();
-				return true;
+				return edge.getProperty(STRING_TIME);
 			}
 		}
 		
 		graph.commit();
 		
-		return false;
+		return null;
 	}
 
 	@Override

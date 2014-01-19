@@ -68,26 +68,29 @@ public class StreamResource extends ServerResource
 			throw new IllegalStateException(
 					"Context does not contain a CollabinateWriter");
 		
+		// create an activity from the given content
 		Activity activity = new Activity(entryContent);
+		
+		// ensure the activity has an id - generate if not
 		String id = activity.getId();
 		if (null == id || id.equals(""))
 		{
 			id = generateId();
 			activity.setId(id);
 		}
+		
+		// pull the existing or created date from the activity
 		DateTime published = activity.getPublished();
 		
-		StreamEntry entry = new StreamEntry(id, published, activity.toString());
-		
+		// create and add new entry
+		StreamEntry entry =
+				new StreamEntry(id, published, activity.toString());
 		writer.addStreamEntry(tenantId, entityId, entry);
 		
-		// if there is no request entity return empty string with text type
-		if (null != entryContent)
-			getResponse().setEntity(activity.toString(), 
-					getRequest().getEntity().getMediaType());
-		else
-			getResponse().setEntity("", MediaType.TEXT_PLAIN);
+		// return the entry in the response body
+		getResponse().setEntity(entry.getContent(), MediaType.APPLICATION_JSON);
 		
+		//TODO: return relative reference location
 		setLocationRef(new Reference(getReference()).addSegment(entry.getId()));
 		setStatus(Status.SUCCESS_CREATED);
 	}

@@ -3,6 +3,7 @@ package com.collabinate.server.resources;
 import static org.junit.Assert.assertEquals;
 
 import org.junit.Test;
+import org.restlet.data.MediaType;
 import org.restlet.data.Status;
 
 /**
@@ -30,6 +31,21 @@ public class FollowingEntityResourceTest extends GraphResourceTest
 	{
 		put();
 		assertEquals(Status.SUCCESS_OK, get().getStatus());
+	}
+	
+	@Test
+	public void get_should_return_json_content_type()
+	{
+		put();
+		assertEquals(MediaType.APPLICATION_JSON,
+				get().getEntity().getMediaType());
+	}
+	
+	@Test
+	public void put_should_return_json_content_type()
+	{
+		assertEquals(MediaType.APPLICATION_JSON,
+				put().getEntity().getMediaType());
 	}
 	
 	@Test

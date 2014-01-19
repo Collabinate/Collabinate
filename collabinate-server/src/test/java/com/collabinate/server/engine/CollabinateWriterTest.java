@@ -113,7 +113,7 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("tenantId");
-		writer.followEntity(null, "user", "1");
+		writer.followEntity(null, "user", "1", null);
 	}
 	
 	@Test
@@ -121,7 +121,7 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("userId");
-		writer.followEntity("c", null, "1");
+		writer.followEntity("c", null, "1", null);
 	}
 	
 	@Test
@@ -129,7 +129,7 @@ public abstract class CollabinateWriterTest
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
-		writer.followEntity("c", "user", null);
+		writer.followEntity("c", "user", null, null);
 	}
 	
 	@Test

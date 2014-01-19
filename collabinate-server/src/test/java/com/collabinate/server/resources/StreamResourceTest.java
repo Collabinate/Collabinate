@@ -69,6 +69,17 @@ public class StreamResourceTest extends GraphResourceTest
 	}
 	
 	@Test
+	public void non_matching_etag_should_return_200()
+	{
+		Request request = getRequest(Method.GET, null);
+		Conditions conditions = new Conditions();
+		conditions.getNoneMatch().add(new Tag("abc"));
+		request.setConditions(conditions);
+		
+		assertEquals(Status.SUCCESS_OK, getResponse(request).getStatus());
+	}
+	
+	@Test
 	public void item_added_to_stream_should_return_201()
 	{
 		assertEquals(Status.SUCCESS_CREATED, post().getStatus());

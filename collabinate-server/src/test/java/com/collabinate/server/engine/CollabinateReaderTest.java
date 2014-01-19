@@ -7,6 +7,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -214,8 +215,8 @@ public abstract class CollabinateReaderTest
 				new StreamEntry("4", time4, null));
 		
 		// follow the entities, feed order is 3, 1, 2, 4
-		writer.followEntity("c", "user", "entityA");
-		writer.followEntity("c", "user", "entityB");
+		writer.followEntity("c", "user", "entityA", null);
+		writer.followEntity("c", "user", "entityB", null);
 		
 		// remove entry 2
 		writer.deleteStreamEntry("c", "entityA", "2");
@@ -254,8 +255,8 @@ public abstract class CollabinateReaderTest
 				new StreamEntry("4", time4, null));
 		
 		// follow the entities, feed order is 3, 1, 2, 4
-		writer.followEntity("c", "user", "entityA");
-		writer.followEntity("c", "user", "entityB");
+		writer.followEntity("c", "user", "entityA", null);
+		writer.followEntity("c", "user", "entityB", null);
 		
 		// remove entry 3
 		writer.deleteStreamEntry("c", "entityA", "3");
@@ -283,8 +284,8 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void feed_for_user_who_follows_entities_with_no_stream_entries_should_be_empty()
 	{
-		writer.followEntity("c", "user", "entityA");
-		writer.followEntity("c", "user", "entityB");
+		writer.followEntity("c", "user", "entityA", null);
+		writer.followEntity("c", "user", "entityB", null);
 		assertEquals(0, reader.getFeed("c", "user", 0, 1).size());
 		
 		//cleanup
@@ -297,7 +298,7 @@ public abstract class CollabinateReaderTest
 	{
 		final DateTime time = DateTime.now();
 		writer.addStreamEntry("c", "entity", new StreamEntry("1", time, null));
-		writer.followEntity("c", "user", "entity");
+		writer.followEntity("c", "user", "entity", null);
 		final DateTime returned = reader.getFeed("c", "user", 0, 1)
 				.get(0).getTime();
 		assertEquals(time.getMillis(), returned.getMillis());
@@ -316,8 +317,8 @@ public abstract class CollabinateReaderTest
 				new StreamEntry("1", time1, null));
 		writer.addStreamEntry("c", "entityB",
 				new StreamEntry("2", time2, null));
-		writer.followEntity("c", "user", "entityA");
-		writer.followEntity("c", "user", "entityB");
+		writer.followEntity("c", "user", "entityA", null);
+		writer.followEntity("c", "user", "entityB", null);
 		ArrayList<Long> timeMillis = new ArrayList<Long>();
 		for (StreamEntry entry : reader.getFeed("c", "user", 0, 2))
 		{
@@ -345,9 +346,9 @@ public abstract class CollabinateReaderTest
 				new StreamEntry("2", time2, null));
 		writer.addStreamEntry("c", "entityC",
 				new StreamEntry("3", time3, null));
-		writer.followEntity("c", "user", "entityA");
-		writer.followEntity("c", "user", "entityB");
-		writer.followEntity("c", "user", "entityC");
+		writer.followEntity("c", "user", "entityA", null);
+		writer.followEntity("c", "user", "entityB", null);
+		writer.followEntity("c", "user", "entityC", null);
 		List<StreamEntry> entries = reader.getFeed("c", "user", 0, 3);
 		assertEquals("newest entry not first", time3.getMillis(),
 				entries.get(0).getTime().getMillis());
@@ -373,9 +374,9 @@ public abstract class CollabinateReaderTest
 				new StreamEntry("2", time2, null));
 		writer.addStreamEntry("c", "entityC",
 				new StreamEntry("3", time3, null));
-		writer.followEntity("c", "user", "entityA");
-		writer.followEntity("c", "user", "entityB");
-		writer.followEntity("c", "user", "entityC");
+		writer.followEntity("c", "user", "entityA", null);
+		writer.followEntity("c", "user", "entityB", null);
+		writer.followEntity("c", "user", "entityC", null);
 		List<StreamEntry> entries = reader.getFeed("c", "user", 0, 3);
 		assertEquals("oldest entry not last", time3.getMillis(),
 				entries.get(2).getTime().getMillis());
@@ -405,8 +406,8 @@ public abstract class CollabinateReaderTest
 				new StreamEntry("1", time1, null));
 		writer.addStreamEntry("c", "entityB",
 				new StreamEntry("2", time2, null));
-		writer.followEntity("c", "user", "entityA");
-		writer.followEntity("c", "user", "entityB");
+		writer.followEntity("c", "user", "entityA", null);
+		writer.followEntity("c", "user", "entityB", null);
 		// The descending time order right now is B1, A1
 		feed = reader.getFeed("c", "user", 0, 2);
 		feedEntry = feed.get(0).getTime();
@@ -451,12 +452,12 @@ public abstract class CollabinateReaderTest
 	}
 	
 	@Test
-	public void is_following_should_return_false_if_user_does_not_follow()
+	public void is_following_should_return_null_if_user_does_not_follow()
 	{
 		writer.addStreamEntry("c", "entity", new StreamEntry("1", null, null));
 		writer.addStreamEntry("c", "user", new StreamEntry("2", null, null));
 		
-		assertFalse(reader.isUserFollowingEntity("c", "user", "entity"));
+		assertNull(reader.getDateTimeUserFollowedEntity("c", "user", "entity"));
 		
 		//cleanup
 		writer.deleteStreamEntry("c", "entity", "1");
@@ -464,13 +465,15 @@ public abstract class CollabinateReaderTest
 	}
 	
 	@Test
-	public void is_following_should_return_true_if_user_follows_entity()
+	public void is_following_should_return_datetime_if_user_follows_entity()
 	{
 		writer.addStreamEntry("c", "entity", new StreamEntry("1", null, null));
 		writer.addStreamEntry("c", "user", new StreamEntry("2", null, null));
-		writer.followEntity("c", "user", "entity");
+		DateTime followed = DateTime.now(DateTimeZone.UTC);
+		writer.followEntity("c", "user", "entity", followed);
 		
-		assertTrue(reader.isUserFollowingEntity("c", "user", "entity"));
+		assertEquals(followed, 
+				reader.getDateTimeUserFollowedEntity("c", "user", "entity"));
 
 		//cleanup
 		writer.unfollowEntity("c", "user", "entity");
@@ -479,14 +482,14 @@ public abstract class CollabinateReaderTest
 	}
 	
 	@Test
-	public void is_following_should_return_false_after_unfollow()
+	public void is_following_should_return_null_after_unfollow()
 	{
 		writer.addStreamEntry("c", "entity", new StreamEntry("1", null, null));
 		writer.addStreamEntry("c", "user", new StreamEntry("2", null, null));
-		writer.followEntity("c", "user", "entity");
+		writer.followEntity("c", "user", "entity", null);
 		writer.unfollowEntity("c", "user", "entity");
 		
-		assertFalse(reader.isUserFollowingEntity("c", "user", "entity"));
+		assertNull(reader.getDateTimeUserFollowedEntity("c", "user", "entity"));
 		
 		//cleanup
 		writer.deleteStreamEntry("c", "entity", "1");
@@ -496,8 +499,8 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void follow_same_entity_twice_should_not_cause_problem_reading_feed()
 	{
-		writer.followEntity("c", "user", "entity");
-		writer.followEntity("c", "user", "entity");
+		writer.followEntity("c", "user", "entity", null);
+		writer.followEntity("c", "user", "entity", null);
 		
 		reader.getFeed("c", "user", 0, 20);
 	}

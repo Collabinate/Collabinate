@@ -1,11 +1,15 @@
 package com.collabinate.server.resources;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
 import org.restlet.data.Status;
 import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
 import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
 
+import com.collabinate.server.activitystreams.Activity;
+import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 
@@ -18,7 +22,7 @@ import com.collabinate.server.engine.CollabinateWriter;
  */
 public class FollowingEntityResource extends ServerResource
 {
-	@Get
+	@Get("json")
 	public String getFollowRelationship()
 	{
 		// extract necessary information from the context
@@ -29,18 +33,22 @@ public class FollowingEntityResource extends ServerResource
 		String entityId = getAttribute("entityId");
 		
 		// test the follow relationship
-		if (reader.isUserFollowingEntity(tenantId, userId, entityId))
-			setStatus(Status.SUCCESS_OK);
-		else
-			setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+		DateTime followed = reader.getDateTimeUserFollowedEntity(
+				tenantId, userId, entityId);
 		
-		// TODO: this has to be something other than empty string or else 204
-		// results.  What body should this return?
-		return entityId;
+		if (null != followed)
+		{
+			setStatus(Status.SUCCESS_OK);
+			return createFollowActivity(userId, FOLLOW, entityId, followed)
+					.toString();
+		}
+		
+		setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+		return null;
 	}
 	
 	@Put
-	public void createFollowRelationship()
+	public String createFollowRelationship()
 	{
 		// extract necessary information from the context
 		CollabinateWriter writer = (CollabinateWriter)getContext()
@@ -50,9 +58,13 @@ public class FollowingEntityResource extends ServerResource
 		String entityId = getAttribute("entityId");
 		
 		// add the follow relationship
-		writer.followEntity(tenantId, userId, entityId);
+		DateTime followed = DateTime.now(DateTimeZone.UTC);
+		writer.followEntity(tenantId, userId, entityId, followed);
 		
 		setStatus(Status.SUCCESS_CREATED);
+		
+		return createFollowActivity(userId, FOLLOW, entityId, followed)
+				.toString();
 	}
 	
 	@Delete
@@ -70,8 +82,44 @@ public class FollowingEntityResource extends ServerResource
 		
 		setStatus(Status.SUCCESS_OK);
 		
-		// TODO: this has to be something other than empty string or else 204
-		// results.  What body should this return?
-		return userId;
+		return createFollowActivity(
+				userId,
+				STOP_FOLLOWING,
+				entityId,
+				DateTime.now(DateTimeZone.UTC)).toString();
 	}
+	
+	/**
+	 * Creates an activity to represent a change to a follow relationship.
+	 * 
+	 * @param userId The user who started or stopped following.
+	 * @param verb Follow or stop-following.
+	 * @param entityId The object that was followed or stopped being followed.
+	 * @param published The time of the activity.
+	 * 
+	 * @return An appropriately structured activity that captures the follow
+	 * change.
+	 */
+	protected Activity createFollowActivity(
+			String userId, String verb, String entityId, DateTime published)
+	{
+		Activity activity = new Activity();
+		
+		ActivityStreamsObject actor = new ActivityStreamsObject();
+		actor.setId(userId);
+		activity.setActor(actor);
+		
+		ActivityStreamsObject object = new ActivityStreamsObject();
+		object.setId(entityId);
+		activity.setObject(object);
+		
+		activity.setVerb(verb);
+		
+		activity.setPublished(published);
+		
+		return activity;
+	}
+	
+	protected static final String FOLLOW = "follow";
+	protected static final String STOP_FOLLOWING = "stop-following";
 }
