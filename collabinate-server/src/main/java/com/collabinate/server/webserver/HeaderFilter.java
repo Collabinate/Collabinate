@@ -1,5 +1,8 @@
 package com.collabinate.server.webserver;
 
+import java.net.MalformedURLException;
+import java.net.URL;
+
 import org.apache.commons.configuration.Configuration;
 import org.restlet.Context;
 import org.restlet.Request;
@@ -10,6 +13,8 @@ import org.restlet.data.Status;
 import org.restlet.engine.header.Header;
 import org.restlet.routing.Filter;
 import org.restlet.util.Series;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.collabinate.server.Collabinate;
 
@@ -31,6 +36,8 @@ public class HeaderFilter extends Filter
 	private boolean writeMetering = false;
 	private String writeMeteringHeader;
 	private String writeMeteringValue;
+	
+	private final Logger logger = LoggerFactory.getLogger(HeaderFilter.class);
 	
 	/**
 	 * Initializes a HeaderFilter instance.
@@ -94,23 +101,33 @@ public class HeaderFilter extends Filter
 	protected void afterHandle(Request request, Response response)
 	{
 		Method requestMethod = request.getMethod();
-		
-		// add the read metering header if it exists
-		if (readMetering && requestMethod.equals(Method.GET))
+				
+		// do not meter for errors
+		if (response.getStatus().isSuccess() || 
+			response.getStatus().isRedirection() || 
+			response.getStatus().isInformational())
 		{
-			setResponseHeaderValue(response, readMeteringHeader,
-					readMeteringValue);
+			// add the read metering header if it exists
+			if (readMetering && requestMethod.equals(Method.GET))
+			{
+				setResponseHeaderValue(response, readMeteringHeader,
+						readMeteringValue);
+			}
+			
+			// add the write metering header if it exists
+			if (writeMetering &&
+					(requestMethod.equals(Method.POST) ||
+					 requestMethod.equals(Method.PUT)  ||
+					 requestMethod.equals(Method.DELETE)))
+			{
+				setResponseHeaderValue(response, writeMeteringHeader,
+						writeMeteringValue);
+			}
 		}
 		
-		// add the write metering header if it exists
-		if (writeMetering &&
-				(requestMethod.equals(Method.POST) ||
-				 requestMethod.equals(Method.PUT)  ||
-				 requestMethod.equals(Method.DELETE)))
-		{
-			setResponseHeaderValue(response, writeMeteringHeader,
-					writeMeteringValue);
-		}
+		// remove the protocol and server name from response headers to make
+		// URLs correct when accessed through proxies.
+		makeHeaderUrlRelative(response, LOCATION_HEADER);
 	}
 	
 	/**
@@ -151,13 +168,46 @@ public class HeaderFilter extends Filter
 		Series<Header> responseHeaders = (Series<Header>) 
 				response.getAttributes().get(RESTLET_HEADERS);
 		
-		if (responseHeaders == null)
+		if (null == responseHeaders)
 		{
 		    responseHeaders = new Series<Header>(Header.class);
 		    response.getAttributes().put(RESTLET_HEADERS, responseHeaders);
 		}
 		
 		responseHeaders.add(new Header(header, value));
+	}
+	
+	/**
+	 * Replaces the absolute URL in the given header with the path portion.
+	 * 
+	 * @param response The response for which the header will be edited.
+	 * @param headerName The header to make relative.
+	 */
+	protected void makeHeaderUrlRelative(Response response,
+			String headerName)
+	{
+		@SuppressWarnings("unchecked")
+		Series<Header> responseHeaders = (Series<Header>)
+				response.getAttributes().get(RESTLET_HEADERS);
+		
+		if (null != responseHeaders)
+		{
+			String location = responseHeaders.getFirstValue(headerName, true);
+			
+			if (null != location && !location.equals(""))
+			{
+				try
+				{
+					responseHeaders.set(headerName,
+							new URL(location).getPath(), true);
+				}
+				catch (MalformedURLException e)
+				{
+					logger.error(
+						"Malformed URL in response header: " + headerName, e);
+				}
+			}
+		}
 	}
 	
 	private static final String RESTLET_HEADERS = "org.restlet.http.headers";
@@ -172,5 +222,6 @@ public class HeaderFilter extends Filter
 	private static final String CONFIG_WRITE_METERING_HEADER =
 			"collabinate.headers.writemetering.name";
 	private static final String CONFIG_WRITE_METERING_VALUE =
-			"collabinate.headers.writemetering.value";	
+			"collabinate.headers.writemetering.value";
+	private static final String LOCATION_HEADER = "Location";
 }
