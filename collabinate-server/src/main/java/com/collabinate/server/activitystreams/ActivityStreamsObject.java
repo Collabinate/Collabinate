@@ -158,7 +158,7 @@ public class ActivityStreamsObject
 		jsonObject.addProperty(PUBLISHED, dateTime.toString(
 				ISODateTimeFormat.dateTime().withZoneUTC()));
 	}
-
+	
 	/**
 	 * Gets an identifier for finding objects within the Collabinate system.
 	 * Typically used in situations where there are conflicts between internal
@@ -181,6 +181,26 @@ public class ActivityStreamsObject
 	public void setCollabinateObjectId(String id)
 	{
 		jsonObject.addProperty(COLLABINATE_OBJECT_ID, id);
+	}
+	
+	/**
+	 * Gets the original ID for the object.
+	 * 
+	 * @return The string identifier that the object originally had.
+	 */
+	public String getCollabinateOriginalId()
+	{
+		return getStringValue(COLLABINATE_ORIGINAL_ID);
+	}
+	
+	/**
+	 * Sets the original ID for the object.
+	 * 
+	 * @param id The string identifier that the object originally had.
+	 */
+	public void setCollabinateOriginalId(String id)
+	{
+		jsonObject.addProperty(COLLABINATE_ORIGINAL_ID, id);
 	}
 	
 	@Override
@@ -216,4 +236,6 @@ public class ActivityStreamsObject
 	protected static final String DISPLAY_NAME = "displayName";
 	protected static final String PUBLISHED = "published";
 	protected static final String COLLABINATE_OBJECT_ID = "collabinateObjectId";
+	protected static final String COLLABINATE_ORIGINAL_ID =
+			"collabinateOriginalId";
 }

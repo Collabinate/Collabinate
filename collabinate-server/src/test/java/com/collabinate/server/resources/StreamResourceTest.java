@@ -138,7 +138,7 @@ public class StreamResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void activity_should_use_given_id()
+	public void activity_should_not_use_given_id()
 	{
 		String entityBody = "{\"id\":\"TEST\"}";
 		post(entityBody, MediaType.TEXT_PLAIN);
@@ -146,21 +146,33 @@ public class StreamResourceTest extends GraphResourceTest
 		ActivityStreamsCollection stream =
 				new ActivityStreamsCollection(get().getEntityAsText());
 		
-		assertEquals("TEST", stream.get(0).getId());
+		assertNotEquals("TEST", stream.get(0).getId());
 	}
 	
 	@Test
-	public void individual_activity_should_be_retrievable_via_given_id()
+	public void individual_activity_should_be_retrievable_via_generated_id()
 	{
 		String entityBody = "{\"id\":\"test\",\"actor\":{\"id\":\"foo\"}}";
-		post(entityBody, MediaType.TEXT_PLAIN);
+		Activity posted = new Activity(
+				post(entityBody, MediaType.TEXT_PLAIN).getEntityAsText());
 		
 		Request request = new Request(Method.GET,
-				"riap://application/1/tenant/entities/entity/stream/test");
+				"riap://application/1/tenant/entities/entity/stream/"
+				+ posted.getId());
 		Activity activity = new Activity(
 				component.handle(request).getEntityAsText());
 
 		assertEquals("foo", activity.getActor().getId());
+	}
+	
+	@Test
+	public void original_id_should_be_preserved()
+	{
+		String entityBody = "{\"id\":\"original\",\"actor\":{\"id\":\"foo\"}}";
+		Activity posted = new Activity(
+				post(entityBody, MediaType.TEXT_PLAIN).getEntityAsText());
+		
+		assertEquals("original", posted.getCollabinateOriginalId());
 	}
 	
 	@Test

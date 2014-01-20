@@ -21,9 +21,16 @@ public class FollowingEntityResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void following_entity_should_return_201()
+	public void following_entity_for_the_first_time_should_return_201()
 	{
 		assertEquals(Status.SUCCESS_CREATED, put().getStatus());
+	}
+	
+	@Test
+	public void following_entity_subsequent_times_should_return_200()
+	{
+		put();
+		assertEquals(Status.SUCCESS_OK, put().getStatus());		
 	}
 	
 	@Test
@@ -56,8 +63,9 @@ public class FollowingEntityResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void unfollowing_never_followed_entity_should_return_200()
+	public void unfollowing_not_followed_entity_should_return_200()
 	{
+		// TODO: this should be a 404
 		assertEquals(Status.SUCCESS_OK, delete().getStatus());
 	}
 	

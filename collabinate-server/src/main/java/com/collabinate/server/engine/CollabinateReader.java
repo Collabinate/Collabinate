@@ -64,7 +64,7 @@ public interface CollabinateReader
 	 * @return A collection of entities followed by the given user.
 	 */
 	public List<ActivityStreamsObject> getFollowing(String tenantId,
-			String userId);
+			String userId, long startIndex, int entriesToReturn);
 	
 	/**
 	 * Retrieves the collection of users that follow an entity.
@@ -75,5 +75,5 @@ public interface CollabinateReader
 	 * @return A collection of users following the given entity.
 	 */
 	public List<ActivityStreamsObject> getFollowers(String tenantId,
-			String entityId);
+			String entityId, long startIndex, int entriesToReturn);
 }

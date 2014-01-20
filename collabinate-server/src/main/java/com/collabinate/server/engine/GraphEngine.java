@@ -451,7 +451,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public void followEntity(String tenantId, String userId,
+	public DateTime followEntity(String tenantId, String userId,
 			String entityId, DateTime followed)
 	{
 		if (null == tenantId)
@@ -477,7 +477,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
 		
-		boolean alreadyFollowed = false;
 		Vertex user = getOrCreateEntityVertex(userId, tenantId);
 		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
 		
@@ -485,21 +484,23 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
-				alreadyFollowed = true;
-				break;
+				DateTime existingDateTime =
+						DateTime.parse((String)edge.getProperty(STRING_TIME));
+				
+				graph.commit();
+				return existingDateTime;
 			}
 		}
 		
-		if (!alreadyFollowed)
-		{
-			Edge followEdge = user.addEdge(STRING_FOLLOWS, entity);
-			followEdge.setProperty(STRING_TENANT_ID, tenantId);
-			followEdge.setProperty(STRING_TIME, followed.toString());
-			
-			insertFeedEntity(user, entity, tenantId);
-		}
+		Edge followEdge = user.addEdge(STRING_FOLLOWS, entity);
+		followEdge.setProperty(STRING_TENANT_ID, tenantId);
+		followEdge.setProperty(STRING_TIME, followed.toString());
+		
+		insertFeedEntity(user, entity, tenantId);
 		
 		graph.commit();
+		
+		return followed;
 	}
 	
 	@Override
@@ -562,8 +563,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public DateTime getDateTimeUserFollowedEntity(String tenantId, String userId,
-			String entityId)
+	public DateTime getDateTimeUserFollowedEntity(String tenantId,
+			String userId, String entityId)
 	{
 		entityId = tenantId + "/" + entityId;
 		userId = tenantId + "/" + userId;
@@ -587,7 +588,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 
 	@Override
 	public List<ActivityStreamsObject> getFollowing(String tenantId,
-			String userId)
+			String userId, long startIndex, int entriesToReturn)
 	{
 		userId = tenantId + "/" + userId;
 		
@@ -595,14 +596,22 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		List<ActivityStreamsObject> following =
 				new ArrayList<ActivityStreamsObject>();
 		
+		long currentPosition = 0;
+		
 		// find all the followed entities and add them to the following list
 		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
 		{
-			ActivityStreamsObject entity = new ActivityStreamsObject();
-			// remove the tenant id from the entity id before adding
-			entity.setId(edge.getVertex(Direction.IN).getId().toString()
-					.replaceFirst(tenantId + "/", ""));
-			following.add(entity);
+			if (currentPosition >= startIndex)
+			{
+				ActivityStreamsObject entity = new ActivityStreamsObject();
+				// remove the tenant id from the entity id before adding
+				entity.setId(edge.getVertex(Direction.IN).getId().toString()
+						.replaceFirst(tenantId + "/", ""));
+				following.add(entity);
+				if (following.size() >= entriesToReturn)
+					break;
+			}
+			currentPosition++;
 		}
 
 		graph.commit();
@@ -612,7 +621,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	
 	@Override
 	public List<ActivityStreamsObject> getFollowers(String tenantId,
-			String entityId)
+			String entityId, long startIndex, int entriesToReturn)
 	{
 		entityId = tenantId + "/" + entityId;
 		
@@ -620,14 +629,22 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		List<ActivityStreamsObject> followers =
 				new ArrayList<ActivityStreamsObject>();
 		
+		long currentPosition = 0;
+		
 		// find all the following users and add them to the followers list
 		for (Edge edge : entity.getEdges(Direction.IN, STRING_FOLLOWS))
 		{
-			ActivityStreamsObject user = new ActivityStreamsObject();
-			// remove the tenant id from the user id before adding
-			user.setId(edge.getVertex(Direction.OUT).getId().toString()
-					.replaceFirst(tenantId + "/", ""));
-			followers.add(user);
+			if (currentPosition >= startIndex)
+			{
+				ActivityStreamsObject user = new ActivityStreamsObject();
+				// remove the tenant id from the user id before adding
+				user.setId(edge.getVertex(Direction.OUT).getId().toString()
+						.replaceFirst(tenantId + "/", ""));
+				followers.add(user);
+				if (followers.size() >= entriesToReturn)
+					break;
+			}
+			currentPosition++;
 		}
 
 		graph.commit();
@@ -716,6 +733,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				new PriorityQueue<Vertex>(11, comparator);
 		ArrayList<Vertex> streamEntries = new ArrayList<Vertex>();
 		
+		// since we need to advance from the beginning of the feed, this lets
+		// us keep track of where we are
+		long feedPosition = 0;
+		
 		// this is used to track the newest entry in the farthest entity reached
 		Vertex topOfEntity = null;
 		
@@ -742,7 +763,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		// while we have not yet hit our entries to return,
 		// and there are still entries in the queue OR
 		// there are more entities
-		while (streamEntries.size() < (entriesToReturn + startIndex)
+		while (streamEntries.size() < entriesToReturn
 				&& (queue.size() > 0 || entity != null))
 		{
 			// compare top of next entity to top of queue
@@ -753,7 +774,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			// the next entity
 			if (result < 0)
 			{
-				streamEntries.add(topOfEntity);
+				if (feedPosition >= startIndex)
+					streamEntries.add(topOfEntity);
 				Vertex nextEntry = getNextStreamEntry(topOfEntity);
 				if (null != nextEntry)
 					queue.add(nextEntry);
@@ -780,10 +802,13 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 					Vertex nextEntry = getNextStreamEntry(removedFromQueue);
 					if (null != nextEntry)
 						queue.add(nextEntry);
-					streamEntries.add(removedFromQueue);
+					if (feedPosition >= startIndex)
+						streamEntries.add(removedFromQueue);
 					topOfQueue = queue.peek();
 				}
 			}
+			
+			feedPosition++;
 		}
 		
 		graph.commit();

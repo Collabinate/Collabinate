@@ -84,7 +84,8 @@ public abstract class CollabinateReaderTest
 		writer.addStreamEntry("test-003", "entity",
 				new StreamEntry("2", DateTime.now(), null));
 		
-		List<StreamEntry> entries = reader.getStream("test-003", "entity", 0, 2);
+		List<StreamEntry> entries =
+				reader.getStream("test-003", "entity", 0, 2);
 		assertEquals("All entries not retrieved", 2, entries.size());
 		
 		//cleanup
@@ -101,13 +102,19 @@ public abstract class CollabinateReaderTest
 		final DateTime time3 = time0.plus(2000); // newest
 		final DateTime time4 = time0.minus(2000);
 		
-		writer.addStreamEntry("test-004", "entity", new StreamEntry("1", time0, null));
-		writer.addStreamEntry("test-004", "entity", new StreamEntry("2", time1, null));
-		writer.addStreamEntry("test-004", "entity", new StreamEntry("3", time2, null));
-		writer.addStreamEntry("test-004", "entity", new StreamEntry("4", time3, null));
-		writer.addStreamEntry("test-004", "entity", new StreamEntry("5", time4, null));
+		writer.addStreamEntry("test-004", "entity",
+				new StreamEntry("1", time0, null));
+		writer.addStreamEntry("test-004", "entity",
+				new StreamEntry("2", time1, null));
+		writer.addStreamEntry("test-004", "entity",
+				new StreamEntry("3", time2, null));
+		writer.addStreamEntry("test-004", "entity",
+				new StreamEntry("4", time3, null));
+		writer.addStreamEntry("test-004", "entity",
+				new StreamEntry("5", time4, null));
 		
-		List<StreamEntry> entries = reader.getStream("test-004", "entity", 0, 1);
+		List<StreamEntry> entries =
+				reader.getStream("test-004", "entity", 0, 1);
 		assertEquals("Newest entry not first in stream", 
 			time3.getMillis(), entries.get(0).getTime().getMillis());
 		
@@ -128,13 +135,19 @@ public abstract class CollabinateReaderTest
 		final DateTime time3 = time0.minus(2000); // oldest	
 		final DateTime time4 = time0.plus(2000);
 		
-		writer.addStreamEntry("test-005", "entity", new StreamEntry("1", time0, null));
-		writer.addStreamEntry("test-005", "entity", new StreamEntry("2", time1, null));
-		writer.addStreamEntry("test-005", "entity", new StreamEntry("3", time2, null));
-		writer.addStreamEntry("test-005", "entity", new StreamEntry("4", time3, null));
-		writer.addStreamEntry("test-005", "entity", new StreamEntry("5", time4, null));
+		writer.addStreamEntry("test-005", "entity",
+				new StreamEntry("1", time0, null));
+		writer.addStreamEntry("test-005", "entity",
+				new StreamEntry("2", time1, null));
+		writer.addStreamEntry("test-005", "entity",
+				new StreamEntry("3", time2, null));
+		writer.addStreamEntry("test-005", "entity",
+				new StreamEntry("4", time3, null));
+		writer.addStreamEntry("test-005", "entity",
+				new StreamEntry("5", time4, null));
 		
-		List<StreamEntry> entries = reader.getStream("test-005", "entity", 0, 5);
+		List<StreamEntry> entries =
+				reader.getStream("test-005", "entity", 0, 5);
 		assertEquals("Oldest entry not last in stream", 
 			time3.getMillis(), entries.get(4).getTime().getMillis());
 		
@@ -149,7 +162,8 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void stream_with_all_entries_removed_should_be_empty()
 	{
-		writer.addStreamEntry("test-006", "entity", new StreamEntry("1", null, null));
+		writer.addStreamEntry("test-006", "entity",
+				new StreamEntry("1", null, null));
 		writer.deleteStreamEntry("test-006", "entity", "1");
 		List<StreamEntry> stream = reader.getStream("test-006", "entity", 0, 1);
 		assertEquals(0, stream.size());
@@ -158,8 +172,10 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void removed_stream_entry_should_not_appear_in_stream()
 	{
-		writer.addStreamEntry("test-007", "entity", new StreamEntry("1", null, null));
-		writer.addStreamEntry("test-007", "entity", new StreamEntry("2", null, null));
+		writer.addStreamEntry("test-007", "entity",
+				new StreamEntry("1", null, null));
+		writer.addStreamEntry("test-007", "entity",
+				new StreamEntry("2", null, null));
 		writer.deleteStreamEntry("test-007", "entity", "1");
 		List<StreamEntry> stream = reader.getStream("test-007", "entity", 0, 1);
 		assertNotEquals("Removed entry appeared in stream", 
@@ -177,15 +193,19 @@ public abstract class CollabinateReaderTest
 		final DateTime time3 = time1.plus(1000);
 		
 		// add entries, order will be 3, 1, 2
-		writer.addStreamEntry("test-008", "entity", new StreamEntry("1", time1, null));
-		writer.addStreamEntry("test-008", "entity", new StreamEntry("2", time2, null));
-		writer.addStreamEntry("test-008", "entity", new StreamEntry("3", time3, null));
+		writer.addStreamEntry("test-008", "entity",
+				new StreamEntry("1", time1, null));
+		writer.addStreamEntry("test-008", "entity",
+				new StreamEntry("2", time2, null));
+		writer.addStreamEntry("test-008", "entity",
+				new StreamEntry("3", time3, null));
 		
 		// remove entry 1
 		writer.deleteStreamEntry("test-008", "entity", "1");
 		
 		// order should be 3, 2		
-		List<StreamEntry> entries = reader.getStream("test-008", "entity", 0, 2);
+		List<StreamEntry> entries =
+				reader.getStream("test-008", "entity", 0, 2);
 		assertEquals("Newest not first.", "3", entries.get(0).getId());
 		assertEquals("Oldest not last.", "2", entries.get(1).getId());
 		
@@ -296,7 +316,8 @@ public abstract class CollabinateReaderTest
 	public void feed_should_contain_entry_from_followed_entity()
 	{
 		final DateTime time = DateTime.now();
-		writer.addStreamEntry("test-013", "entity", new StreamEntry("1", time, null));
+		writer.addStreamEntry("test-013", "entity",
+				new StreamEntry("1", time, null));
 		writer.followEntity("test-013", "user", "entity", null);
 		final DateTime returned = reader.getFeed("test-013", "user", 0, 1)
 				.get(0).getTime();
@@ -453,10 +474,13 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void is_following_should_return_null_if_user_does_not_follow()
 	{
-		writer.addStreamEntry("test-018", "entity", new StreamEntry("1", null, null));
-		writer.addStreamEntry("test-018", "user", new StreamEntry("2", null, null));
+		writer.addStreamEntry("test-018", "entity",
+				new StreamEntry("1", null, null));
+		writer.addStreamEntry("test-018", "user",
+				new StreamEntry("2", null, null));
 		
-		assertNull(reader.getDateTimeUserFollowedEntity("test-018", "user", "entity"));
+		assertNull(reader.getDateTimeUserFollowedEntity(
+				"test-018", "user", "entity"));
 		
 		//cleanup
 		writer.deleteStreamEntry("test-018", "entity", "1");
@@ -466,15 +490,17 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void is_following_should_return_datetime_if_user_follows_entity()
 	{
-		writer.addStreamEntry("test-019", "entity", new StreamEntry("1", null, null));
-		writer.addStreamEntry("test-019", "user", new StreamEntry("2", null, null));
+		writer.addStreamEntry("test-019", "entity",
+				new StreamEntry("1", null, null));
+		writer.addStreamEntry("test-019", "user",
+				new StreamEntry("2", null, null));
 		DateTime followed = new DateTime(1977, 5, 13, 12, 00);
 		writer.followEntity("test-019", "user", "entity", followed);
 		
 		
-		assertEquals(followed.toInstant(),
-				reader.getDateTimeUserFollowedEntity("test-019", "user", "entity")
-				.toInstant());
+		assertEquals(followed.getMillis(), 
+				reader.getDateTimeUserFollowedEntity(
+						"test-019", "user", "entity").getMillis());
 
 		//cleanup
 		writer.unfollowEntity("test-019", "user", "entity");
@@ -485,12 +511,15 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void is_following_should_return_null_after_unfollow()
 	{
-		writer.addStreamEntry("test-020", "entity", new StreamEntry("1", null, null));
-		writer.addStreamEntry("test-020", "user", new StreamEntry("2", null, null));
+		writer.addStreamEntry("test-020", "entity",
+				new StreamEntry("1", null, null));
+		writer.addStreamEntry("test-020", "user",
+				new StreamEntry("2", null, null));
 		writer.followEntity("test-020", "user", "entity", null);
 		writer.unfollowEntity("test-020", "user", "entity");
 		
-		assertNull(reader.getDateTimeUserFollowedEntity("test-020", "user", "entity"));
+		assertNull(reader.getDateTimeUserFollowedEntity(
+				"test-020", "user", "entity"));
 		
 		//cleanup
 		writer.deleteStreamEntry("test-020", "entity", "1");
@@ -512,15 +541,80 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void streams_for_the_same_entityId_for_different_tenants_should_be_different()
 	{
-		writer.addStreamEntry("test-022-tenant1", "entity", new StreamEntry("1", null, null));
-		writer.addStreamEntry("test-022-tenant2", "entity", new StreamEntry("1", null, null));
+		writer.addStreamEntry("test-022-tenant1", "entity",
+				new StreamEntry("1", null, null));
+		writer.addStreamEntry("test-022-tenant2", "entity",
+				new StreamEntry("1", null, null));
 		
-		List<StreamEntry> entries = reader.getStream("test-022-tenant1", "entity", 0, 2);
+		List<StreamEntry> entries =
+				reader.getStream("test-022-tenant1", "entity", 0, 2);
 		assertEquals("Stream not separate - invalid entry count.",
 				1, entries.size());
 		
 		//cleanup
 		writer.deleteStreamEntry("test-022-tenant1", "entity", "1");
 		writer.deleteStreamEntry("test-022-tenant2", "entity", "1");
+	}
+	
+	@Test
+	public void start_parameter_should_start_stream_in_correct_place()
+	{
+		final DateTime time1 = DateTime.now();
+		final DateTime time2 = DateTime.now().plus(1000);
+		writer.addStreamEntry("test-023", "entityA",
+				new StreamEntry("1", time1, null));
+		writer.addStreamEntry("test-023", "entityA",
+				new StreamEntry("2", time2, null));
+		
+		DateTime secondEntryTime =
+				reader.getStream("test-023", "entityA", 1, 1).get(0).getTime();
+		
+		assertEquals(secondEntryTime.getMillis(), time1.getMillis());
+	}
+	
+	@Test
+	public void start_parameter_should_start_feed_in_correct_place()
+	{
+		final DateTime time1 = DateTime.now();
+		final DateTime time2 = DateTime.now().plus(1000);
+		writer.addStreamEntry("test-024", "entityA",
+				new StreamEntry("1", time1, null));
+		writer.addStreamEntry("test-024", "entityB",
+				new StreamEntry("2", time2, null));
+		writer.followEntity("test-024", "user", "entityA", null);
+		writer.followEntity("test-024", "user", "entityB", null);
+		
+		DateTime secondEntryTime =
+				reader.getFeed("test-024", "user", 1, 1).get(0).getTime();
+		
+		assertEquals(secondEntryTime.getMillis(), time1.getMillis());
+	}
+	
+	@Test
+	public void count_parameter_should_return_correct_number_of_stream_items()
+	{
+		final DateTime time1 = DateTime.now();
+		final DateTime time2 = DateTime.now().plus(1000);
+		writer.addStreamEntry("test-025", "entityA",
+				new StreamEntry("1", time1, null));
+		writer.addStreamEntry("test-025", "entityA",
+				new StreamEntry("2", time2, null));
+		
+		assertEquals(1, reader.getStream("test-025", "entityA", 0, 1).size());
+	}
+
+	@Test
+	public void count_parameter_should_return_correct_number_of_feed_items()
+	{
+		final DateTime time1 = DateTime.now();
+		final DateTime time2 = DateTime.now().plus(1000);
+		writer.addStreamEntry("test-026", "entityA",
+				new StreamEntry("1", time1, null));
+		writer.addStreamEntry("test-026", "entityB",
+				new StreamEntry("2", time2, null));
+		writer.followEntity("test-026", "user", "entityA", null);
+		writer.followEntity("test-026", "user", "entityB", null);
+		
+		assertEquals(1, reader.getFeed("test-026", "user", 0, 1).size());
 	}
 }

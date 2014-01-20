@@ -22,9 +22,16 @@ public class FollowersResource extends ServerResource
 				.getAttributes().get("collabinateReader");
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
+		String startString = getQueryValue("start");
+		String countString = getQueryValue("count");
+		long start = null == startString ? 0 : Long.parseLong(startString);
+		int count = null == countString ? DEFAULT_COUNT : 
+			Integer.parseInt(countString);
 
 		return "{\"items\":[" + Joiner.on(',')
-				.join(reader.getFollowers(tenantId, entityId))
+				.join(reader.getFollowers(tenantId, entityId, start, count))
 				+ "]}";
 	}
+	
+	private static final int DEFAULT_COUNT = 20;
 }

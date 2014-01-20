@@ -47,8 +47,10 @@ public interface CollabinateWriter
 	 * @param entityId The ID of the entity that the user follows.
 	 * @param dateFollowed The date that the follow relationship occurred. If
 	 * null is passed, the current date will be used.
+	 * @return The date of the follow relationship. If the relationship already
+	 * existed before this call, the existing date will be returned.
 	 */
-	public void followEntity(String tenantId, String userId, String entityId,
+	public DateTime followEntity(String tenantId, String userId, String entityId,
 			DateTime dateFollowed);
 	
 	/**

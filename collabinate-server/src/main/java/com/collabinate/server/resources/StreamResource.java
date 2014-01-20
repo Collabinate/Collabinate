@@ -71,12 +71,14 @@ public class StreamResource extends ServerResource
 		// create an activity from the given content
 		Activity activity = new Activity(entryContent);
 		
-		// ensure the activity has an id - generate if not
-		String id = activity.getId();
-		if (null == id || id.equals(""))
+		// generate an id and relocate the original if necessary
+		String originalId = activity.getId();
+		String id = generateId();
+		activity.setId(id);
+		
+		if (null != originalId && !originalId.equals(""))
 		{
-			id = generateId();
-			activity.setId(id);
+			activity.setCollabinateOriginalId(originalId);
 		}
 		
 		// pull the existing or created date from the activity

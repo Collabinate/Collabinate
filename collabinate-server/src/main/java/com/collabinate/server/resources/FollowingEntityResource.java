@@ -59,11 +59,15 @@ public class FollowingEntityResource extends ServerResource
 		
 		// add the follow relationship
 		DateTime followed = DateTime.now(DateTimeZone.UTC);
-		writer.followEntity(tenantId, userId, entityId, followed);
+		DateTime returnDate = 
+				writer.followEntity(tenantId, userId, entityId, followed);
 		
-		setStatus(Status.SUCCESS_CREATED);
+		if (returnDate.getMillis() == followed.getMillis())
+			setStatus(Status.SUCCESS_CREATED);
+		else
+			setStatus(Status.SUCCESS_OK);
 		
-		return createFollowActivity(userId, FOLLOW, entityId, followed)
+		return createFollowActivity(userId, FOLLOW, entityId, returnDate)
 				.toString();
 	}
 	
