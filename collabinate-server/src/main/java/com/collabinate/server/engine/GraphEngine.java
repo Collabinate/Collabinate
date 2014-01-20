@@ -494,7 +494,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			Edge followEdge = user.addEdge(STRING_FOLLOWS, entity);
 			followEdge.setProperty(STRING_TENANT_ID, tenantId);
-			followEdge.setProperty(STRING_TIME, followed);
+			followEdge.setProperty(STRING_TIME, followed.toString());
 			
 			insertFeedEntity(user, entity, tenantId);
 		}
@@ -534,7 +534,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			if (edge.getVertex(Direction.OUT).getId().equals(
 					user.getId()))
-				followed = edge.getProperty(STRING_TIME);
+				followed = 
+					DateTime.parse((String)edge.getProperty(STRING_TIME));
 				edge.remove();
 		}
 		
@@ -575,7 +576,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
 				graph.commit();
-				return edge.getProperty(STRING_TIME);
+				return DateTime.parse((String)edge.getProperty(STRING_TIME));
 			}
 		}
 		
