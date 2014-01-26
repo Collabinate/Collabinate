@@ -26,14 +26,14 @@ public class TenantResource extends ServerResource
 		String tenantKey = getQueryValue("key");
 		
 		// set defaults for values not provided
-		if (null == tenantName || "" == tenantName)
+		if (null == tenantName || tenantName.equals(""))
 			tenantName = tenantId;
 		
 		// create the tenant
 		Tenant tenant = new Tenant(tenantId, tenantName);
 		
 		// add or generate the initial key
-		if (null == tenantKey || "" == tenantKey)
+		if (null == tenantKey || tenantKey.equals(""))
 			tenant.generateKey();
 		else
 			tenant.addKey(tenantKey);

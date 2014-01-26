@@ -45,7 +45,7 @@ public abstract class CollabinateReaderTest
 	{
 		Activity activity = new Activity(content);
 		
-		if (null == id || "" == id)
+		if (null == id || id.equals(""))
 		{
 			id = UUID.randomUUID().toString();
 		}
