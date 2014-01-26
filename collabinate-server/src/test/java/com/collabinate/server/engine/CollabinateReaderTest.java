@@ -637,4 +637,47 @@ public abstract class CollabinateReaderTest
 		
 		assertEquals(1, reader.getFeed("test-026", "user", 0, 1).size());
 	}
+	
+	@Test
+	public void updated_should_supercede_published_in_stream_order()
+	{
+		final DateTime current = DateTime.now();
+		final DateTime futurePublish = current.plus(1000);
+		final DateTime pastUpdate = current.minus(1000);
+		
+		writer.addActivity("test-027", "entity",
+				getActivity("current", current, null));
+		Activity withUpdate = getActivity("withUpdate", futurePublish, null);
+		withUpdate.setUpdated(pastUpdate);
+		writer.addActivity("test-027", "entity", withUpdate);
+		
+		List<Activity> activities =
+				reader.getStream("test-027", "entity", 0, 2);
+		
+		assertEquals(current.getMillis(),
+				activities.get(0).getSortTime().getMillis());
+	}
+	
+	@Test
+	public void updated_should_supercede_published_in_feed_order()
+	{
+		final DateTime current = DateTime.now();
+		final DateTime futurePublish = current.plus(1000);
+		final DateTime pastUpdate = current.minus(1000);
+		
+		writer.addActivity("test-028", "entity1",
+				getActivity("current", current, null));
+		Activity withUpdate = getActivity("withUpdate", futurePublish, null);
+		withUpdate.setUpdated(pastUpdate);
+		writer.addActivity("test-028", "entity2", withUpdate);
+		
+		writer.followEntity("test-028", "user", "entity1", current);
+		writer.followEntity("test-028", "user", "entity2", current);		
+		
+		List<Activity> activities =
+				reader.getFeed("test-028", "user", 0, 2);
+		
+		assertEquals(current.getMillis(),
+				activities.get(0).getSortTime().getMillis());
+	}
 }
