@@ -276,7 +276,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		String userId;
 		for (Vertex user : users)
 		{
-			userId = getIdString(user);
+			userId = user.getProperty(STRING_ENTITY_ID);
 			DateTime followed = unfollowEntity(tenantId, userId, entityId);
 			followEntity(tenantId, userId, entityId, followed);
 		}
