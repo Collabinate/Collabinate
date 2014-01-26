@@ -36,6 +36,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 */
 	private CollabinateGraph graph;
 	
+	// Comparators
+	private ActivityDateComparator activityDateComparator =
+			new ActivityDateComparator();
+	private EntityFirstActivityDateComparator firstActivityDateComparator =
+			new EntityFirstActivityDateComparator();
+	
 	/**
 	 * Ensures that the graph can have IDs assigned.
 	 * 
@@ -154,16 +160,14 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 					"addedActivity must not be null");
 		}
 		
-		ActivityDateComparator comparator = new ActivityDateComparator();
-		
 		Edge currentStreamEdge = getStreamEdge(entity);
 		Vertex currentActivity = getNextActivity(entity);
 		Vertex previousActivity = entity;
 		int position = 0;
 		
 		// advance along the stream path, comparing each activity to the new one
-		while (currentActivity != null &&
-		       comparator.compare(addedActivity, currentActivity) > 0)
+		while (currentActivity != null && activityDateComparator
+				.compare(addedActivity, currentActivity) > 0)
 		{
 			previousActivity = currentActivity;
 			currentStreamEdge = getStreamEdge(currentActivity);
@@ -666,10 +670,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 					"newEntity must not be null");
 		}
 		
-		// we order entities based on the date of their first activity
-		EntityFirstActivityDateComparator comparator = 
-				new EntityFirstActivityDateComparator();
-		
 		// start with the user and the first feed entity
 		String feedLabel = getFeedLabel((String)user.getId());
 		Edge currentFeedEdge = getSingleOutgoingEdge(user, feedLabel);
@@ -678,9 +678,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		Vertex previousFeedEntity = user;
 		int position = 0;		
 		
+		// we order entities based on the date of their first activity
 		// advance along the feed until we find where the new entity belongs
-		while (currentFeedEntity != null &&
-		       comparator.compare(newEntity, currentFeedEntity) > 0)
+		while (currentFeedEntity != null && firstActivityDateComparator
+				.compare(newEntity, currentFeedEntity) > 0)
 		{
 			previousFeedEntity = currentFeedEntity;
 			currentFeedEdge = getSingleOutgoingEdge(currentFeedEntity,
@@ -714,13 +715,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		// this method represents the core of the Graphity algorithm
 		// http://www.rene-pickhardt.de/graphity-an-efficient-graph-model-for-retrieving-the-top-k-news-feeds-for-users-in-social-networks/
 		
-		// we order activities by their date
-		ActivityDateComparator comparator = new ActivityDateComparator();
-		
 		// a priority queue is used to order the activities that are "next" for
 		// each entity we've already reached in the feed
 		PriorityQueue<Vertex> queue =
-				new PriorityQueue<Vertex>(11, comparator);
+				new PriorityQueue<Vertex>(11, activityDateComparator);
 		ArrayList<Vertex> activities = new ArrayList<Vertex>();
 		
 		// since we need to advance from the beginning of the feed, this lets
@@ -757,7 +755,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				&& (queue.size() > 0 || entity != null))
 		{
 			// compare top of next entity to top of queue
-			int result = comparator.compare(topOfEntity, topOfQueue);
+			int result = activityDateComparator.compare(
+					topOfEntity, topOfQueue);
 
 			// if top of next entity is newer, take the top element,
 			// push the next element to the queue, and move to
