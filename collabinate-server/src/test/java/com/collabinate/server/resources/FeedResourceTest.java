@@ -45,7 +45,7 @@ public class FeedResourceTest extends GraphResourceTest
 	{
 		Tag tag1 = get().getEntity().getTag();
 		
-		// add entry TEST to the stream of entity 1
+		// add activity TEST to the stream of entity 1
 		Request request = new Request(Method.POST,
 				"riap://application/1/tenant/entities/entity1/stream");
 		String entityBody1 = "TEST";
@@ -88,7 +88,7 @@ public class FeedResourceTest extends GraphResourceTest
 	@Test
 	public void feed_should_be_json_object()
 	{
-		// add entry TEST to the stream of entity 1
+		// add activity TEST to the stream of entity 1
 		Request request = new Request(Method.POST,
 				"riap://application/1/tenant/entities/entity1/stream");
 		String entityBody1 = "TEST";
@@ -106,14 +106,14 @@ public class FeedResourceTest extends GraphResourceTest
 	@Test
 	public void items_added_to_followed_entity_streams_should_appear_in_feed()
 	{
-		// add entry TEST-A to the stream of entity 1
+		// add activity TEST-A to the stream of entity 1
 		Request request = new Request(Method.POST,
 				"riap://application/1/tenant/entities/entity1/stream");
 		String entityBody1 = "TEST-A";
 		request.setEntity(entityBody1, MediaType.TEXT_PLAIN);
 		component.handle(request);
 		
-		// add entry TEST-B to the stream of entity 2
+		// add activity TEST-B to the stream of entity 2
 		request = new Request(Method.POST,
 				"riap://application/1/tenant/entities/entity2/stream");
 		String entityBody2 = "TEST-B";

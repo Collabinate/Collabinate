@@ -203,7 +203,7 @@ public class StreamResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void stream_entries_should_appear_in_correct_date_order()
+	public void activities_should_appear_in_correct_date_order()
 	{
 		DateTime dateTime1 = new DateTime(1977, 5, 13, 5, 13, DateTimeZone.UTC);
 		Activity activity1 = new Activity();

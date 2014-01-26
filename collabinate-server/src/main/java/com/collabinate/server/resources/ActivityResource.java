@@ -1,6 +1,5 @@
 package com.collabinate.server.resources;
 
-import org.joda.time.DateTime;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
 import org.restlet.data.Tag;
@@ -11,38 +10,37 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
 
-import com.collabinate.server.StreamEntry;
 import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.google.common.hash.Hashing;
 
 /**
- * Restful resource representing a single stream entry for an entity.
+ * Restful resource representing a single activity for an entity.
  * 
  * @author mafuba
  *
  */
-public class StreamEntryResource extends ServerResource
+public class ActivityResource extends ServerResource
 {
 	@Get("json")
-	public Representation getStreamEntry()
+	public Representation getActivity()
 	{
 		// extract necessary information from the context
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
-		String entryId = getAttribute("entryId");
+		String activityId = getAttribute("activityId");
 
-		StreamEntry matchingEntry = 
-				findMatchingEntry(tenantId, entityId, entryId);
+		Activity matchingActivity = 
+				findMatchingActivity(tenantId, entityId, activityId);
 		
-		if (null != matchingEntry)
+		if (null != matchingActivity)
 		{
 			Representation representation = new StringRepresentation(
-					matchingEntry.getContent(), MediaType.APPLICATION_JSON);
+					matchingActivity.toString(), MediaType.APPLICATION_JSON);
 			representation.setTag(
 				new Tag(Hashing.murmur3_128().hashUnencodedChars(
-				matchingEntry.getContent()+tenantId+entityId+entryId)
+				matchingActivity.toString()+tenantId+entityId+activityId)
 				.toString(), false));
 			
 			return representation;
@@ -55,39 +53,39 @@ public class StreamEntryResource extends ServerResource
 	}
 	
 	/**
-	 * Finds an entry that matches the tenantId, entityId, and entryId in the
-	 * request.
+	 * Finds an activity that matches the tenantId, entityId, and activityId in
+	 * the request.
 	 * @return
 	 */
-	private StreamEntry findMatchingEntry(
-			String tenantId, String entityId, String entryId)
+	private Activity findMatchingActivity(
+			String tenantId, String entityId, String activityId)
 	{
 		// extract necessary information from the context
 		CollabinateReader reader = (CollabinateReader)getContext()
 				.getAttributes().get("collabinateReader");
 		
-		StreamEntry matchingEntry = null;
+		Activity matchingActivity = null;
 		
-		// loop over all stream entries to find the desired entity
+		// loop over all activities to find the desired entity
 		// TODO: this is highly inefficient for large feeds, it will be better
 		// to have a method on the server to query by ID
-		for (StreamEntry entry : 
+		for (Activity activity : 
 			reader.getStream(tenantId, entityId, 0, Integer.MAX_VALUE))
 		{
-			if (entry.getId().equals(entryId))
-				matchingEntry = entry;
+			if (activity.getId().equals(activityId))
+				matchingActivity = activity;
 		}
 		
-		return matchingEntry;
+		return matchingActivity;
 	}
 	
 	@Put
-	public void putEntry(String entryContent)
+	public void putActivity(String activityContent)
 	{
 		// extract necessary information from the context
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
-		String entryId = getAttribute("entryId");
+		String activityId = getAttribute("activityId");
 		CollabinateWriter writer = (CollabinateWriter)getContext()
 				.getAttributes().get("collabinateWriter");
 		
@@ -95,51 +93,44 @@ public class StreamEntryResource extends ServerResource
 			throw new IllegalStateException(
 					"Context does not contain a CollabinateWriter");
 		
-		// remove any existing entry
-		writer.deleteStreamEntry(tenantId, entityId, entryId);
+		// remove any existing activity
+		writer.deleteActivity(tenantId, entityId, activityId);
 		
 		// create an activity from the given content
-		Activity activity = new Activity(entryContent);
+		Activity activity = new Activity(activityContent);
 		
 		// ensure the activity has an id - set to given id if not
 		String id = activity.getId();
 		if (null == id || id.equals(""))
 		{
-			id = entryId;
+			id = activityId;
 			activity.setId(id);
 		}
 		
-		// deal with id differences
-		if (!entryId.equals(id))
+		// if the URL ID differs from the activity ID, the activity cannot be
+		// processed
+		if (!activityId.equals(id))
 		{
-			// this is tricky - we will use the URL entry ID
-			// for access, with the activity ID still in the
-			// object,  so make access easier the URL ID will
-			// be stored as a "collabinateObjectId"
-			activity.setCollabinateObjectId(entryId);
+			setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+			return;
 		}
 		
-		// pull the existing or created date from the activity
-		DateTime published = activity.getPublished();
+		writer.addActivity(tenantId, entityId, activity);
 		
-		// create and add new entry
-		StreamEntry entry =
-				new StreamEntry(entryId, published, activity.toString());
-		writer.addStreamEntry(tenantId, entityId, entry);
-		
-		// return the entry in the response body
-		getResponse().setEntity(entry.getContent(), MediaType.APPLICATION_JSON);
+		// return the activity in the response body
+		getResponse().setEntity(activity.toString(),
+				MediaType.APPLICATION_JSON);
 		
 		setStatus(Status.SUCCESS_OK);
 	}
 	
 	@Delete
-	public void deleteEntry()
+	public void deleteActivity()
 	{
 		// extract necessary information from the context
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
-		String entryId = getAttribute("entryId");
+		String activityId = getAttribute("activityId");
 		CollabinateWriter writer = (CollabinateWriter)getContext()
 				.getAttributes().get("collabinateWriter");
 		
@@ -147,7 +138,7 @@ public class StreamEntryResource extends ServerResource
 			throw new IllegalStateException(
 					"Context does not contain a CollabinateWriter");
 		
-		// remove any existing entry
-		writer.deleteStreamEntry(tenantId, entityId, entryId);
+		// remove any existing activity
+		writer.deleteActivity(tenantId, entityId, activityId);
 	}
 }

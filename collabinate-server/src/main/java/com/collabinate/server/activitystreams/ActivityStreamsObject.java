@@ -119,6 +119,11 @@ public class ActivityStreamsObject
 	 */
 	public void setId(String id)
 	{
+		if (null == id)
+		{
+			throw new IllegalArgumentException("id must not be null");
+		}
+		
 		jsonObject.addProperty(ID, id);
 	}
 	
@@ -155,7 +160,49 @@ public class ActivityStreamsObject
 	 */
 	public void setPublished(DateTime dateTime)
 	{
+		if (null == dateTime)
+		{
+			throw new IllegalArgumentException("dateTime must not be null");
+		}
+		
 		jsonObject.addProperty(PUBLISHED, dateTime.toString(
+				ISODateTimeFormat.dateTime().withZoneUTC()));
+	}
+	
+	/**
+	 * Gets the date and time at which a previously published object has been
+	 * modified. An Object MAY contain an updated property.
+	 * 
+	 * @return The [RFC3339] date-time at which the object was published.
+	 */
+	public DateTime getUpdated()
+	{
+		JsonElement element = jsonObject.get(UPDATED);
+		DateTime updated = null;
+		try
+		{
+			if (null != element)
+			{
+				String updatedString = element.getAsString();
+				updated = DateTime.parse(updatedString,
+					ISODateTimeFormat.dateTimeParser().withZoneUTC());
+			}
+		}
+		catch (ClassCastException | IllegalStateException e) { }
+
+		return  updated;
+	}
+	
+	/**
+	 * Sets the date and time at which a previously published object has been
+	 * modified. An Object MAY contain an updated property.
+	 * 
+	 * @param dateTime The [RFC3339] date-time at which the object was
+	 * updated.
+	 */
+	public void setUpdated(DateTime dateTime)
+	{
+		jsonObject.addProperty(UPDATED, dateTime.toString(
 				ISODateTimeFormat.dateTime().withZoneUTC()));
 	}
 	
@@ -235,6 +282,7 @@ public class ActivityStreamsObject
 	protected static final String CONTENT = "content";
 	protected static final String DISPLAY_NAME = "displayName";
 	protected static final String PUBLISHED = "published";
+	protected static final String UPDATED = "updated";
 	protected static final String COLLABINATE_OBJECT_ID = "collabinateObjectId";
 	protected static final String COLLABINATE_ORIGINAL_ID =
 			"collabinateOriginalId";

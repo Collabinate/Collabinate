@@ -2,7 +2,6 @@ package com.collabinate.server.resources;
 
 import java.util.UUID;
 
-import org.joda.time.DateTime;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
@@ -13,7 +12,6 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
 
-import com.collabinate.server.StreamEntry;
 import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
@@ -21,7 +19,7 @@ import com.google.common.base.Joiner;
 import com.google.common.hash.Hashing;
 
 /**
- * Restful resource representing a series of stream entries for an entity.
+ * Restful resource representing a series of activities for an entity.
  * 
  * @author mafuba
  *
@@ -56,7 +54,7 @@ public class StreamResource extends ServerResource
 	}
 	
 	@Post
-	public void addEntry(String entryContent)
+	public void addActivity(String content)
 	{
 		// extract necessary information from the context
 		String tenantId = getAttribute("tenantId");
@@ -69,7 +67,7 @@ public class StreamResource extends ServerResource
 					"Context does not contain a CollabinateWriter");
 		
 		// create an activity from the given content
-		Activity activity = new Activity(entryContent);
+		Activity activity = new Activity(content);
 		
 		// generate an id and relocate the original if necessary
 		String originalId = activity.getId();
@@ -81,19 +79,15 @@ public class StreamResource extends ServerResource
 			activity.setCollabinateOriginalId(originalId);
 		}
 		
-		// pull the existing or created date from the activity
-		DateTime published = activity.getPublished();
+		writer.addActivity(tenantId, entityId, activity);
 		
-		// create and add new entry
-		StreamEntry entry =
-				new StreamEntry(id, published, activity.toString());
-		writer.addStreamEntry(tenantId, entityId, entry);
-		
-		// return the entry in the response body
-		getResponse().setEntity(entry.getContent(), MediaType.APPLICATION_JSON);
+		// return the activity in the response body
+		getResponse().setEntity(activity.toString(),
+				MediaType.APPLICATION_JSON);
 		
 		//TODO: return relative reference location
-		setLocationRef(new Reference(getReference()).addSegment(entry.getId()));
+		setLocationRef(new Reference(getReference())
+			.addSegment(activity.getId()));
 		setStatus(Status.SUCCESS_CREATED);
 	}
 	

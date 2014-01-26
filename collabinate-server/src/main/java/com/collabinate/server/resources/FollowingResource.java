@@ -22,17 +22,17 @@ public class FollowingResource extends ServerResource
 				.getAttributes().get("collabinateReader");
 		String tenantId = getAttribute("tenantId");
 		String userId = getAttribute("userId");
-		String startString = getQueryValue("start");
-		String countString = getQueryValue("count");
-		long start = null == startString ? 0 : Long.parseLong(startString);
-		int count = null == countString ? DEFAULT_COUNT : 
-			Integer.parseInt(countString);
+		String skipString = getQueryValue("skip");
+		String takeString = getQueryValue("take");
+		long skip = null == skipString ? 0 : Long.parseLong(skipString);
+		int take = null == takeString ? DEFAULT_TAKE : 
+			Integer.parseInt(takeString);
 
 
 		return "{\"items\":[" + Joiner.on(',')
-				.join(reader.getFollowing(tenantId, userId, start, count))
+				.join(reader.getFollowing(tenantId, userId, skip, take))
 				+ "]}";
 	}
 	
-	private static final int DEFAULT_COUNT = 20;
+	private static final int DEFAULT_TAKE = 20;
 }

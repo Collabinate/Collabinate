@@ -2,13 +2,12 @@ package com.collabinate.server.engine;
 
 import static org.junit.Assert.*;
 
-import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
-import com.collabinate.server.StreamEntry;
+import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.engine.CollabinateWriter;
 
 /**
@@ -39,73 +38,78 @@ public abstract class CollabinateWriterTest
 	}
 
 	@Test
-	public void add_stream_entry_should_not_allow_null_tenant_ID()
+	public void add_activity_should_not_allow_null_tenant_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("tenantId");
-		writer.addStreamEntry(null, "entity", new StreamEntry(null, null, null));
+		writer.addActivity(null, "entity", new Activity());
 	}
 	
 	@Test
-	public void add_stream_entry_should_not_allow_null_entity_ID()
+	public void add_activity_should_not_allow_null_entity_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
-		writer.addStreamEntry("c", null, new StreamEntry(null, null, null));
+		writer.addActivity("c", null, new Activity());
 	}
 	
 	@Test
-	public void add_stream_entry_should_not_allow_null_stream_entry()
+	public void add_activity_should_not_allow_null_activity()
 	{
 		exception.expect(IllegalArgumentException.class);
-		exception.expectMessage("streamEntry");
-		writer.addStreamEntry("c", "", null);
+		exception.expectMessage("activity");
+		writer.addActivity("c", "", null);
 	}
 
 	@Test
-	public void adding_duplicate_stream_entries_should_succeed()
+	public void adding_duplicate_activities_should_fail()
 	{
-		StreamEntry entry = new StreamEntry("1", DateTime.now(), "content");
-		writer.addStreamEntry("c", "entity", entry);
-		writer.addStreamEntry("c", "entity", entry);
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("exists");
+
+		Activity activity = new Activity();
+		activity.setId("1");
+		writer.addActivity("c", "entity", activity);
+		writer.addActivity("c", "entity", activity);
 		
 		//cleanup
-		writer.deleteStreamEntry("c", "entity", "1");
-		writer.deleteStreamEntry("c", "entity", "1");
+		writer.deleteActivity("c", "entity", "1");
 	}
 	
 	@Test
-	public void delete_stream_entry_should_not_allow_null_tenant_ID()
+	public void delete_activity_should_not_allow_null_tenant_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("tenantId");
-		writer.deleteStreamEntry(null, "entity", "");
+		writer.deleteActivity(null, "entity", "");
 	}
 		
 	@Test
-	public void delete_stream_entry_should_not_allow_null_entity_ID()
+	public void delete_activity_should_not_allow_null_entity_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
-		writer.deleteStreamEntry("c", null, "");
+		writer.deleteActivity("c", null, "");
 	}
 		
 	@Test
-	public void delete_stream_entry_should_not_allow_null_entry_ID()
+	public void delete_activity_should_not_allow_null_activity_ID()
 	{
 		exception.expect(IllegalArgumentException.class);
-		exception.expectMessage("entryId");
-		writer.deleteStreamEntry("c", "", null);
+		exception.expectMessage("activityId");
+		writer.deleteActivity("c", "", null);
 	}
 	
 	@Test
-	public void deleting_nonexistent_entry_should_succeed()
+	public void deleting_nonexistent_activity_should_succeed()
 	{
-		writer.addStreamEntry("c", "entity", new StreamEntry("1", null, null));
-		writer.deleteStreamEntry("c", "entity", "2");
+		Activity activity = new Activity();
+		activity.setId("1");
+		writer.addActivity("c", "entity", activity);
+		writer.deleteActivity("c", "entity", "2");
 		
 		//cleanup
-		writer.deleteStreamEntry("c", "entity", "1");
+		writer.deleteActivity("c", "entity", "1");
 	}
 	
 	@Test

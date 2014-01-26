@@ -99,8 +99,8 @@ public class CollabinateApplication extends Application
 		
 		// resource router handles the routing for post-authentication resources
 		Router resourceRouter = new Router(getContext());
-		resourceRouter.attach("/entities/{entityId}/stream/{entryId}",
-				StreamEntryResource.class);
+		resourceRouter.attach("/entities/{entityId}/stream/{activityId}",
+				ActivityResource.class);
 		resourceRouter.attach("/entities/{entityId}/stream",
 				StreamResource.class);
 		resourceRouter.attach("/entities/{entityId}/followers",

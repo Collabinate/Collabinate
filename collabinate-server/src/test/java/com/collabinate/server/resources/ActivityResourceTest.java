@@ -15,21 +15,21 @@ import com.collabinate.server.activitystreams.Activity;
 import com.google.gson.JsonParser;
 
 /**
- * Tests for the Stream Entry Resource
+ * Tests for the Activity Resource
  * 
  * @author mafuba
  * 
  */
-public class StreamEntryResourceTest extends GraphResourceTest
+public class ActivityResourceTest extends GraphResourceTest
 {
 	@Test
-	public void get_nonexistent_entry_should_return_404()
+	public void get_nonexistent_activity_should_return_404()
 	{
 		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, get().getStatus());
 	}
 	
 	@Test
-	public void putting_entry_should_return_200()
+	public void putting_activity_should_return_200()
 	{
 		assertEquals(Status.SUCCESS_OK, put().getStatus());
 	}
@@ -115,7 +115,7 @@ public class StreamEntryResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void get_existing_entry_should_return_entry()
+	public void get_existing_activity_should_return_activity()
 	{
 		put("test", MediaType.TEXT_PLAIN);
 		assertThat(get().getEntityAsText(), containsString("test"));		
@@ -142,7 +142,7 @@ public class StreamEntryResourceTest extends GraphResourceTest
 	@Test
 	public void activity_matching_id_should_not_have_collabinate_object_id()
 	{
-		put("{\"id\":\"entry\"}", MediaType.APPLICATION_JSON);
+		put("{\"id\":\"activity\"}", MediaType.APPLICATION_JSON);
 
 		Activity activity = new Activity(get().getEntityAsText());
 		
@@ -150,23 +150,20 @@ public class StreamEntryResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void activity_with_different_id_should_have_collabinate_object_id()
-	{
-		put("{\"id\":\"test\"}", MediaType.APPLICATION_JSON);
-
-		Activity activity = new Activity(get().getEntityAsText());
-		
-		assertEquals("entry", activity.getCollabinateObjectId());
+	public void activity_with_different_id_than_url_should_return_422()
+	{		
+		assertEquals(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY,
+			put("{\"id\":\"test\"}", MediaType.APPLICATION_JSON).getStatus());
 	}
 	
 	@Test
-	public void delete_nonexistent_entry_should_return_200()
+	public void delete_nonexistent_activity_should_return_200()
 	{
 		assertEquals(Status.SUCCESS_OK, delete().getStatus());
 	}
 	
 	@Test
-	public void get_deleted_entry_should_return_404()
+	public void get_deleted_activity_should_return_404()
 	{
 		put();
 		delete();
@@ -176,6 +173,6 @@ public class StreamEntryResourceTest extends GraphResourceTest
 	@Override
 	protected String getResourcePath()
 	{
-		return "/1/tenant/entities/entity/stream/entry";
+		return "/1/tenant/entities/entity/stream/activity";
 	}
 }

@@ -12,7 +12,7 @@ import org.joda.time.DateTimeZone;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.collabinate.server.StreamEntry;
+import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
@@ -53,8 +53,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public void addStreamEntry(String tenantId, String entityId,
-			StreamEntry streamEntry)
+	public void addActivity(String tenantId, String entityId,
+			Activity activity)
 	{
 		if (null == tenantId)
 		{
@@ -66,19 +66,22 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("entityId must not be null");
 		}
 		
-		if (null == streamEntry)
+		if (null == activity)
 		{
-			throw new IllegalArgumentException("streamEntry must not be null");
+			throw new IllegalArgumentException("activity must not be null");
 		}
 		
 		entityId = tenantId + "/" + entityId;
 		
 		Vertex entityVertex = getOrCreateEntityVertex(entityId, tenantId);
 		
-		Vertex streamEntryVertex = serializeStreamEntry(streamEntry, tenantId);
+		String activityVertexId = entityId + "/" + activity.getId();
 		
-		if (insertStreamEntry(entityVertex, streamEntryVertex, tenantId))
-			// if the inserted stream entry is first in its stream, it may have
+		Vertex activityVertex = serializeActivity(activityVertexId, activity,
+				tenantId);
+		
+		if (insertActivity(entityVertex, activityVertex, tenantId))
+			// if the inserted activity is first in its stream, it may have
 			// changed the entity order for feed paths
 			updateFeedPaths(tenantId, entityVertex);
 		
@@ -107,77 +110,77 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	/**
-	 * Creates a new vertex representation of a given stream entry.
+	 * Creates a new vertex representation of a given activity.
 	 * 
-	 * @param streamEntry The stream entry to be represented.
-	 * @param tenantId The tenant for the entry.
-	 * @return A vertex that represents the given stream entry.
+	 * @param activity The activity to be represented.
+	 * @param tenantId The tenant for the activity.
+	 * @return A vertex that represents the given activity.
 	 */
-	private Vertex serializeStreamEntry(final StreamEntry streamEntry,
-			final String tenantId)
+	private Vertex serializeActivity(final String vertexId,
+			final Activity activity, final String tenantId)
 	{
-		Vertex streamEntryVertex = graph.addVertex(null);
-		streamEntryVertex.setProperty(STRING_TENANT_ID, tenantId);
-		streamEntryVertex.setProperty(STRING_ENTRY_ID, streamEntry.getId());
-		streamEntryVertex.setProperty(STRING_TIME, 
-				streamEntry.getTime().toString());
-		streamEntryVertex.setProperty(STRING_CONTENT, streamEntry.getContent());
-		return streamEntryVertex;
+		Vertex activityVertex = graph.addVertex(vertexId);
+		activityVertex.setProperty(STRING_TENANT_ID, tenantId);
+		activityVertex.setProperty(STRING_SORTTIME, 
+				activity.getSortTime().toString());
+		activityVertex.setProperty(STRING_CONTENT, activity.toString());
+		return activityVertex;
 	}
 	
 	/**
-	 * Adds a stream entry vertex at the correct chronological location among
-	 * the stream vertices of an entity.
+	 * Adds an activity vertex at the correct chronological location among the
+	 * stream vertices of an entity.
 	 * 
 	 * @param entity The vertex representing the entity.
-	 * @param addedStreamEntry The stream entry to add to the stream.
+	 * @param addedActivity The activity to add to the stream.
 	 * @param tenantId The tenant for the entity.
-	 * @return true if the added stream entry is the newest (first) in the
-	 * stream, otherwise false.
+	 * @return true if the added activity is the newest (first) in the stream,
+	 * otherwise false.
 	 */
-	private boolean insertStreamEntry(final Vertex entity,
-			final Vertex addedStreamEntry, final String tenantId)
+	private boolean insertActivity(final Vertex entity,
+			final Vertex addedActivity, final String tenantId)
 	{
 		if (null == entity)
 		{
 			throw new IllegalArgumentException("entity must not be null");
 		}
 		
-		if (null == addedStreamEntry)
+		if (null == addedActivity)
 		{
 			throw new IllegalArgumentException(
-					"addedStreamEntry must not be null");
+					"addedActivity must not be null");
 		}
 		
-		StreamEntryDateComparator comparator = new StreamEntryDateComparator();
+		ActivityDateComparator comparator = new ActivityDateComparator();
 		
-		Edge currentStreamEdge = getStreamEntryEdge(entity);
-		Vertex currentStreamEntry = getNextStreamEntry(entity);
-		Vertex previousStreamEntry = entity;
+		Edge currentStreamEdge = getStreamEdge(entity);
+		Vertex currentActivity = getNextActivity(entity);
+		Vertex previousActivity = entity;
 		int position = 0;
 		
-		// advance along the stream path, comparing each stream entry to the
-		// new entry
-		while (currentStreamEntry != null &&
-		       comparator.compare(addedStreamEntry, currentStreamEntry) > 0)
+		// advance along the stream path, comparing each activity to the new one
+		while (currentActivity != null &&
+		       comparator.compare(addedActivity, currentActivity) > 0)
 		{
-			previousStreamEntry = currentStreamEntry;
-			currentStreamEdge = getStreamEntryEdge(currentStreamEntry);
-			currentStreamEntry = getNextStreamEntry(currentStreamEntry);
+			previousActivity = currentActivity;
+			currentStreamEdge = getStreamEdge(currentActivity);
+			currentActivity = getNextActivity(currentActivity);
 			position++;
 		}
 		
-		// add a stream edge between the previous entry (the one that is newer
-		// than the added one, or the entity if there are none) and the new one.
-		previousStreamEntry.addEdge(STRING_STREAM_ENTRY, addedStreamEntry)
+		// add a stream edge between the previous activity (the one that is 
+		// newer than the added one, or the entity if there are none) and the
+		// new one.
+		previousActivity.addEdge(STRING_STREAM, addedActivity)
 			.setProperty(STRING_TENANT_ID, tenantId);
 		
-		// if there are one or more entries that are older than the added one,
-		// add an edge between the added one and the next older one, and delete
-		// the edge between the that one and the previous (next newer) one.
+		// if there are one or more activities that are older than the added
+		// one, add an edge between the added one and the next older one, and
+		// delete the edge between the that one and the previous (next newer)
+		// one.
 		if (null != currentStreamEdge)
 		{
-			addedStreamEntry.addEdge(STRING_STREAM_ENTRY, currentStreamEntry)
+			addedActivity.addEdge(STRING_STREAM, currentActivity)
 				.setProperty(STRING_TENANT_ID, tenantId);
 			currentStreamEdge.remove();
 		}
@@ -186,16 +189,16 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	/**
-	 * Retrieves the edge to the next stream entry from the given vertex,
-	 * whether the given vertex is an entity or a stream entry.
-	 * @param node A stream entry or entity for which to find the next stream
-	 * entry edge.
+	 * Retrieves the edge to the next activity from the given vertex, whether
+	 * the given vertex is an entity or a activity.
+	 * 
+	 * @param node An activity or entity for which to find the next stream edge.
 	 * @return The next stream edge in the stream containing or starting at
 	 * the given vertex.
 	 */
-	private Edge getStreamEntryEdge(Vertex node)
+	private Edge getStreamEdge(Vertex node)
 	{
-		return getSingleOutgoingEdge(node, STRING_STREAM_ENTRY);
+		return getSingleOutgoingEdge(node, STRING_STREAM);
 	}
 	
 	/**
@@ -232,7 +235,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	/**
 	 * Puts an entity into the correct chronological order in the feed paths
 	 * of all the users that follow it.  This is used for changes to the first
-	 * stream entry of an entity, which potentially changes its feed order.
+	 * activity of an entity, which potentially changes its feed order.
 	 * 
 	 * @param entity The entity for which followers are updated.
 	 */
@@ -275,8 +278,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public void deleteStreamEntry(String tenantId, String entityId,
-			String entryId)
+	public void deleteActivity(String tenantId, String entityId,
+			String activityId)
 	{
 		if (null == tenantId)
 			throw new IllegalArgumentException("tenantId must not be null");
@@ -284,15 +287,15 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (null == entityId)
 			throw new IllegalArgumentException("entityId must not be null");
 		
-		if (null == entryId)
-			throw new IllegalArgumentException("entryId must not be null");
+		if (null == activityId)
+			throw new IllegalArgumentException("activityId must not be null");
 		
 		entityId = tenantId + "/" + entityId;
 		
 		Vertex entityVertex = getOrCreateEntityVertex(entityId, tenantId);
 				
-		if (removeStreamEntry(entityVertex, entryId, entityId))
-			// if the deleted stream entry was first in its stream, it may have
+		if (removeActivity(entityVertex, activityId, entityId))
+			// if the deleted activity was first in its stream, it may have
 			// changed the entity order for feed paths
 			updateFeedPaths(tenantId, entityVertex);
 		
@@ -300,49 +303,49 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	/**
-	 * Deletes the stream entry vertex that matches the given entryId within
-	 * the stream of the given entity.  The continuity of the stream is
-	 * maintained.
+	 * Deletes the activity vertex that matches the given activityId within the
+	 * stream of the given entity.  The continuity of the stream is maintained.
 	 * 
 	 * @param entityVertex The vertex representing the entity.
-	 * @param entryId The ID of the stream entry to delete from the stream.
+	 * @param activityId The ID of the activity to delete from the stream.
 	 * @param entityId The entity for the stream.
-	 * @return true if the deleted stream entry was the newest (first) in the
+	 * @return true if the deleted activity was the newest (first) in the
 	 * stream, otherwise false.
 	 */
-	private boolean removeStreamEntry(Vertex entityVertex, String entryId,
+	private boolean removeActivity(Vertex entityVertex, String activityId,
 			String entityId)
 	{
 		if (null == entityVertex)
 			throw new IllegalArgumentException("entityVertex must not be null");
 		
-		if (null == entryId)
-			throw new IllegalArgumentException("entryId must not be null");
+		if (null == activityId)
+			throw new IllegalArgumentException("activityId must not be null");
 		
-		Vertex currentStreamEntry = getNextStreamEntry(entityVertex);
-		Vertex previousStreamEntry = entityVertex;
+		Vertex currentActivity = getNextActivity(entityVertex);
+		Vertex previousActivity = entityVertex;
+		String activityVertexId = entityId + "/" + activityId;
 		int position = 0;		
 		
-		// advance along the stream path, checking each stream entry for a match
-		while (currentStreamEntry != null)
+		// advance along the stream path, checking each activity for a match
+		while (currentActivity != null)
 		{
 			// if a match is found, remove it and make a new edge from the
-			// previous entry to the following entry (if one exists)
-			if (entryId.equals(currentStreamEntry.getProperty(STRING_ENTRY_ID)))
+			// previous activity to the following activity (if one exists)
+			if (activityVertexId.equals(currentActivity.getId()))
 			{
-				Vertex followingEntry = getNextStreamEntry(currentStreamEntry);
-				currentStreamEntry.remove();
-				if (null != followingEntry)
-					previousStreamEntry.addEdge(STRING_STREAM_ENTRY,
-							followingEntry).setProperty(
+				Vertex followingActivity = getNextActivity(currentActivity);
+				currentActivity.remove();
+				if (null != followingActivity)
+					previousActivity.addEdge(STRING_STREAM,
+							followingActivity).setProperty(
 									STRING_TENANT_ID, entityId);
-				currentStreamEntry = null;
+				currentActivity = null;
 			}
 			// if no match, proceed along the stream updating the pointers
 			else
 			{
-				previousStreamEntry = currentStreamEntry;
-				currentStreamEntry = getNextStreamEntry(currentStreamEntry);
+				previousActivity = currentActivity;
+				currentActivity = getNextActivity(currentActivity);
 				position++;
 			}
 		}
@@ -351,103 +354,96 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<StreamEntry> getStream(String tenantId, String entityId,
-			long startIndex, int entriesToReturn)
+	public List<Activity> getStream(String tenantId, String entityId,
+			long startIndex, int activitiesToReturn)
 	{
 		entityId = tenantId + "/" + entityId;
 		
 		Vertex entity = graph.getVertex(entityId);
 		if (null == entity)
 		{
-			return new ArrayList<StreamEntry>();
+			return new ArrayList<Activity>();
 		}
 		
 		// since we need to advance from the beginning of the stream,
 		// this lets us keep track of where we are
 		int streamPosition = 0;
-		// once we reach the number of entries to return, we can stop
-		int foundEntryCount = 0;
+		// once we reach the number of activities to return, we can stop
+		int foundActivityCount = 0;
 		
-		List<Vertex> streamVertices = new ArrayList<Vertex>();
+		List<Vertex> activityVertices = new ArrayList<Vertex>();
 		
-		Vertex currentStreamEntry = getNextStreamEntry(entity);
+		Vertex currentActivity = getNextActivity(entity);
 		
 		// advance along the stream, collecting vertices after we get to the
 		// start index, and stopping when we have enough to return or run out
 		// of stream
-		while (null != currentStreamEntry && foundEntryCount < entriesToReturn)
+		while (null != currentActivity &&
+				foundActivityCount < activitiesToReturn)
 		{
 			if (streamPosition >= startIndex)
 			{
-				streamVertices.add(currentStreamEntry);
-				foundEntryCount++;
+				activityVertices.add(currentActivity);
+				foundActivityCount++;
 			}
-			currentStreamEntry = getNextStreamEntry(currentStreamEntry);
+			currentActivity = getNextActivity(currentActivity);
 			streamPosition++;
 		}
 		
 		graph.commit();
 		
-		// we only have the vertices, the actual entries need to be created
-		return deserializeStreamEntries(streamVertices);
+		// we only have the vertices, the actual activities need to be created
+		return deserializeActivities(activityVertices);
 	}
 	
 	/**
-	 * Retrieves the stream entry after the given node by following the outgoing
-	 * stream edge. The node can be an entity (including users) or a stream
-	 * entry.
+	 * Retrieves the activity after the given node by following the outgoing
+	 * stream edge. The node can be an entity (including users) or an activity.
 	 * 
-	 * @param node The entity or stream entry for which to find the next stream
-	 * entry.
-	 * @return The next stream entry after the given node, or null if one does
-	 * not exist.
+	 * @param node The entity or activity for which to find the next activity.
+	 * @return The next activity after the given node, or null if one does not
+	 * exist.
 	 */
-	private Vertex getNextStreamEntry(Vertex node)
+	private Vertex getNextActivity(Vertex node)
 	{
-		Edge streamEntryEdge = getStreamEntryEdge(node);
-		return null == streamEntryEdge ? null :
-			streamEntryEdge.getVertex(Direction.IN);
+		Edge streamEdge = getStreamEdge(node);
+		return null == streamEdge ? null : streamEdge.getVertex(Direction.IN);
 	}
 
 	/**
-	 * Turns a collection of stream entry vertices into a collection of stream
-	 * entries.
+	 * Turns a collection of activity vertices into a collection of activities.
 	 * 
-	 * @param streamEntryVertices The vertices to deserialize.
-	 * @return A collection of stream entries that were represented by the
-	 * given vertices.
+	 * @param activityVertices The vertices to deserialize.
+	 * @return A collection of activities that were represented by the given
+	 * vertices.
 	 */
-	private List<StreamEntry> deserializeStreamEntries(
-			Collection<Vertex> streamEntryVertices)
+	private List<Activity> deserializeActivities(
+			Collection<Vertex> activityVertices)
 	{
-		ArrayList<StreamEntry> entries =
-				new ArrayList<StreamEntry>();
+		ArrayList<Activity> activities = new ArrayList<Activity>();
 		
-		for (final Vertex vertex : streamEntryVertices)
+		for (final Vertex vertex : activityVertices)
 		{
 			if (null != vertex)
 			{
-				entries.add(deserializeStreamEntry(vertex));
+				activities.add(deserializeActivity(vertex));
 			}
 		}
 		
-		return entries;
+		return activities;
 	}
 	
 	/**
-	 * Deserializes a vertex representing a stream entry.
+	 * Deserializes a vertex representing an activity.
 	 * 
-	 * @param streamEntryVertex The vertex to deserialize.
-	 * @return A stream entry that was represented by the given vertex.
+	 * @param activityVertex The vertex to deserialize.
+	 * @return An activity that was represented by the given vertex.
 	 */
-	private StreamEntry deserializeStreamEntry(final Vertex streamEntryVertex)
+	private Activity deserializeActivity(final Vertex activityVertex)
 	{
-		String id = (String)streamEntryVertex.getProperty(STRING_ENTRY_ID);
-		DateTime time = DateTime.parse((String) streamEntryVertex
-				.getProperty(STRING_TIME));
-		String content = (String)streamEntryVertex.getProperty(STRING_CONTENT);
+		String content = (String)activityVertex.getProperty(STRING_CONTENT);
 		
-		return new StreamEntry(id, time, content);
+		return new Activity(content);
 	}
 
 	@Override
@@ -485,7 +481,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
 				DateTime existingDateTime =
-						DateTime.parse((String)edge.getProperty(STRING_TIME));
+						DateTime.parse((String)edge.getProperty(STRING_SORTTIME));
 				
 				graph.commit();
 				return existingDateTime;
@@ -494,7 +490,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		Edge followEdge = user.addEdge(STRING_FOLLOWS, entity);
 		followEdge.setProperty(STRING_TENANT_ID, tenantId);
-		followEdge.setProperty(STRING_TIME, followed.toString());
+		followEdge.setProperty(STRING_SORTTIME, followed.toString());
 		
 		insertFeedEntity(user, entity, tenantId);
 		
@@ -536,7 +532,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (edge.getVertex(Direction.OUT).getId().equals(
 					user.getId()))
 				followed = 
-					DateTime.parse((String)edge.getProperty(STRING_TIME));
+					DateTime.parse((String)edge.getProperty(STRING_SORTTIME));
 				edge.remove();
 		}
 		
@@ -577,7 +573,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
 				graph.commit();
-				return DateTime.parse((String)edge.getProperty(STRING_TIME));
+				return DateTime.parse((String)edge.getProperty(STRING_SORTTIME));
 			}
 		}
 		
@@ -588,7 +584,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 
 	@Override
 	public List<ActivityStreamsObject> getFollowing(String tenantId,
-			String userId, long startIndex, int entriesToReturn)
+			String userId, long startIndex, int entitiesToReturn)
 	{
 		userId = tenantId + "/" + userId;
 		
@@ -608,7 +604,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				entity.setId(edge.getVertex(Direction.IN).getId().toString()
 						.replaceFirst(tenantId + "/", ""));
 				following.add(entity);
-				if (following.size() >= entriesToReturn)
+				if (following.size() >= entitiesToReturn)
 					break;
 			}
 			currentPosition++;
@@ -621,7 +617,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	
 	@Override
 	public List<ActivityStreamsObject> getFollowers(String tenantId,
-			String entityId, long startIndex, int entriesToReturn)
+			String entityId, long startIndex, int followersToReturn)
 	{
 		entityId = tenantId + "/" + entityId;
 		
@@ -641,7 +637,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				user.setId(edge.getVertex(Direction.OUT).getId().toString()
 						.replaceFirst(tenantId + "/", ""));
 				followers.add(user);
-				if (followers.size() >= entriesToReturn)
+				if (followers.size() >= followersToReturn)
 					break;
 			}
 			currentPosition++;
@@ -674,9 +670,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 					"newEntity must not be null");
 		}
 		
-		// we order entities based on the date of their first stream entry
-		EntityFirstStreamEntryDateComparator comparator = 
-				new EntityFirstStreamEntryDateComparator();
+		// we order entities based on the date of their first activity
+		EntityFirstActivityDateComparator comparator = 
+				new EntityFirstActivityDateComparator();
 		
 		// start with the user and the first feed entity
 		String feedLabel = getFeedLabel((String)user.getId());
@@ -716,32 +712,32 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<StreamEntry> getFeed(String tenantId, String userId,
-			long startIndex, int entriesToReturn)
+	public List<Activity> getFeed(String tenantId, String userId,
+			long startIndex, int activitiesToReturn)
 	{
 		// this method represents the core of the Graphity algorithm
 		// http://www.rene-pickhardt.de/graphity-an-efficient-graph-model-for-retrieving-the-top-k-news-feeds-for-users-in-social-networks/
 		
 		userId = tenantId + "/" + userId;
 		
-		// we order stream entries by their date
-		StreamEntryDateComparator comparator = new StreamEntryDateComparator();
+		// we order activities by their date
+		ActivityDateComparator comparator = new ActivityDateComparator();
 		
-		// a priority queue is used to order the entries that are "next" for
+		// a priority queue is used to order the activities that are "next" for
 		// each entity we've already reached in the feed
 		PriorityQueue<Vertex> queue =
 				new PriorityQueue<Vertex>(11, comparator);
-		ArrayList<Vertex> streamEntries = new ArrayList<Vertex>();
+		ArrayList<Vertex> activities = new ArrayList<Vertex>();
 		
 		// since we need to advance from the beginning of the feed, this lets
 		// us keep track of where we are
 		long feedPosition = 0;
 		
-		// this is used to track the newest entry in the farthest entity reached
+		// this is used to track the newest activity in the last entity reached
 		Vertex topOfEntity = null;
 		
-		// this is used to track the newest entry within all of the streams for
-		// entities that have already been reached
+		// this is used to track the newest activity within all of the streams
+		// for entities that have already been reached
 		Vertex topOfQueue = null;
 		
 		Vertex user = getOrCreateEntityVertex(userId, tenantId);
@@ -750,20 +746,20 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		if (null != entity)
 		{
-			topOfEntity = getNextStreamEntry(entity);
+			topOfEntity = getNextActivity(entity);
 			if (null != topOfEntity)
 			{
 				queue.add(topOfEntity);
 				topOfQueue = topOfEntity;
 			}
 			entity = getNextFeedEntity(feedLabel, entity, Direction.OUT);
-			topOfEntity = getNextStreamEntry(entity);
+			topOfEntity = getNextActivity(entity);
 		}
 		
-		// while we have not yet hit our entries to return,
-		// and there are still entries in the queue OR
+		// while we have not yet hit our activities to return,
+		// and there are still activities in the queue OR
 		// there are more entities
-		while (streamEntries.size() < entriesToReturn
+		while (activities.size() < activitiesToReturn
 				&& (queue.size() > 0 || entity != null))
 		{
 			// compare top of next entity to top of queue
@@ -775,12 +771,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (result < 0)
 			{
 				if (feedPosition >= startIndex)
-					streamEntries.add(topOfEntity);
-				Vertex nextEntry = getNextStreamEntry(topOfEntity);
-				if (null != nextEntry)
-					queue.add(nextEntry);
+					activities.add(topOfEntity);
+				Vertex nextActivity = getNextActivity(topOfEntity);
+				if (null != nextActivity)
+					queue.add(nextActivity);
 				entity = getNextFeedEntity(feedLabel, entity, Direction.OUT);
-				topOfEntity = getNextStreamEntry(entity);
+				topOfEntity = getNextActivity(entity);
 				topOfQueue = queue.peek();
 			}
 			
@@ -792,18 +788,18 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				{
 					entity = getNextFeedEntity(feedLabel,
 							entity, Direction.OUT);
-					topOfEntity = getNextStreamEntry(entity);
+					topOfEntity = getNextActivity(entity);
 				}
 				// if top of queue is newer, take the top element, and
 				// push the next element to the queue
 				else
 				{
 					Vertex removedFromQueue = queue.remove();
-					Vertex nextEntry = getNextStreamEntry(removedFromQueue);
-					if (null != nextEntry)
-						queue.add(nextEntry);
+					Vertex nextActivity = getNextActivity(removedFromQueue);
+					if (null != nextActivity)
+						queue.add(nextActivity);
 					if (feedPosition >= startIndex)
-						streamEntries.add(removedFromQueue);
+						activities.add(removedFromQueue);
 					topOfQueue = queue.peek();
 				}
 			}
@@ -813,12 +809,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		graph.commit();
 		
-		return deserializeStreamEntries(streamEntries);
+		return deserializeActivities(activities);
 	}
 
 	/**
 	 * Retrieves an adjacent entity in a path of entities for a feed, where the
-	 * entities are ordered by their newest stream entry.
+	 * entities are ordered by their newest activity.
 	 * 
 	 * @param feedLabel The unique-per-user label for the edges in the feed.
 	 * @param currentEntity The start entity.
@@ -869,23 +865,23 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	/**
-	 * A comparator for stream entry vertices that orders by the entry time.
+	 * A comparator for activity vertices that orders by the sort time.
 	 * 
 	 * @author mafuba
 	 *
 	 */
-	private class StreamEntryDateComparator implements Comparator<Vertex>
+	private class ActivityDateComparator implements Comparator<Vertex>
 	{
 		@Override
 		public int compare(Vertex v1, Vertex v2)
 		{
 			long t1 = 0;
 			if (null != v1)
-				t1 = DateTime.parse((String)v1.getProperty(STRING_TIME))
+				t1 = DateTime.parse((String)v1.getProperty(STRING_SORTTIME))
 					.getMillis();
 			long t2 = 0;
 			if (null != v2)
-				t2 = DateTime.parse((String)v2.getProperty(STRING_TIME))
+				t2 = DateTime.parse((String)v2.getProperty(STRING_SORTTIME))
 					.getMillis();
 
 			return new Long(t2).compareTo(t1);
@@ -894,43 +890,42 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	
 	/**
 	 * A comparator for entity vertices that orders by the time of the first
-	 * stream entry for the entity.
+	 * activity for the entity.
 	 * 
 	 * @author mafuba
 	 *
 	 */
-	private class EntityFirstStreamEntryDateComparator
+	private class EntityFirstActivityDateComparator
 		implements Comparator<Vertex>
 	{
 		@Override
 		public int compare(Vertex v1, Vertex v2)
 		{
-			Vertex streamEntry = null;
+			Vertex activity = null;
 			
 			long t1 = 0;
 			if (null != v1)
-				streamEntry = getNextStreamEntry(v1);
-			if (null != streamEntry)
-				t1 = DateTime.parse((String)streamEntry
-						.getProperty(STRING_TIME)).getMillis();
+				activity = getNextActivity(v1);
+			if (null != activity)
+				t1 = DateTime.parse((String)activity
+						.getProperty(STRING_SORTTIME)).getMillis();
 			
-			streamEntry = null;
+			activity = null;
 			long t2 = 0;
 			if (null != v2)
-				streamEntry = getNextStreamEntry(v2);
-			if (null != streamEntry)
-				t2 = DateTime.parse((String)streamEntry
-						.getProperty(STRING_TIME)).getMillis();
+				activity = getNextActivity(v2);
+			if (null != activity)
+				t2 = DateTime.parse((String)activity
+						.getProperty(STRING_SORTTIME)).getMillis();
 			
 			return new Long(t2).compareTo(t1);
 		}
 	}
 	
-	private static final String STRING_ENTRY_ID = "EntryID";
 	private static final String STRING_TENANT_ID = "TenantID";
-	private static final String STRING_TIME = "Time";
+	private static final String STRING_SORTTIME = "SortTime";
 	private static final String STRING_CONTENT = "Content";
 	private static final String STRING_FOLLOWS = "Follows";
-	private static final String STRING_STREAM_ENTRY = "StreamEntry";
+	private static final String STRING_STREAM = "Stream";
 	private static final String STRING_FEED_LABEL_PREFIX = "Feed+";
 }

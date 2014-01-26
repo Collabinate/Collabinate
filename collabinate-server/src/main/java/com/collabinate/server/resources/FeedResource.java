@@ -12,8 +12,8 @@ import com.google.common.base.Joiner;
 import com.google.common.hash.Hashing;
 
 /**
- * Restful resource representing the collection of stream entries for all
- * entities followed by a user.
+ * Restful resource representing the collection of activities for all entities
+ * followed by a user.
  * 
  * @author mafuba
  *
@@ -28,24 +28,24 @@ public class FeedResource extends ServerResource
 				.getAttributes().get("collabinateReader");
 		String tenantId = getAttribute("tenantId");
 		String userId = getAttribute("userId");
-		String startString = getQueryValue("start");
-		String countString = getQueryValue("count");
-		long start = null == startString ? 0 : Long.parseLong(startString);
-		int count = null == countString ? DEFAULT_COUNT : 
-			Integer.parseInt(countString);
+		String skipString = getQueryValue("skip");
+		String takeString = getQueryValue("take");
+		long skip = null == skipString ? 0 : Long.parseLong(skipString);
+		int take = null == takeString ? DEFAULT_TAKE : 
+			Integer.parseInt(takeString);
 		
 		String result = "{\"items\":[" + Joiner.on(',')
-				.join(reader.getFeed(tenantId, userId, start, count))
+				.join(reader.getFeed(tenantId, userId, skip, take))
 				+ "]}";
 		
 		Representation representation = new StringRepresentation(
 				result, MediaType.APPLICATION_JSON);
 		representation.setTag(new Tag(Hashing.murmur3_128().hashUnencodedChars(
-				result+tenantId+userId+startString+countString)
+				result+tenantId+userId+skipString+takeString)
 				.toString(), false));
 		
 		return representation;
 	}
 	
-	private static final int DEFAULT_COUNT = 20;
+	private static final int DEFAULT_TAKE = 20;
 }

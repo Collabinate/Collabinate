@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.joda.time.DateTime;
 
-import com.collabinate.server.StreamEntry;
+import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
 
 /**
@@ -17,29 +17,29 @@ import com.collabinate.server.activitystreams.ActivityStreamsObject;
 public interface CollabinateReader
 {
 	/**
-	 * Retrieves a collection of entries for an entity, with paging ability. 
+	 * Retrieves a collection of activities for an entity, with paging ability. 
 	 * 
 	 * @param tenantId the tenant for which the request is processed.
 	 * @param entityId The ID of the entity for which to retrieve a stream.
 	 * @param startIndex The zero-based index of the first element to retrieve.
-	 * @param entriesToReturn The maximum number of stream entries to retrieve.
-	 * @return A collection of stream entries for the given entity.
+	 * @param activitiesToReturn The maximum number of activities to retrieve.
+	 * @return A collection of activities for the given entity.
 	 */
-	public List<StreamEntry> getStream(String tenantId, String entityId,
-			long startIndex, int entriesToReturn);
+	public List<Activity> getStream(String tenantId, String entityId,
+			long startIndex, int activitiesToReturn);
 	
 	/**
-	 * Retrieves a collection of stream entries for the entities that a user
+	 * Retrieves a collection of activities for the entities that a user
 	 * follows, in chronological order.
 	 * 
 	 * @param tenantId the tenant for which the request is processed.
 	 * @param userId The ID of the user for which to retrieve a feed.
 	 * @param startIndex The zero-based index of the first element to retrieve.
-	 * @param entriesToReturn The maximum number of feed entries to retrieve.
-	 * @return A collection of feed entries for the given user.
+	 * @param activitiesToReturn The maximum number of activities to retrieve.
+	 * @return A collection of activities for the given user.
 	 */
-	public List<StreamEntry> getFeed(String tenantId, String userId,
-			long startIndex, int entriesToReturn);
+	public List<Activity> getFeed(String tenantId, String userId,
+			long startIndex, int activitiesToReturn);
 	
 	/**
 	 * Retrieves a DateTime value for when a user followed an entity, or null if
@@ -61,10 +61,12 @@ public interface CollabinateReader
 	 * @param tenantId the tenant for which the request is processed.
 	 * @param userId the ID of the user for which to retrieve the followed
 	 * entities.
+	 * @param startIndex The zero-based index of the first entity to retrieve.
+	 * @param entitiesToReturn The maximum number of entities to retrieve.
 	 * @return A collection of entities followed by the given user.
 	 */
 	public List<ActivityStreamsObject> getFollowing(String tenantId,
-			String userId, long startIndex, int entriesToReturn);
+			String userId, long startIndex, int entitiesToReturn);
 	
 	/**
 	 * Retrieves the collection of users that follow an entity.
@@ -72,8 +74,10 @@ public interface CollabinateReader
 	 * @param tenantId the tenant for which the request is processed.
 	 * @param entityId the ID of the entity for which the followers will be
 	 * retrieved.
+	 * @param startIndex The zero-based index of the first follower to retrieve.
+	 * @param entitiesToReturn The maximum number of followers to retrieve.
 	 * @return A collection of users following the given entity.
 	 */
 	public List<ActivityStreamsObject> getFollowers(String tenantId,
-			String entityId, long startIndex, int entriesToReturn);
+			String entityId, long startIndex, int followersToReturn);
 }
