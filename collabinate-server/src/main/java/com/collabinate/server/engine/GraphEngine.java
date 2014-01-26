@@ -53,8 +53,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public void addActivity(String tenantId, String entityId,
-			Activity activity)
+	public void addActivity(String tenantId, String entityId, Activity activity)
 	{
 		if (null == tenantId)
 		{
@@ -71,19 +70,13 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("activity must not be null");
 		}
 		
-		entityId = tenantId + "/" + entityId;
+		Vertex entityVertex = getOrCreateEntityVertex(tenantId, entityId);
+		Vertex activityVertex = serializeActivity(activity, tenantId, entityId);
 		
-		Vertex entityVertex = getOrCreateEntityVertex(entityId, tenantId);
-		
-		String activityVertexId = entityId + "/" + activity.getId();
-		
-		Vertex activityVertex = serializeActivity(activityVertexId, activity,
-				tenantId);
-		
-		if (insertActivity(entityVertex, activityVertex, tenantId))
+		if (insertActivity(entityVertex, activityVertex))
 			// if the inserted activity is first in its stream, it may have
 			// changed the entity order for feed paths
-			updateFeedPaths(tenantId, entityVertex);
+			updateFeedPaths(tenantId, entityId, entityVertex);
 		
 		graph.commit();		
 	}
@@ -92,18 +85,22 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * Attempts to retrieve the vertex for the entity with the given ID. If a
 	 * matching entity cannot be found, the vertex is created.
 	 * 
-	 * @param entityId The ID of the entity for which to retrieve a vertex.
 	 * @param tenantId The ID of the tenant to add to the vertex upon creation.
+	 * @param entityId The ID of the entity to add to the vertex upon creation.
 	 * @return The vertex for the given entity.
 	 */
-	private synchronized Vertex getOrCreateEntityVertex(final String entityId,
-			final String tenantId)
+	private synchronized Vertex getOrCreateEntityVertex(final String tenantId,
+			final String entityId)
 	{
-		Vertex entityVertex = graph.getVertex(entityId);
+		Vertex entityVertex = graph.getVertex(tenantId + "/" + entityId);
 		if (null == entityVertex)
 		{
-			entityVertex = graph.addVertex(entityId);
+			entityVertex = graph.addVertex(tenantId + "/" + entityId);
 			entityVertex.setProperty(STRING_TENANT_ID, tenantId);
+			entityVertex.setProperty(STRING_ENTITY_ID, entityId);
+			entityVertex.setProperty(STRING_TYPE, STRING_ENTITY);
+			entityVertex.setProperty(STRING_CREATED,
+					DateTime.now(DateTimeZone.UTC).toString());
 			graph.commit();
 		}
 		return entityVertex;
@@ -114,15 +111,22 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * 
 	 * @param activity The activity to be represented.
 	 * @param tenantId The tenant for the activity.
+	 * @param entityId The entity to which the activity belongs.
 	 * @return A vertex that represents the given activity.
 	 */
-	private Vertex serializeActivity(final String vertexId,
-			final Activity activity, final String tenantId)
+	private Vertex serializeActivity(final Activity activity,
+			final String tenantId, final String entityId)
 	{
-		Vertex activityVertex = graph.addVertex(vertexId);
+		Vertex activityVertex = graph.addVertex(tenantId + "/" + entityId + "/"
+				+ activity.getId());
 		activityVertex.setProperty(STRING_TENANT_ID, tenantId);
+		activityVertex.setProperty(STRING_ENTITY_ID, entityId);
+		activityVertex.setProperty(STRING_ACTIVITY_ID, activity.getId());
+		activityVertex.setProperty(STRING_TYPE, STRING_ACTIVITY);
 		activityVertex.setProperty(STRING_SORTTIME, 
 				activity.getSortTime().toString());
+		activityVertex.setProperty(STRING_CREATED,
+				DateTime.now(DateTimeZone.UTC).toString());
 		activityVertex.setProperty(STRING_CONTENT, activity.toString());
 		return activityVertex;
 	}
@@ -133,12 +137,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * 
 	 * @param entity The vertex representing the entity.
 	 * @param addedActivity The activity to add to the stream.
-	 * @param tenantId The tenant for the entity.
 	 * @return true if the added activity is the newest (first) in the stream,
 	 * otherwise false.
 	 */
 	private boolean insertActivity(final Vertex entity,
-			final Vertex addedActivity, final String tenantId)
+			final Vertex addedActivity)
 	{
 		if (null == entity)
 		{
@@ -168,11 +171,18 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			position++;
 		}
 		
+		String tenantId = (String)entity.getProperty(STRING_TENANT_ID);
+		String entityId = (String)entity.getProperty(STRING_ENTITY_ID);
+		
 		// add a stream edge between the previous activity (the one that is 
 		// newer than the added one, or the entity if there are none) and the
 		// new one.
-		previousActivity.addEdge(STRING_STREAM, addedActivity)
-			.setProperty(STRING_TENANT_ID, tenantId);
+		Edge newEdge = previousActivity.addEdge(STRING_STREAM, addedActivity);
+		newEdge.setProperty(STRING_TENANT_ID, tenantId);
+		newEdge.setProperty(STRING_ENTITY_ID, entityId);
+		newEdge.setProperty(STRING_CREATED,
+				DateTime.now(DateTimeZone.UTC).toString());
+
 		
 		// if there are one or more activities that are older than the added
 		// one, add an edge between the added one and the next older one, and
@@ -180,8 +190,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		// one.
 		if (null != currentStreamEdge)
 		{
-			addedActivity.addEdge(STRING_STREAM, currentActivity)
-				.setProperty(STRING_TENANT_ID, tenantId);
+			newEdge = addedActivity.addEdge(STRING_STREAM, currentActivity);
+			newEdge.setProperty(STRING_TENANT_ID, tenantId);
+			newEdge.setProperty(STRING_ENTITY_ID, entityId);
+			newEdge.setProperty(STRING_CREATED,
+					DateTime.now(DateTimeZone.UTC).toString());
+			
 			currentStreamEdge.remove();
 		}
 		
@@ -237,9 +251,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * of all the users that follow it.  This is used for changes to the first
 	 * activity of an entity, which potentially changes its feed order.
 	 * 
+	 * @param tenantId The ID of the tenant.
+	 * @param entityId The raw ID of the entity.
 	 * @param entity The entity for which followers are updated.
 	 */
-	private void updateFeedPaths(String tenantId, Vertex entity)
+	private void updateFeedPaths(String tenantId, String entityId,
+			Vertex entity)
 	{
 		// get all the users that follow the entity
 		Iterable<Vertex> usersInGraph =
@@ -256,7 +273,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		// loop over each user and move the entity to the correct
 		// feed position by un-following and re-following
 		// TODO: is this the best way to do this?
-		String entityId = entity.getId().toString();
 		String userId;
 		for (Vertex user : users)
 		{
@@ -290,14 +306,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (null == activityId)
 			throw new IllegalArgumentException("activityId must not be null");
 		
-		entityId = tenantId + "/" + entityId;
-		
-		Vertex entityVertex = getOrCreateEntityVertex(entityId, tenantId);
+		Vertex entityVertex = getOrCreateEntityVertex(tenantId, entityId);
 				
-		if (removeActivity(entityVertex, activityId, entityId))
+		if (removeActivity(entityVertex, activityId))
 			// if the deleted activity was first in its stream, it may have
 			// changed the entity order for feed paths
-			updateFeedPaths(tenantId, entityVertex);
+			updateFeedPaths(tenantId, entityId, entityVertex);
 		
 		graph.commit();
 	}
@@ -308,12 +322,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * 
 	 * @param entityVertex The vertex representing the entity.
 	 * @param activityId The ID of the activity to delete from the stream.
-	 * @param entityId The entity for the stream.
 	 * @return true if the deleted activity was the newest (first) in the
 	 * stream, otherwise false.
 	 */
-	private boolean removeActivity(Vertex entityVertex, String activityId,
-			String entityId)
+	private boolean removeActivity(Vertex entityVertex, String activityId)
 	{
 		if (null == entityVertex)
 			throw new IllegalArgumentException("entityVertex must not be null");
@@ -321,9 +333,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (null == activityId)
 			throw new IllegalArgumentException("activityId must not be null");
 		
+		// TODO: improve performance by going directly to the activity
+		
 		Vertex currentActivity = getNextActivity(entityVertex);
 		Vertex previousActivity = entityVertex;
-		String activityVertexId = entityId + "/" + activityId;
 		int position = 0;		
 		
 		// advance along the stream path, checking each activity for a match
@@ -331,14 +344,15 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			// if a match is found, remove it and make a new edge from the
 			// previous activity to the following activity (if one exists)
-			if (activityVertexId.equals(currentActivity.getId()))
+			if (currentActivity.getProperty(STRING_ACTIVITY_ID).equals(activityId))
 			{
 				Vertex followingActivity = getNextActivity(currentActivity);
 				currentActivity.remove();
 				if (null != followingActivity)
 					previousActivity.addEdge(STRING_STREAM,
-							followingActivity).setProperty(
-									STRING_TENANT_ID, entityId);
+						followingActivity).setProperty(
+							STRING_TENANT_ID, previousActivity
+								.getProperty(STRING_ENTITY_ID));
 				currentActivity = null;
 			}
 			// if no match, proceed along the stream updating the pointers
@@ -357,14 +371,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	public List<Activity> getStream(String tenantId, String entityId,
 			long startIndex, int activitiesToReturn)
 	{
-		entityId = tenantId + "/" + entityId;
-		
-		Vertex entity = graph.getVertex(entityId);
-		if (null == entity)
-		{
-			return new ArrayList<Activity>();
-		}
-		
 		// since we need to advance from the beginning of the stream,
 		// this lets us keep track of where we are
 		int streamPosition = 0;
@@ -373,7 +379,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		List<Vertex> activityVertices = new ArrayList<Vertex>();
 		
-		Vertex currentActivity = getNextActivity(entity);
+		Vertex currentActivity = getNextActivity(
+				getOrCreateEntityVertex(tenantId, entityId));
 		
 		// advance along the stream, collecting vertices after we get to the
 		// start index, and stopping when we have enough to return or run out
@@ -470,27 +477,26 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			followed = DateTime.now(DateTimeZone.UTC);
 		}
 		
-		entityId = tenantId + "/" + entityId;
-		userId = tenantId + "/" + userId;
-		
-		Vertex user = getOrCreateEntityVertex(userId, tenantId);
-		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
+		Vertex user = getOrCreateEntityVertex(tenantId, userId);
+		Vertex entity = getOrCreateEntityVertex(tenantId, entityId);
 		
 		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
 		{
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
 				DateTime existingDateTime =
-						DateTime.parse((String)edge.getProperty(STRING_SORTTIME));
+						DateTime.parse((String)edge.getProperty(STRING_CREATED));
 				
 				graph.commit();
 				return existingDateTime;
 			}
 		}
 		
+		logger.debug("No follow relationship found for userID: {} " +
+				"to entityID: {}. Creating.", userId, entityId);
 		Edge followEdge = user.addEdge(STRING_FOLLOWS, entity);
 		followEdge.setProperty(STRING_TENANT_ID, tenantId);
-		followEdge.setProperty(STRING_SORTTIME, followed.toString());
+		followEdge.setProperty(STRING_CREATED, followed.toString());
 		
 		insertFeedEntity(user, entity, tenantId);
 		
@@ -518,11 +524,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			throw new IllegalArgumentException("entityId must not be null");
 		}
 		
-		entityId = tenantId + "/" + entityId;
-		userId = tenantId + "/" + userId;
-		
-		Vertex user = getOrCreateEntityVertex(userId, tenantId);
-		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
+		Vertex user = getOrCreateEntityVertex(tenantId, userId);
+		Vertex entity = getOrCreateEntityVertex(tenantId, entityId);
 		String feedLabel = getFeedLabel(getIdString(user));
 		DateTime followed = null;
 		
@@ -532,7 +535,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (edge.getVertex(Direction.OUT).getId().equals(
 					user.getId()))
 				followed = 
-					DateTime.parse((String)edge.getProperty(STRING_SORTTIME));
+					DateTime.parse((String)edge.getProperty(STRING_CREATED));
 				edge.remove();
 		}
 		
@@ -562,18 +565,15 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	public DateTime getDateTimeUserFollowedEntity(String tenantId,
 			String userId, String entityId)
 	{
-		entityId = tenantId + "/" + entityId;
-		userId = tenantId + "/" + userId;
-		
-		Vertex user = getOrCreateEntityVertex(userId, tenantId);
-		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
+		Vertex user = getOrCreateEntityVertex(tenantId, userId);
+		Vertex entity = getOrCreateEntityVertex(tenantId, entityId);
 		
 		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
 		{
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
 				graph.commit();
-				return DateTime.parse((String)edge.getProperty(STRING_SORTTIME));
+				return DateTime.parse((String)edge.getProperty(STRING_CREATED));
 			}
 		}
 		
@@ -586,9 +586,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	public List<ActivityStreamsObject> getFollowing(String tenantId,
 			String userId, long startIndex, int entitiesToReturn)
 	{
-		userId = tenantId + "/" + userId;
-		
-		Vertex user = getOrCreateEntityVertex(userId, tenantId);
+		Vertex user = getOrCreateEntityVertex(tenantId, userId);
 		List<ActivityStreamsObject> following =
 				new ArrayList<ActivityStreamsObject>();
 		
@@ -601,8 +599,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			{
 				ActivityStreamsObject entity = new ActivityStreamsObject();
 				// remove the tenant id from the entity id before adding
-				entity.setId(edge.getVertex(Direction.IN).getId().toString()
-						.replaceFirst(tenantId + "/", ""));
+				entity.setId((String)edge.getVertex(Direction.IN)
+						.getProperty(STRING_ENTITY_ID));
 				following.add(entity);
 				if (following.size() >= entitiesToReturn)
 					break;
@@ -619,9 +617,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	public List<ActivityStreamsObject> getFollowers(String tenantId,
 			String entityId, long startIndex, int followersToReturn)
 	{
-		entityId = tenantId + "/" + entityId;
-		
-		Vertex entity = getOrCreateEntityVertex(entityId, tenantId);
+		Vertex entity = getOrCreateEntityVertex(tenantId, entityId);
 		List<ActivityStreamsObject> followers =
 				new ArrayList<ActivityStreamsObject>();
 		
@@ -634,8 +630,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			{
 				ActivityStreamsObject user = new ActivityStreamsObject();
 				// remove the tenant id from the user id before adding
-				user.setId(edge.getVertex(Direction.OUT).getId().toString()
-						.replaceFirst(tenantId + "/", ""));
+				user.setId((String)edge.getVertex(Direction.OUT)
+						.getProperty(STRING_ENTITY_ID));
 				followers.add(user);
 				if (followers.size() >= followersToReturn)
 					break;
@@ -718,8 +714,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		// this method represents the core of the Graphity algorithm
 		// http://www.rene-pickhardt.de/graphity-an-efficient-graph-model-for-retrieving-the-top-k-news-feeds-for-users-in-social-networks/
 		
-		userId = tenantId + "/" + userId;
-		
 		// we order activities by their date
 		ActivityDateComparator comparator = new ActivityDateComparator();
 		
@@ -740,7 +734,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		// for entities that have already been reached
 		Vertex topOfQueue = null;
 		
-		Vertex user = getOrCreateEntityVertex(userId, tenantId);
+		Vertex user = getOrCreateEntityVertex(tenantId, userId);
 		String feedLabel = getFeedLabel(getIdString(user));
 		Vertex entity = getNextFeedEntity(feedLabel, user, Direction.OUT);
 		
@@ -923,9 +917,15 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	private static final String STRING_TENANT_ID = "TenantID";
+	private static final String STRING_ENTITY_ID = "EntityID";
+	private static final String STRING_ENTITY = "Entity";
+	private static final String STRING_ACTIVITY_ID = "ActivityID";
+	private static final String STRING_ACTIVITY = "Activity";
 	private static final String STRING_SORTTIME = "SortTime";
 	private static final String STRING_CONTENT = "Content";
 	private static final String STRING_FOLLOWS = "Follows";
 	private static final String STRING_STREAM = "Stream";
+	private static final String STRING_TYPE = "Type";
+	private static final String STRING_CREATED = "Created";
 	private static final String STRING_FEED_LABEL_PREFIX = "Feed+";
 }

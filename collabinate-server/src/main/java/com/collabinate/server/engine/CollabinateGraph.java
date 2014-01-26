@@ -65,7 +65,7 @@ public class CollabinateGraph implements KeyIndexableGraph
 		// ensure we can provide IDs to the graph
 		KeyIndexableGraph idGraph;
 		if (baseGraph.getFeatures().ignoresSuppliedIds)
-			idGraph = new IdGraph<KeyIndexableGraph>(baseGraph);
+			idGraph = new IdGraph<KeyIndexableGraph>(baseGraph, true, false);
 		else
 			idGraph = baseGraph;
 		
