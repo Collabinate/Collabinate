@@ -1,5 +1,8 @@
 package com.collabinate.server.engine;
 
+import org.joda.time.DateTime;
+import org.joda.time.DateTimeZone;
+
 import com.collabinate.server.Tenant;
 import com.google.gson.Gson;
 import com.tinkerpop.blueprints.Vertex;
@@ -35,12 +38,14 @@ public class GraphAdmin implements CollabinateAdmin
 			tenantVertex = graph.addVertex(getTenantVertexId(tenant.getId()));
 		}
 		
-		tenantVertex.setProperty(STRING_TENANTID, tenant.getId());
-		tenantVertex.setProperty(STRING_TENANTNAME, tenant.getName());
+		tenantVertex.setProperty(STRING_TENANT_ID, tenant.getId());
+		tenantVertex.setProperty(STRING_NAME, tenant.getName());
+		tenantVertex.setProperty(STRING_CREATED,
+				DateTime.now(DateTimeZone.UTC).toString());
 		
 		Gson gson = new Gson();
 		String tenantJson = gson.toJson(tenant);
-		tenantVertex.setProperty(STRING_TENANT, tenantJson);
+		tenantVertex.setProperty(STRING_CONTENT, tenantJson);
 		
 		graph.commit();
 	}
@@ -54,7 +59,7 @@ public class GraphAdmin implements CollabinateAdmin
 		
 		if (null != tenantVertex)
 		{
-			String tenantJson = (String)tenantVertex.getProperty(STRING_TENANT);
+			String tenantJson = (String)tenantVertex.getProperty(STRING_CONTENT);
 			Gson gson = new Gson();
 			tenant = gson.fromJson(tenantJson, Tenant.class);
 		}
@@ -75,8 +80,9 @@ public class GraphAdmin implements CollabinateAdmin
 		return STRING_TENANT_PREFIX + tenantId;
 	}
 	
-	private static final String STRING_TENANT_PREFIX = "_TENANT-";
-	private static final String STRING_TENANT = "tenant";
-	private static final String STRING_TENANTID = "tenantId";
-	private static final String STRING_TENANTNAME = "tenantName";
+	private static final String STRING_TENANT_PREFIX = "collabinate/tenant/";
+	private static final String STRING_CONTENT = "Content";
+	private static final String STRING_TENANT_ID = "TenantID";
+	private static final String STRING_NAME = "Name";
+	private static final String STRING_CREATED = "Created";
 }
