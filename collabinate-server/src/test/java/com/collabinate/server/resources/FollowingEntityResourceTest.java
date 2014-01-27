@@ -63,10 +63,9 @@ public class FollowingEntityResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void unfollowing_not_followed_entity_should_return_200()
+	public void unfollowing_not_followed_entity_should_return_404()
 	{
-		// TODO: this should be a 404
-		assertEquals(Status.SUCCESS_OK, delete().getStatus());
+		assertEquals(Status.CLIENT_ERROR_NOT_FOUND, delete().getStatus());
 	}
 	
 	@Test

@@ -82,9 +82,12 @@ public class FollowingEntityResource extends ServerResource
 		String entityId = getAttribute("entityId");
 		
 		// remove the follow relationship
-		writer.unfollowEntity(tenantId, userId, entityId);
+		DateTime followed = writer.unfollowEntity(tenantId, userId, entityId);
 		
-		setStatus(Status.SUCCESS_OK);
+		if (null == followed)
+			setStatus(Status.CLIENT_ERROR_NOT_FOUND);
+		else
+			setStatus(Status.SUCCESS_OK);
 		
 		return createFollowActivity(
 				userId,

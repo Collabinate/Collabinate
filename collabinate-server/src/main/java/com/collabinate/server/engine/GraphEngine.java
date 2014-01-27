@@ -220,6 +220,73 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	/**
+	 * Retrieves the edge to the next overlay from the given vertex, whether
+	 * the given vertex is an entity or an overlay.
+	 * 
+	 * @param node An overlay or entity for which to find the next feed edge.
+	 * @return The next feed edge in the feed containing or starting at the
+	 * given vertex.
+	 */
+	private Edge getFeedEdge(Vertex node)
+	{
+		return getSingleOutgoingEdge(node, STRING_FEED);
+	}
+	
+	/**
+	 * Retrieves the entity vertex pointed to by an overlay.
+	 * 
+	 * @param overlay The overlay vertex for which to find the feed entity.
+	 * @return The entity vertex for the given overlay vertex.
+	 */
+	private Vertex getFeedEntity(Vertex overlay)
+	{
+		if (null == overlay)
+			return null;
+		
+		Iterator<Vertex> vertices =
+				overlay.getVertices(Direction.OUT, STRING_FEED_ENTITY)
+				.iterator();
+		
+		Vertex entity = vertices.hasNext() ? vertices.next() : null;
+		
+		if (null != entity)
+		{
+			if (vertices.hasNext())
+			{
+				logger.error("Multiple feed entities for overlay with id: {}",
+						overlay.getId());
+			}
+		}
+		
+		return entity;
+	}
+	
+	/**
+	 * Retrieves the overlay pointing to the given entity vertex.
+	 * 
+	 * @param entity The entity vertex for which to find the overlay.
+	 * @param userId The entityId of the user for which to find the overlay.
+	 * @return The overlay vertex for the given entity vertex.
+	 */
+	private Vertex getOverlayForEntity(Vertex entity, String userId)
+	{
+		Iterator<Vertex> vertices =
+				entity.getVertices(Direction.IN, STRING_FEED_ENTITY)
+				.iterator();
+		
+		Vertex overlay;
+		
+		while(vertices.hasNext())
+		{
+			overlay = vertices.next();
+			if (userId.equals(overlay.getProperty(STRING_ENTITY_ID)))
+				return overlay;
+		}
+		
+		return null;
+	}
+	
+	/**
 	 * Retrieves the single edge emanating from the given vertex where the edge
 	 * has the given label.
 	 * 
@@ -286,17 +353,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 	}
 	
-	/**
-	 * Gets the ID of a vertex in string form.
-	 * 
-	 * @param vertex The vertex for which the ID will be returned.
-	 * @return The ID of the vertex formatted as a string.
-	 */
-	private String getIdString(Vertex vertex)
-	{
-		return vertex.getId().toString();
-	}
-	
 	@Override
 	public void deleteActivity(String tenantId, String entityId,
 			String activityId)
@@ -348,7 +404,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			// if a match is found, remove it and make a new edge from the
 			// previous activity to the following activity (if one exists)
-			if (currentActivity.getProperty(STRING_ACTIVITY_ID).equals(activityId))
+			if (currentActivity.getProperty(STRING_ACTIVITY_ID)
+					.equals(activityId))
 			{
 				Vertex followingActivity = getNextActivity(currentActivity);
 				currentActivity.remove();
@@ -489,7 +546,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
 				DateTime existingDateTime =
-						DateTime.parse((String)edge.getProperty(STRING_CREATED));
+						DateTime.parse((String)edge
+								.getProperty(STRING_CREATED));
 				
 				graph.commit();
 				return existingDateTime;
@@ -530,35 +588,36 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		Vertex user = getOrCreateEntityVertex(tenantId, userId);
 		Vertex entity = getOrCreateEntityVertex(tenantId, entityId);
-		String feedLabel = getFeedLabel(getIdString(user));
 		DateTime followed = null;
 		
 		// remove the follow relationship
 		for (Edge edge: entity.getEdges(Direction.IN, STRING_FOLLOWS))
 		{
-			if (edge.getVertex(Direction.OUT).getId().equals(
-					user.getId()))
+			if (edge.getVertex(Direction.OUT).getId().equals(user.getId()))
+			{
 				followed = 
 					DateTime.parse((String)edge.getProperty(STRING_CREATED));
 				edge.remove();
+			}
 		}
 		
-		// remove the entity from the user feed by removing the feed edges
-		// into and out of it
-		Vertex previousEntity = getNextFeedEntity(feedLabel, entity,
-				Direction.IN);
-		Vertex nextEntity = getNextFeedEntity(feedLabel, entity,
-				Direction.OUT);
-		for (Edge edge: entity.getEdges(Direction.BOTH, feedLabel))
+		if (null != followed)
 		{
-			edge.remove();
-		}
-		
-		// replace the missing edge for the feed if necessary
-		if (null != nextEntity)
-		{
-			previousEntity.addEdge(feedLabel, nextEntity)
-				.setProperty(STRING_TENANT_ID, tenantId);
+			// remove the entity from the user feed by removing the overlay
+			Vertex currentOverlay = getOverlayForEntity(entity, userId);
+			Vertex previousOverlay = getPreviousOverlay(currentOverlay);
+			Vertex nextOverlay = getNextOverlay(currentOverlay);
+			currentOverlay.remove();
+			
+			// replace the missing edge for the feed if necessary
+			if (null != nextOverlay)
+			{
+				Edge newEdge = previousOverlay.addEdge(STRING_FEED, nextOverlay);
+				newEdge.setProperty(STRING_TENANT_ID, tenantId);
+				newEdge.setProperty(STRING_ENTITY_ID, entityId);
+				newEdge.setProperty(STRING_CREATED,
+						DateTime.now(DateTimeZone.UTC).toString());
+			}
 		}
 		
 		graph.commit();
@@ -666,41 +725,55 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		if (null == newEntity)
 		{
-			throw new IllegalArgumentException(
-					"newEntity must not be null");
+			throw new IllegalArgumentException("newEntity must not be null");
 		}
+
+		String entityId = user.getProperty(STRING_ENTITY_ID);
+		String now = DateTime.now(DateTimeZone.UTC).toString();
 		
-		// start with the user and the first feed entity
-		String feedLabel = getFeedLabel((String)user.getId());
-		Edge currentFeedEdge = getSingleOutgoingEdge(user, feedLabel);
-		Vertex currentFeedEntity = getNextFeedEntity(feedLabel, user,
-				Direction.OUT);
-		Vertex previousFeedEntity = user;
+		// create the overlay and attach it to the new entity
+		Vertex newOverlay = graph.addVertex(null);
+		newOverlay.setProperty(STRING_TYPE, STRING_OVERLAY);
+		newOverlay.setProperty(STRING_TENANT_ID, tenantId);
+		newOverlay.setProperty(STRING_ENTITY_ID, entityId);
+		newOverlay.setProperty(STRING_CREATED, now);
+		
+		Edge newEdge = newOverlay.addEdge(STRING_FEED_ENTITY, newEntity);
+		newEdge.setProperty(STRING_TENANT_ID, tenantId);
+		newEdge.setProperty(STRING_ENTITY_ID, entityId);
+		newEdge.setProperty(STRING_CREATED, now);
+		
+		// start with the user and the first feed overlay
+		Edge currentFeedEdge = getFeedEdge(user);
+		Vertex currentOverlay = getNextOverlay(user);
+		Vertex previousOverlay = user;
 		int position = 0;		
 		
-		// we order entities based on the date of their first activity
+		// we order overlays based on the date of their entity's first activity
 		// advance along the feed until we find where the new entity belongs
-		while (currentFeedEntity != null && firstActivityDateComparator
-				.compare(newEntity, currentFeedEntity) > 0)
+		while (currentOverlay != null && firstActivityDateComparator
+				.compare(newEntity, getFeedEntity(currentOverlay)) > 0)
 		{
-			previousFeedEntity = currentFeedEntity;
-			currentFeedEdge = getSingleOutgoingEdge(currentFeedEntity,
-					feedLabel);
-			currentFeedEntity = getNextFeedEntity(feedLabel, currentFeedEntity,
-					Direction.OUT);
+			previousOverlay = currentOverlay;
+			currentFeedEdge = getFeedEdge(currentOverlay);
+			currentOverlay = getNextOverlay(currentOverlay);
 			position++;
 		}
 		
-		// add an edge from the previous entity to the new one
-		previousFeedEntity.addEdge(feedLabel, newEntity)
-			.setProperty(STRING_TENANT_ID, tenantId);
+		// add an edge from the previous overlay to the new one
+		newEdge = previousOverlay.addEdge(STRING_FEED, newOverlay);
+		newEdge.setProperty(STRING_TENANT_ID, tenantId);
+		newEdge.setProperty(STRING_ENTITY_ID, entityId);
+		newEdge.setProperty(STRING_CREATED, now);
 		
-		// if there are following entities, add an edge from the new one to the
+		// if there are following overlays, add an edge from the new one to the
 		// following one
 		if (null != currentFeedEdge)
 		{
-			newEntity.addEdge(feedLabel, currentFeedEntity)
-				.setProperty(STRING_TENANT_ID, tenantId);
+			newEdge = newOverlay.addEdge(STRING_FEED, currentOverlay);
+			newEdge.setProperty(STRING_TENANT_ID, tenantId);
+			newEdge.setProperty(STRING_ENTITY_ID, entityId);
+			newEdge.setProperty(STRING_CREATED, now);
 			currentFeedEdge.remove();
 		}
 		
@@ -733,26 +806,25 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		Vertex topOfQueue = null;
 		
 		Vertex user = getOrCreateEntityVertex(tenantId, userId);
-		String feedLabel = getFeedLabel(getIdString(user));
-		Vertex entity = getNextFeedEntity(feedLabel, user, Direction.OUT);
+		Vertex overlay = getNextOverlay(user);
 		
-		if (null != entity)
+		if (null != overlay)
 		{
-			topOfEntity = getNextActivity(entity);
+			topOfEntity = getNextActivity(getFeedEntity(overlay));
 			if (null != topOfEntity)
 			{
 				queue.add(topOfEntity);
 				topOfQueue = topOfEntity;
 			}
-			entity = getNextFeedEntity(feedLabel, entity, Direction.OUT);
-			topOfEntity = getNextActivity(entity);
+			overlay = getNextOverlay(overlay);
+			topOfEntity = getNextActivity(getFeedEntity(overlay));
 		}
 		
 		// while we have not yet hit our activities to return,
 		// and there are still activities in the queue OR
-		// there are more entities
+		// there are more overlays
 		while (activities.size() < activitiesToReturn
-				&& (queue.size() > 0 || entity != null))
+				&& (queue.size() > 0 || overlay != null))
 		{
 			// compare top of next entity to top of queue
 			int result = activityDateComparator.compare(
@@ -768,8 +840,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				Vertex nextActivity = getNextActivity(topOfEntity);
 				if (null != nextActivity)
 					queue.add(nextActivity);
-				entity = getNextFeedEntity(feedLabel, entity, Direction.OUT);
-				topOfEntity = getNextActivity(entity);
+				overlay = getNextOverlay(overlay);
+				topOfEntity = getNextActivity(getFeedEntity(overlay));
 				topOfQueue = queue.peek();
 			}
 			
@@ -779,9 +851,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				// we need to move to the next entity
 				if (queue.isEmpty())
 				{
-					entity = getNextFeedEntity(feedLabel,
-							entity, Direction.OUT);
-					topOfEntity = getNextActivity(entity);
+					overlay = getNextOverlay(overlay);
+					topOfEntity = getNextActivity(getFeedEntity(overlay));
 				}
 				// if top of queue is newer, take the top element, and
 				// push the next element to the queue
@@ -806,55 +877,39 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	/**
-	 * Retrieves an adjacent entity in a path of entities for a feed, where the
-	 * entities are ordered by their newest activity.
+	 * Retrieves the overlay after the given node by following the outgoing
+	 * feed edge. The node can be an entity (user) or an overlay.
 	 * 
-	 * @param feedLabel The unique-per-user label for the edges in the feed.
-	 * @param currentEntity The start entity.
-	 * @param direction Whether to get the next entity (out) or the previous
-	 * entity (in).
-	 * @return The entity adjacent to the given entity for the given feed in the
-	 * given direction, or null if one does not exist.
+	 * @param node The entity or overlay for which to find the next overlay.
+	 * @return The next overlay after the given node, or null if one does not
+	 * exist.
 	 */
-	private Vertex getNextFeedEntity(String feedLabel,
-			Vertex currentEntity, Direction direction)
+	private Vertex getNextOverlay(Vertex node)
 	{
-		if (null == currentEntity)
+		Edge feedEdge = getFeedEdge(node);
+		return null == feedEdge ? null : feedEdge.getVertex(Direction.IN);
+	}
+	
+	private Vertex getPreviousOverlay(Vertex node)
+	{
+		if (null == node)
 			return null;
 		
-		// get a list of vertices along edges that match the label and direction
-		// of the given values
-		Iterator<Vertex> vertices = 
-				currentEntity
-				.getVertices(direction, feedLabel)
-				.iterator();
+		Iterator<Vertex> vertices =
+				node.getVertices(Direction.IN, STRING_FEED).iterator();
 		
-		// get the first vertex if it exists
-		Vertex vertex = vertices.hasNext() ? vertices.next() : null;
+		Vertex overlay = vertices.hasNext() ? vertices.next() : null;
 		
-		// if there are more vertices, the feed is incorrectly structured
-		if (null != vertex)
+		if (null != overlay)
 		{
 			if (vertices.hasNext())
 			{
-				logger.error("Multiple feed edges for vertex: {} " +
-						"with feedLabel: {}", vertex.getId(), feedLabel);
+				logger.error("Multiple previous overlays for node with id: {}",
+						node.getId());
 			}
 		}
 		
-		return vertex;
-	}
-	
-	/**
-	 * Builds a feed edge label based on a common prefix prepended to the
-	 * userId.
-	 * 
-	 * @param userId The ID of the user for which to return a feed label.
-	 * @return A feed edge label constructed from the given user ID.
-	 */
-	private String getFeedLabel(String userId)
-	{
-		return STRING_FEED_LABEL_PREFIX + userId;
+		return overlay;
 	}
 
 	/**
@@ -924,7 +979,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private static final String STRING_CONTENT = "Content";
 	private static final String STRING_FOLLOWS = "Follows";
 	private static final String STRING_STREAM = "Stream";
+	private static final String STRING_FEED = "Feed";
+	private static final String STRING_FEED_ENTITY = "FeedEntity";
+	private static final String STRING_OVERLAY = "Overlay";
 	private static final String STRING_TYPE = "Type";
 	private static final String STRING_CREATED = "Created";
-	private static final String STRING_FEED_LABEL_PREFIX = "Feed+";
 }
