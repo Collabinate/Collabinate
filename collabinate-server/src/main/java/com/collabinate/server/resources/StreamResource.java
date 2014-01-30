@@ -76,7 +76,7 @@ public class StreamResource extends ServerResource
 		
 		if (null != originalId && !originalId.equals(""))
 		{
-			activity.setCollabinateOriginalId(originalId);
+			activity.setCollabinateValue(ORIGINAL_ID, originalId);
 		}
 		
 		writer.addActivity(tenantId, entityId, activity);
@@ -103,6 +103,7 @@ public class StreamResource extends ServerResource
 	}
 	
 	private static final int DEFAULT_COUNT = 20;
+	private static final String ORIGINAL_ID = "originalId";
 }
 
 

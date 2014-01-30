@@ -11,7 +11,6 @@ import org.restlet.data.Method;
 import org.restlet.data.Status;
 import org.restlet.data.Tag;
 
-import com.collabinate.server.activitystreams.Activity;
 import com.google.gson.JsonParser;
 
 /**
@@ -127,26 +126,6 @@ public class ActivityResourceTest extends GraphResourceTest
 		put("test", MediaType.TEXT_PLAIN);
 		// parser will throw if result is not json
 		new JsonParser().parse(get().getEntityAsText());
-	}
-	
-	@Test
-	public void activity_without_id_should_not_have_collabinate_object_id()
-	{
-		put("test", MediaType.TEXT_PLAIN);
-		
-		Activity activity = new Activity(get().getEntityAsText());
-		
-		assertNull(activity.getCollabinateObjectId());
-	}
-	
-	@Test
-	public void activity_matching_id_should_not_have_collabinate_object_id()
-	{
-		put("{\"id\":\"activity\"}", MediaType.APPLICATION_JSON);
-
-		Activity activity = new Activity(get().getEntityAsText());
-		
-		assertNull(activity.getCollabinateObjectId());
 	}
 	
 	@Test

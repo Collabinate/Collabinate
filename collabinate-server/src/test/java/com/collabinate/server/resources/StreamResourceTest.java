@@ -172,7 +172,7 @@ public class StreamResourceTest extends GraphResourceTest
 		Activity posted = new Activity(
 				post(entityBody, MediaType.TEXT_PLAIN).getEntityAsText());
 		
-		assertEquals("original", posted.getCollabinateOriginalId());
+		assertEquals("original", posted.getCollabinateValue("originalId"));
 	}
 	
 	@Test

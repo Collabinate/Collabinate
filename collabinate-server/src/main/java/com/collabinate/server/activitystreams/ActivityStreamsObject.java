@@ -206,50 +206,6 @@ public class ActivityStreamsObject
 				ISODateTimeFormat.dateTime().withZoneUTC()));
 	}
 	
-	/**
-	 * Gets an identifier for finding objects within the Collabinate system.
-	 * Typically used in situations where there are conflicts between internal
-	 * and external IDs.
-	 * 
-	 * @return The string identifier used to find the object in Collabinate.
-	 */
-	public String getCollabinateObjectId()
-	{
-		return getStringValue(COLLABINATE_OBJECT_ID);
-	}
-	
-	/**
-	 * Sets an identifier for finding objects within the Collabinate system.
-	 * Typically used in situations where there are conflicts between internal
-	 * and external IDs.
-	 * 
-	 * @param id The string identifier used to find the object in Collabinate.
-	 */
-	public void setCollabinateObjectId(String id)
-	{
-		jsonObject.addProperty(COLLABINATE_OBJECT_ID, id);
-	}
-	
-	/**
-	 * Gets the original ID for the object.
-	 * 
-	 * @return The string identifier that the object originally had.
-	 */
-	public String getCollabinateOriginalId()
-	{
-		return getStringValue(COLLABINATE_ORIGINAL_ID);
-	}
-	
-	/**
-	 * Sets the original ID for the object.
-	 * 
-	 * @param id The string identifier that the object originally had.
-	 */
-	public void setCollabinateOriginalId(String id)
-	{
-		jsonObject.addProperty(COLLABINATE_ORIGINAL_ID, id);
-	}
-	
 	@Override
 	public String toString()
 	{
@@ -257,15 +213,31 @@ public class ActivityStreamsObject
 	}
 	
 	/**
-	 * Gets a string value from the json.
+	 * Gets a string value from the activity streams object.
 	 * 
 	 * @param key The key of the value to retrieve.
 	 * @return The value of the given string key, or null if it does not exist.
 	 */
 	protected String getStringValue(String key)
 	{
+		return getStringValue(key, jsonObject);
+	}
+	
+	/**
+	 * Gets a string value from the given json object.
+	 * 
+	 * @param key The key of the value to retrieve.
+	 * @param container The json object from which to retrieve a string.
+	 * @return The value of the given string key, or null if it does not exist.
+	 */
+	private String getStringValue(String key, JsonObject container)
+	{
+		if (null == key || null == container)
+			return null;
+		
 		String value = null;
-		JsonElement element = jsonObject.get(key);
+		
+		JsonElement element = container.get(key);
 		if (null != element)
 		{
 			try 
@@ -277,13 +249,39 @@ public class ActivityStreamsObject
 		
 		return value;
 	}
+	
+	/**
+	 * Gets a Collabinate metadata string value from the activity streams
+	 * object.
+	 * 
+	 * @param key The key for the Collabinate metadata value.
+	 * @return The value for the given key, or null if it does not exist.
+	 */
+	public String getCollabinateValue(String key)
+	{
+		return getStringValue(key, jsonObject.getAsJsonObject(COLLABINATE));
+	}
+	
+	/**
+	 * Sets a Collabinate metadata string value in the activity streams object.
+	 * 
+	 * @param key The key for the Collabinate metadata value.
+	 * @param value The value for the given key.
+	 */
+	public void setCollabinateValue(String key, String value)
+	{
+		if (!jsonObject.has(COLLABINATE))
+		{
+			jsonObject.add(COLLABINATE, new JsonObject());
+		}
+		
+		jsonObject.getAsJsonObject(COLLABINATE).addProperty(key, value);
+	}
 
 	protected static final String ID = "id";
 	protected static final String CONTENT = "content";
 	protected static final String DISPLAY_NAME = "displayName";
 	protected static final String PUBLISHED = "published";
 	protected static final String UPDATED = "updated";
-	protected static final String COLLABINATE_OBJECT_ID = "collabinateObjectId";
-	protected static final String COLLABINATE_ORIGINAL_ID =
-			"collabinateOriginalId";
+	protected static final String COLLABINATE = "collabinate";
 }
