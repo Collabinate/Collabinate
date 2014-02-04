@@ -590,6 +590,10 @@ public abstract class CollabinateReaderTest
 				reader.getStream("test-023", "entityA", 1, 1).get(0).getSortTime();
 		
 		assertEquals(secondActivityTime.getMillis(), time1.getMillis());
+		
+		//cleanup
+		writer.deleteActivity("test-023", "entityA", "1");
+		writer.deleteActivity("test-023", "entityA", "2");
 	}
 	
 	@Test
@@ -608,6 +612,12 @@ public abstract class CollabinateReaderTest
 				reader.getFeed("test-024", "user", 1, 1).get(0).getSortTime();
 		
 		assertEquals(secondActivityTime.getMillis(), time1.getMillis());
+
+		//cleanup
+		writer.deleteActivity("test-024", "entityA", "1");
+		writer.deleteActivity("test-024", "entityB", "2");
+		writer.unfollowEntity("test-024", "user", "entityA");
+		writer.unfollowEntity("test-024", "user", "entityB");
 	}
 	
 	@Test
@@ -621,6 +631,10 @@ public abstract class CollabinateReaderTest
 				getActivity("2", time2, null));
 		
 		assertEquals(1, reader.getStream("test-025", "entityA", 0, 1).size());
+		
+		//cleanup
+		writer.deleteActivity("test-025", "entityA", "1");
+		writer.deleteActivity("test-025", "entityA", "2");
 	}
 
 	@Test
@@ -636,6 +650,12 @@ public abstract class CollabinateReaderTest
 		writer.followEntity("test-026", "user", "entityB", null);
 		
 		assertEquals(1, reader.getFeed("test-026", "user", 0, 1).size());
+
+		//cleanup
+		writer.deleteActivity("test-026", "entityA", "1");
+		writer.deleteActivity("test-026", "entityB", "2");
+		writer.unfollowEntity("test-026", "user", "entityA");
+		writer.unfollowEntity("test-026", "user", "entityB");
 	}
 	
 	@Test
@@ -656,6 +676,10 @@ public abstract class CollabinateReaderTest
 		
 		assertEquals(current.getMillis(),
 				activities.get(0).getSortTime().getMillis());
+
+		//cleanup
+		writer.deleteActivity("test-027", "entity", "current");
+		writer.deleteActivity("test-027", "entity", "withUpdate");
 	}
 	
 	@Test
@@ -679,5 +703,28 @@ public abstract class CollabinateReaderTest
 		
 		assertEquals(current.getMillis(),
 				activities.get(0).getSortTime().getMillis());
+		
+		//cleanup
+		writer.deleteActivity("test-028", "entity1", "current");
+		writer.deleteActivity("test-028", "entity2", "withUpdate");
+		writer.unfollowEntity("test-028", "user", "entity1");
+		writer.unfollowEntity("test-028", "user", "entity2");
+}
+	
+	@Test
+	public void zero_published_date_should_return_in_feed()
+	{
+		writer.addActivity("test-029", "entity1",
+				new Activity("{\"published\":0,\"id\":\"test\"}"));
+		writer.followEntity("test-029", "user", "entity1", DateTime.now());
+		
+		List<Activity> activities =
+				reader.getFeed("test-029", "user", 0, 1);
+		
+		assertEquals(1, activities.size());
+		
+		//cleanup
+		writer.deleteActivity("test-029", "entity1", "test");
+		writer.unfollowEntity("test-029", "user", "entity1");
 	}
 }

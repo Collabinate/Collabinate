@@ -923,11 +923,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		@Override
 		public int compare(Vertex v1, Vertex v2)
 		{
-			long t1 = 0;
+			long t1 = Long.MIN_VALUE;
 			if (null != v1)
 				t1 = DateTime.parse((String)v1.getProperty(STRING_SORTTIME))
 					.getMillis();
-			long t2 = 0;
+			long t2 = Long.MIN_VALUE;
 			if (null != v2)
 				t2 = DateTime.parse((String)v2.getProperty(STRING_SORTTIME))
 					.getMillis();
@@ -951,7 +951,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			Vertex activity = null;
 			
-			long t1 = 0;
+			long t1 = Long.MIN_VALUE;
 			if (null != v1)
 				activity = getNextActivity(v1);
 			if (null != activity)
@@ -959,7 +959,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 						.getProperty(STRING_SORTTIME)).getMillis();
 			
 			activity = null;
-			long t2 = 0;
+			long t2 = Long.MIN_VALUE;
 			if (null != v2)
 				activity = getNextActivity(v2);
 			if (null != activity)
