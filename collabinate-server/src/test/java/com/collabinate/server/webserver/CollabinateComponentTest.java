@@ -76,12 +76,12 @@ public class CollabinateComponentTest
 	}
 	
 	@Test
-	public void getting_empty_static_resource_should_return_204()
+	public void getting_static_resource_should_return_200()
 	{
-		Request request = new Request(Method.GET, "riap://application/.static");
+		Request request = new Request(Method.GET, "riap://application/favicon.ico");
 		Response response = component.handle(request);
 		
-		assertEquals(Status.SUCCESS_NO_CONTENT, response.getStatus());
+		assertEquals(Status.SUCCESS_OK, response.getStatus());
 	}
 	
 	@Test

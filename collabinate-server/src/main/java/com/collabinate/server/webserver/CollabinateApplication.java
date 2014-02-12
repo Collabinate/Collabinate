@@ -1,26 +1,35 @@
 package com.collabinate.server.webserver;
 
 import java.io.File;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.net.URL;
+import java.util.List;
 
+import org.apache.commons.configuration.Configuration;
 import org.restlet.Application;
+import org.restlet.Context;
 import org.restlet.Request;
 import org.restlet.Response;
 import org.restlet.Restlet;
 import org.restlet.data.ChallengeScheme;
 import org.restlet.resource.Directory;
+import org.restlet.routing.Filter;
 import org.restlet.routing.Router;
 import org.restlet.routing.Template;
 import org.restlet.security.Authenticator;
 import org.restlet.security.ChallengeAuthenticator;
 import org.restlet.security.SecretVerifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import com.collabinate.server.Collabinate;
 import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.collabinate.server.resources.*;
+import com.google.common.base.Splitter;
 
 /**
  * Main Restlet application
@@ -34,6 +43,12 @@ public class CollabinateApplication extends Application
 	private CollabinateWriter writer;
 	private CollabinateAdmin admin;
 	private Authenticator authenticator;
+	
+	/**
+	 * Static logger.
+	 */
+	private static final Logger logger =
+			LoggerFactory.getLogger(CollabinateApplication.class);
 	
 	/**
 	 * Sets the application properties.
@@ -86,16 +101,6 @@ public class CollabinateApplication extends Application
 		adminRouter.attach("/tenants/{tenantId}/keys",
 				TenantKeysResource.class);
 		adminAuthenticator.setNext(adminRouter);
-
-		// normal resource paths go through the authenticator
-		primaryRouter.attach("/{apiVersion}/{tenantId}", authenticator)
-			.setMatchingMode(Template.MODE_STARTS_WITH);
-		
-		// trace resource for client debugging
-		primaryRouter.attach("/trace", TraceResource.class);
-		
-		// directory resource for static content
-		primaryRouter.attach("/", getStaticDirectoryResource());
 		
 		// resource router handles the routing for post-authentication resources
 		Router resourceRouter = new Router(getContext());
@@ -111,10 +116,20 @@ public class CollabinateApplication extends Application
 				FollowingEntityResource.class);
 		resourceRouter.attach("/users/{userId}/feed", FeedResource.class);
 		
-		// add a filter for checking and adding necessary headers before the
-		// resources and after authentication
-		Restlet headerFilter = new HeaderFilter(getContext(), resourceRouter);
-		authenticator.setNext(headerFilter);
+		// plugin resource paths skip the authenticator
+		addPlugins(primaryRouter, resourceRouter);
+
+		// normal resource paths go through the authenticator
+		primaryRouter.attach("/{apiVersion}/{tenantId}", authenticator)
+			.setMatchingMode(Template.MODE_STARTS_WITH);
+		
+		// trace resource for client debugging
+		primaryRouter.attach("/trace", TraceResource.class);
+		
+		// directory resource for static content
+		primaryRouter.attach("/", getStaticDirectoryResource());
+		
+		authenticator.setNext(resourceRouter);
 		
 		return primaryRouter;
 	}
@@ -127,9 +142,9 @@ public class CollabinateApplication extends Application
 	private Authenticator getAdminAuthenticator()
 	{
 		final String adminUsername = Collabinate.getConfiguration()
-				.getString("adminUsername", "");
+				.getString(ADMIN_USERNAME, "");
 		final String adminPassword = Collabinate.getConfiguration()
-				.getString("adminPassword", "");
+				.getString(ADMIN_PASSWORD, "");
 		
 		// only authenticate if the admin credentials are configured
 		if (adminUsername.equals(""))
@@ -159,6 +174,80 @@ public class CollabinateApplication extends Application
 					}
 				});
 	}
+	
+	/**
+	 * Loads filter plugins as specified in configuration.
+	 * 
+	 * @param primaryRouter The router which will pass control to the filter.
+	 * @param resourceRouter The router to which the filter will attach.
+	 */
+	private void addPlugins(Router primaryRouter, Router resourceRouter)
+	{
+		// get the configuration strings that define the plugins
+		String[] pluginsList = Collabinate.getConfiguration()
+				.getStringArray(FILTER_PLUGINS);
+		
+		logger.debug("Found {} filter plugins", pluginsList.length);
+		
+		// loop over each plugin
+		for (String pluginConfig : pluginsList)
+		{
+			// separate the class name from the URL pattern
+			List<String> pluginValues = Splitter.on(";").omitEmptyStrings()
+					.trimResults().splitToList(pluginConfig);
+			
+			if (2 != pluginValues.size())
+			{
+				logger.error("Invalid plugin configuration: {}", pluginConfig);
+				continue;
+			}
+			
+			String pluginClassName = pluginValues.get(0);
+			String pluginUrlPattern = pluginValues.get(1);
+			
+			try
+			{
+				// instantiate the plugin
+				Class<?> pluginClass = getClass().getClassLoader()
+						.loadClass(pluginClassName);
+				Constructor<?> constructor = pluginClass
+						.getConstructor(Context.class, Configuration.class);
+				Filter plugin = 
+						(Filter)constructor.newInstance(
+								getContext(), Collabinate.getConfiguration());
+				
+				// set up the routing path with the plugin
+				plugin.setNext(resourceRouter);
+				primaryRouter.attach(pluginUrlPattern, plugin);
+				logger.info("Loaded plugin: {} for path: {}", pluginClassName,
+						pluginUrlPattern);
+			}
+			catch (ClassNotFoundException e)
+			{
+				logger.error("Plugin class not found: " + pluginClassName, e);
+			}
+			catch (NoSuchMethodException e)
+			{
+				logger.error("Invalid constructor (requires Context, " +
+					"Configuration) for plugin class: " + pluginClassName, e);
+			}
+			catch (InvocationTargetException e)
+			{
+				logger.error("Problem instantiating plugin: " +
+					pluginClassName, e);
+			}
+			catch (IllegalAccessException e)
+			{
+				logger.error("Problem instantiating plugin: " +
+					pluginClassName, e);
+			}
+			catch (InstantiationException e)
+			{
+				logger.error("Problem instantiating plugin: " +
+					pluginClassName, e);
+			}			
+		}
+	}
 
 	/**
 	 * Creates a directory resource used for static content.
@@ -179,4 +268,11 @@ public class CollabinateApplication extends Application
 		}
 		return new Directory(getContext(), staticFolderUrl.toString());		
 	}
+	
+	private static final String ADMIN_USERNAME =
+			"collabinate.server.webserver.admin.username";
+	private static final String ADMIN_PASSWORD =
+			"collabinate.server.webserver.admin.password";
+	private static final String FILTER_PLUGINS =
+			"collabinate.server.webserver.filterplugins";
 }
