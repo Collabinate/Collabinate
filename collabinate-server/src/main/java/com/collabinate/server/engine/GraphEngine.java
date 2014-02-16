@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.collabinate.server.activitystreams.Activity;
+import com.collabinate.server.activitystreams.ActivityStreamsCollection;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
@@ -640,8 +641,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<Activity> getStream(String tenantId, String entityId,
-			long startIndex, int activitiesToReturn)
+	public ActivityStreamsCollection getStream(String tenantId, String entityId,
+			int startIndex, int activitiesToReturn)
 	{
 		// since we need to advance from the beginning of the stream,
 		// this lets us keep track of where we are
@@ -672,7 +673,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		graph.commit();
 		
 		// we only have the vertices, the actual activities need to be created
-		return deserializeActivities(activityVertices);
+		return new ActivityStreamsCollection(
+				deserializeActivities(activityVertices));
 	}
 	
 	/**
@@ -719,10 +721,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * @return A collection of activities that were represented by the given
 	 * vertices.
 	 */
-	private List<Activity> deserializeActivities(
+	private List<ActivityStreamsObject> deserializeActivities(
 			Collection<Vertex> activityVertices)
 	{
-		ArrayList<Activity> activities = new ArrayList<Activity>();
+		ArrayList<ActivityStreamsObject> activities =
+				new ArrayList<ActivityStreamsObject>();
 		
 		for (final Vertex vertex : activityVertices)
 		{
@@ -918,14 +921,13 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<ActivityStreamsObject> getFollowing(String tenantId,
-			String userId, long startIndex, int entitiesToReturn)
+	public ActivityStreamsCollection getFollowing(String tenantId,
+			String userId, int startIndex, int entitiesToReturn)
 	{
 		Vertex user = getOrCreateEntityVertex(tenantId, userId);
-		List<ActivityStreamsObject> following =
-				new ArrayList<ActivityStreamsObject>();
+		ActivityStreamsCollection following = new ActivityStreamsCollection();
 		
-		long currentPosition = 0;
+		int currentPosition = 0;
 		
 		// find all the followed entities and add them to the following list
 		for (Edge edge : user.getEdges(Direction.OUT, STRING_FOLLOWS))
@@ -949,14 +951,13 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public List<ActivityStreamsObject> getFollowers(String tenantId,
-			String entityId, long startIndex, int followersToReturn)
+	public ActivityStreamsCollection getFollowers(String tenantId,
+			String entityId, int startIndex, int followersToReturn)
 	{
 		Vertex entity = getOrCreateEntityVertex(tenantId, entityId);
-		List<ActivityStreamsObject> followers =
-				new ArrayList<ActivityStreamsObject>();
+		ActivityStreamsCollection followers = new ActivityStreamsCollection();
 		
-		long currentPosition = 0;
+		int currentPosition = 0;
 		
 		// find all the following users and add them to the followers list
 		for (Edge edge : entity.getEdges(Direction.IN, STRING_FOLLOWS))
@@ -1054,8 +1055,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 
 	@Override
-	public List<Activity> getFeed(String tenantId, String userId,
-			long startIndex, int activitiesToReturn)
+	public ActivityStreamsCollection getFeed(String tenantId, String userId,
+			int startIndex, int activitiesToReturn)
 	{
 		// this method represents the core of the Graphity algorithm
 		// http://www.rene-pickhardt.de/graphity-an-efficient-graph-model-for-retrieving-the-top-k-news-feeds-for-users-in-social-networks/
@@ -1068,7 +1069,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		// since we need to advance from the beginning of the feed, this lets
 		// us keep track of where we are
-		long feedPosition = 0;
+		int feedPosition = 0;
 		
 		// this is used to track the newest activity in the last entity reached
 		Vertex topOfEntity = null;
@@ -1145,7 +1146,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		graph.commit();
 		
-		return deserializeActivities(activities);
+		return new ActivityStreamsCollection(deserializeActivities(activities));
 	}
 
 	/**
@@ -1263,17 +1264,17 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public List<ActivityStreamsObject> getComments(String tenantId,
-			String entityId, String activityId, long startIndex,
+	public ActivityStreamsCollection getComments(String tenantId,
+			String entityId, String activityId, int startIndex,
 			int commentsToReturn)
 	{
 
 		Vertex activityVertex = 
 				getActivityVertex(tenantId, entityId, activityId);
 		
-		List<ActivityStreamsObject> comments = 
+		ActivityStreamsCollection comments = new ActivityStreamsCollection(
 				deserializeComments(getCommentVertices(
-						activityVertex, startIndex, commentsToReturn));
+						activityVertex, startIndex, commentsToReturn)));
 		
 		graph.commit();
 		
@@ -1289,7 +1290,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	 * @return A collection of comment vertices.
 	 */
 	private Collection<Vertex> getCommentVertices(Vertex activityVertex,
-			long startIndex, int commentsToReturn)
+			int startIndex, int commentsToReturn)
 	{
 		// since we need to advance from the beginning of the comments,
 		// this lets us keep track of where we are

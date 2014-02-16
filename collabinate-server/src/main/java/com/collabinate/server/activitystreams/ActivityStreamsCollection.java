@@ -62,6 +62,19 @@ public class ActivityStreamsCollection extends ActivityStreamsObject
 	}
 	
 	/**
+	 * Returns the number of elements in the items array of this collection.
+	 * Note that this may differ from the logical total number of elements in
+	 * the represented collection, for which the totalItems property should be
+	 * used.
+	 * 
+	 * @return An integer number of elements in this collection's items array.
+	 */
+	public int size()
+	{
+		return jsonObject.getAsJsonArray(ITEMS).size();
+	}
+	
+	/**
 	 * Returns an immutable copy of the current items collection.
 	 * 
 	 * @return An immutable list copy of the current items collection.

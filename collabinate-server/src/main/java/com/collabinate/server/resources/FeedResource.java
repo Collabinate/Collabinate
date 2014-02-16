@@ -8,7 +8,6 @@ import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import com.collabinate.server.engine.CollabinateReader;
-import com.google.common.base.Joiner;
 import com.google.common.hash.Hashing;
 
 /**
@@ -30,13 +29,11 @@ public class FeedResource extends ServerResource
 		String userId = getAttribute("userId");
 		String skipString = getQueryValue("skip");
 		String takeString = getQueryValue("take");
-		long skip = null == skipString ? 0 : Long.parseLong(skipString);
+		int skip = null == skipString ? 0 : Integer.parseInt(skipString);
 		int take = null == takeString ? DEFAULT_TAKE : 
 			Integer.parseInt(takeString);
 		
-		String result = "{\"items\":[" + Joiner.on(',')
-				.join(reader.getFeed(tenantId, userId, skip, take))
-				+ "]}";
+		String result = reader.getFeed(tenantId, userId, skip, take).toString();
 		
 		Representation representation = new StringRepresentation(
 				result, MediaType.APPLICATION_JSON);

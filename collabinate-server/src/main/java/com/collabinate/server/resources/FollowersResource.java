@@ -4,7 +4,6 @@ import org.restlet.resource.Get;
 import org.restlet.resource.ServerResource;
 
 import com.collabinate.server.engine.CollabinateReader;
-import com.google.common.base.Joiner;
 
 /**
  * Restful resource representing the users following an entity.
@@ -24,13 +23,11 @@ public class FollowersResource extends ServerResource
 		String entityId = getAttribute("entityId");
 		String skipString = getQueryValue("skip");
 		String takeString = getQueryValue("take");
-		long skip = null == skipString ? 0 : Long.parseLong(skipString);
+		int skip = null == skipString ? 0 : Integer.parseInt(skipString);
 		int take = null == takeString ? DEFAULT_TAKE : 
 			Integer.parseInt(takeString);
 
-		return "{\"items\":[" + Joiner.on(',')
-				.join(reader.getFollowers(tenantId, entityId, skip, take))
-				+ "]}";
+		return reader.getFollowers(tenantId, entityId, skip, take).toString();
 	}
 	
 	private static final int DEFAULT_TAKE = 20;

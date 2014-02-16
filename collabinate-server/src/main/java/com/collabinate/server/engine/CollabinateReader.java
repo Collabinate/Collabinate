@@ -1,11 +1,9 @@
 package com.collabinate.server.engine;
 
-import java.util.List;
-
 import org.joda.time.DateTime;
 
 import com.collabinate.server.activitystreams.Activity;
-import com.collabinate.server.activitystreams.ActivityStreamsObject;
+import com.collabinate.server.activitystreams.ActivityStreamsCollection;
 
 /**
  * The interface for a Collabinate server that performs read (retrieval)
@@ -36,8 +34,8 @@ public interface CollabinateReader
 	 * @param activitiesToReturn The maximum number of activities to retrieve.
 	 * @return A collection of activities for the given entity.
 	 */
-	public List<Activity> getStream(String tenantId, String entityId,
-			long startIndex, int activitiesToReturn);
+	public ActivityStreamsCollection getStream(String tenantId, String entityId,
+			int startIndex, int activitiesToReturn);
 	
 	/**
 	 * Retrieves a collection of activities for the entities that a user
@@ -49,8 +47,8 @@ public interface CollabinateReader
 	 * @param activitiesToReturn The maximum number of activities to retrieve.
 	 * @return A collection of activities for the given user.
 	 */
-	public List<Activity> getFeed(String tenantId, String userId,
-			long startIndex, int activitiesToReturn);
+	public ActivityStreamsCollection getFeed(String tenantId, String userId,
+			int startIndex, int activitiesToReturn);
 	
 	/**
 	 * Retrieves a DateTime value for when a user followed an entity, or null if
@@ -76,8 +74,8 @@ public interface CollabinateReader
 	 * @param entitiesToReturn The maximum number of entities to retrieve.
 	 * @return A collection of entities followed by the given user.
 	 */
-	public List<ActivityStreamsObject> getFollowing(String tenantId,
-			String userId, long startIndex, int entitiesToReturn);
+	public ActivityStreamsCollection getFollowing(String tenantId,
+			String userId, int startIndex, int entitiesToReturn);
 	
 	/**
 	 * Retrieves the collection of users that follow an entity.
@@ -89,8 +87,8 @@ public interface CollabinateReader
 	 * @param entitiesToReturn The maximum number of followers to retrieve.
 	 * @return A collection of users following the given entity.
 	 */
-	public List<ActivityStreamsObject> getFollowers(String tenantId,
-			String entityId, long startIndex, int followersToReturn);
+	public ActivityStreamsCollection getFollowers(String tenantId,
+			String entityId, int startIndex, int followersToReturn);
 	
 	/**
 	 * Retrieves the collection of comments on an activity.
@@ -103,7 +101,7 @@ public interface CollabinateReader
 	 * @param commentsToReturn The maximum number of comments to retrieve.
 	 * @return A collection of comments on the given activity.
 	 */
-	public List<ActivityStreamsObject> getComments(String tenantId,
-			String entityId, String activityId, long startIndex,
+	public ActivityStreamsCollection getComments(String tenantId,
+			String entityId, String activityId, int startIndex,
 			int commentsToReturn);
 }

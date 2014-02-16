@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.collabinate.server.activitystreams.Activity;
+import com.collabinate.server.activitystreams.ActivityStreamsCollection;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
@@ -64,7 +65,8 @@ public abstract class CollabinateReaderTest
 	@Test
 	public void stream_for_new_entity_should_be_empty()
 	{
-		List<Activity> stream = reader.getStream("test-000", "1", 0, 1);
+		ActivityStreamsCollection stream =
+				reader.getStream("test-000", "1", 0, 1);
 		assertEquals(0, stream.size());
 	}
 	
@@ -89,7 +91,8 @@ public abstract class CollabinateReaderTest
 				getActivity("1", DateTime.now(), null));
 		writer.addActivity("test-002", "entity",
 				getActivity("2", DateTime.now(), null));
-		List<Activity> stream = reader.getStream("test-002", "entity", 0, 3);
+		ActivityStreamsCollection stream =
+				reader.getStream("test-002", "entity", 0, 3);
 		assertEquals(2, stream.size());
 		
 		//cleanup
@@ -105,7 +108,7 @@ public abstract class CollabinateReaderTest
 		writer.addActivity("test-003", "entity",
 				getActivity("2", DateTime.now(), null));
 		
-		List<Activity> activities =
+		ActivityStreamsCollection activities =
 				reader.getStream("test-003", "entity", 0, 2);
 		assertEquals("All activities not retrieved", 2, activities.size());
 		
@@ -134,8 +137,8 @@ public abstract class CollabinateReaderTest
 		writer.addActivity("test-004", "entity",
 				getActivity("5", time4, null));
 		
-		List<Activity> activities =
-				reader.getStream("test-004", "entity", 0, 1);
+		List<ActivityStreamsObject> activities =
+				reader.getStream("test-004", "entity", 0, 1).getItems();
 		assertEquals("Newest activity not first in stream", 
 			time3.getMillis(), activities.get(0).getSortTime().getMillis());
 		
@@ -167,8 +170,8 @@ public abstract class CollabinateReaderTest
 		writer.addActivity("test-005", "entity",
 				getActivity("5", time4, null));
 		
-		List<Activity> activities =
-				reader.getStream("test-005", "entity", 0, 5);
+		List<ActivityStreamsObject> activities =
+				reader.getStream("test-005", "entity", 0, 5).getItems();
 		assertEquals("Oldest activity not last in stream", 
 			time3.getMillis(), activities.get(4).getSortTime().getMillis());
 		
@@ -186,7 +189,8 @@ public abstract class CollabinateReaderTest
 		writer.addActivity("test-006", "entity",
 				getActivity("1", null, null));
 		writer.deleteActivity("test-006", "entity", "1");
-		List<Activity> stream = reader.getStream("test-006", "entity", 0, 1);
+		ActivityStreamsCollection stream =
+				reader.getStream("test-006", "entity", 0, 1);
 		assertEquals(0, stream.size());
 	}
 	
@@ -198,7 +202,8 @@ public abstract class CollabinateReaderTest
 		writer.addActivity("test-007", "entity",
 				getActivity("2", null, null));
 		writer.deleteActivity("test-007", "entity", "1");
-		List<Activity> stream = reader.getStream("test-007", "entity", 0, 1);
+		List<ActivityStreamsObject> stream =
+				reader.getStream("test-007", "entity", 0, 1).getItems();
 		assertNotEquals("Removed activity appeared in stream", 
 				stream.get(0).getId(), "1");
 		
@@ -225,8 +230,8 @@ public abstract class CollabinateReaderTest
 		writer.deleteActivity("test-008", "entity", "1");
 		
 		// order should be 3, 2		
-		List<Activity> activities =
-				reader.getStream("test-008", "entity", 0, 2);
+		List<ActivityStreamsObject> activities =
+				reader.getStream("test-008", "entity", 0, 2).getItems();
 		assertEquals("Newest not first.", "3", activities.get(0).getId());
 		assertEquals("Oldest not last.", "2", activities.get(1).getId());
 		
@@ -262,7 +267,8 @@ public abstract class CollabinateReaderTest
 		writer.deleteActivity("test-009", "entityA", "2");
 		
 		// order should be 3, 1, 4	
-		List<Activity> activities = reader.getFeed("test-009", "user", 0, 3);
+		List<ActivityStreamsObject> activities =
+				reader.getFeed("test-009", "user", 0, 3).getItems();
 		assertEquals("Newest not first.", "3", activities.get(0).getId());
 		assertEquals("Middle not correct.", "1", activities.get(1).getId());
 		assertEquals("Oldest not last.", "4", activities.get(2).getId());
@@ -302,7 +308,8 @@ public abstract class CollabinateReaderTest
 		writer.deleteActivity("test-010", "entityA", "3");
 		
 		// order should be 1, 2, 4	
-		List<Activity> activities = reader.getFeed("test-010", "user", 0, 3);
+		List<ActivityStreamsObject> activities =
+				reader.getFeed("test-010", "user", 0, 3).getItems();
 		assertEquals("Newest not first.", "1", activities.get(0).getId());
 		assertEquals("Middle not correct.", "2", activities.get(1).getId());
 		assertEquals("Oldest not last.", "4", activities.get(2).getId());
@@ -361,7 +368,8 @@ public abstract class CollabinateReaderTest
 		writer.followEntity("test-014", "user", "entityA", null);
 		writer.followEntity("test-014", "user", "entityB", null);
 		ArrayList<Long> timeMillis = new ArrayList<Long>();
-		for (Activity activity : reader.getFeed("test-014", "user", 0, 2))
+		for (ActivityStreamsObject activity :
+			reader.getFeed("test-014", "user", 0, 2).getItems())
 		{
 			timeMillis.add(activity.getSortTime().getMillis());
 		}
@@ -390,7 +398,8 @@ public abstract class CollabinateReaderTest
 		writer.followEntity("test-015", "user", "entityA", null);
 		writer.followEntity("test-015", "user", "entityB", null);
 		writer.followEntity("test-015", "user", "entityC", null);
-		List<Activity> activities = reader.getFeed("test-015", "user", 0, 3);
+		List<ActivityStreamsObject> activities =
+				reader.getFeed("test-015", "user", 0, 3).getItems();
 		assertEquals("newest activity not first", time3.getMillis(),
 				activities.get(0).getSortTime().getMillis());
 		
@@ -418,7 +427,8 @@ public abstract class CollabinateReaderTest
 		writer.followEntity("test-016", "user", "entityA", null);
 		writer.followEntity("test-016", "user", "entityB", null);
 		writer.followEntity("test-016", "user", "entityC", null);
-		List<Activity> activities = reader.getFeed("test-016", "user", 0, 3);
+		List<ActivityStreamsObject> activities =
+				reader.getFeed("test-016", "user", 0, 3).getItems();
 		assertEquals("oldest activity not last", time3.getMillis(),
 				activities.get(2).getSortTime().getMillis());
 		
@@ -439,7 +449,7 @@ public abstract class CollabinateReaderTest
 		final DateTime time3 = new DateTime(4000); // A2
 		final DateTime time4 = new DateTime(1000); // B2
 		DateTime activityTime;
-		List<Activity> feed;
+		List<ActivityStreamsObject> feed;
 		
 		// create activities for two entities
 		// and have a user follow them
@@ -450,7 +460,7 @@ public abstract class CollabinateReaderTest
 		writer.followEntity("test-017", "user", "entityA", null);
 		writer.followEntity("test-017", "user", "entityB", null);
 		// The descending time order right now is B1, A1
-		feed = reader.getFeed("test-017", "user", 0, 2);
+		feed = reader.getFeed("test-017", "user", 0, 2).getItems();
 		activityTime = feed.get(0).getSortTime();
 		assertEquals(time2.getMillis(), activityTime.getMillis());
 		activityTime = feed.get(1).getSortTime();
@@ -460,7 +470,7 @@ public abstract class CollabinateReaderTest
 		// the time order A2, B1, A1
 		writer.addActivity("test-017", "entityA",
 				getActivity("3", time3, null));
-		feed = reader.getFeed("test-017", "user", 0, 3);
+		feed = reader.getFeed("test-017", "user", 0, 3).getItems();
 		activityTime = feed.get(0).getSortTime();
 		assertEquals(time3.getMillis(), activityTime.getMillis());
 		activityTime = feed.get(1).getSortTime();
@@ -473,7 +483,7 @@ public abstract class CollabinateReaderTest
 		// A2 (time3), B1 (time2), A1 (time1), B2 (time4)
 		writer.addActivity("test-017", "entityB",
 				getActivity("4", time4, null));
-		feed = reader.getFeed("test-017", "user", 0, 4);
+		feed = reader.getFeed("test-017", "user", 0, 4).getItems();
 		activityTime = feed.get(0).getSortTime();
 		assertEquals(time3.getMillis(), activityTime.getMillis());
 		activityTime = feed.get(1).getSortTime();
@@ -567,7 +577,7 @@ public abstract class CollabinateReaderTest
 		writer.addActivity("test-022-tenant2", "entity",
 				getActivity("1", null, null));
 		
-		List<Activity> activities =
+		ActivityStreamsCollection activities =
 				reader.getStream("test-022-tenant1", "entity", 0, 2);
 		assertEquals("Stream not separate - invalid activity count.",
 				1, activities.size());
@@ -672,8 +682,8 @@ public abstract class CollabinateReaderTest
 		withUpdate.setUpdated(pastUpdate);
 		writer.addActivity("test-027", "entity", withUpdate);
 		
-		List<Activity> activities =
-				reader.getStream("test-027", "entity", 0, 2);
+		List<ActivityStreamsObject> activities =
+				reader.getStream("test-027", "entity", 0, 2).getItems();
 		
 		assertEquals(current.getMillis(),
 				activities.get(0).getSortTime().getMillis());
@@ -699,8 +709,8 @@ public abstract class CollabinateReaderTest
 		writer.followEntity("test-028", "user", "entity1", current);
 		writer.followEntity("test-028", "user", "entity2", current);		
 		
-		List<Activity> activities =
-				reader.getFeed("test-028", "user", 0, 2);
+		List<ActivityStreamsObject> activities =
+				reader.getFeed("test-028", "user", 0, 2).getItems();
 		
 		assertEquals(current.getMillis(),
 				activities.get(0).getSortTime().getMillis());
@@ -719,7 +729,7 @@ public abstract class CollabinateReaderTest
 				new Activity("{\"published\":0,\"id\":\"test\"}"));
 		writer.followEntity("test-029", "user", "entity1", DateTime.now());
 		
-		List<Activity> activities =
+		ActivityStreamsCollection activities =
 				reader.getFeed("test-029", "user", 0, 1);
 		
 		assertEquals(1, activities.size());
@@ -740,7 +750,8 @@ public abstract class CollabinateReaderTest
 		writer.addComment("test-030", "entity", "activity", null, comment);
 		
 		List<ActivityStreamsObject> comments =
-				reader.getComments("test-030", "entity", "activity", 0, 1);
+				reader.getComments("test-030", "entity", "activity", 0, 1)
+					.getItems();
 		
 		assertThat(comments.get(0).toString(), containsString("comment"));
 		
@@ -786,7 +797,8 @@ public abstract class CollabinateReaderTest
 		writer.addComment("test-033", "entity", "activity", null, comment2);
 		
 		List<ActivityStreamsObject> comments =
-				reader.getComments("test-033", "entity", "activity", 0, 2);
+				reader.getComments("test-033", "entity", "activity", 0, 2)
+					.getItems();
 		
 		assertEquals(time2.getMillis(),
 				comments.get(0).getPublished().getMillis());
@@ -840,7 +852,8 @@ public abstract class CollabinateReaderTest
 		writer.deleteComment("test-035", "entity", "activity", "2");
 		
 		List<ActivityStreamsObject> comments =
-				reader.getComments("test-035", "entity", "activity", 0, 2);
+				reader.getComments("test-035", "entity", "activity", 0, 2)
+					.getItems();
 		
 		assertEquals(time3.getMillis(),
 				comments.get(0).getPublished().getMillis());

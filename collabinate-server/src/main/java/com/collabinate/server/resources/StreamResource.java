@@ -15,7 +15,6 @@ import org.restlet.resource.ServerResource;
 import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
-import com.google.common.base.Joiner;
 import com.google.common.hash.Hashing;
 
 /**
@@ -36,13 +35,12 @@ public class StreamResource extends ServerResource
 		String entityId = getAttribute("entityId");
 		String startString = getQueryValue("start");
 		String countString = getQueryValue("count");
-		long start = null == startString ? 0 : Long.parseLong(startString);
+		int start = null == startString ? 0 : Integer.parseInt(startString);
 		int count = null == countString ? DEFAULT_COUNT : 
 			Integer.parseInt(countString);
 		
-		String result = "{\"items\":[" + Joiner.on(',')
-				.join(reader.getStream(tenantId, entityId, start, count))
-				+ "]}";
+		String result = reader.getStream(tenantId, entityId, start, count)
+				.toString();
 		
 		Representation representation = new StringRepresentation(
 				result, MediaType.APPLICATION_JSON);
