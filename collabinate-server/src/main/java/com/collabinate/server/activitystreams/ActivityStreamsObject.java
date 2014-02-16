@@ -70,6 +70,18 @@ public class ActivityStreamsObject
 	protected void ensureDefaultFields() { }
 	
 	/**
+	 * Gets a natural-language description of the object encoded as a single
+	 * JSON String containing HTML markup. Visual elements such as thumbnail
+	 * images MAY be included. An object MAY contain a content property.
+	 * 
+	 * @return content a JSON [RFC4627] String containing the content.
+	 */
+	public String getContent()
+	{
+		return getStringValue(CONTENT);
+	}
+	
+	/**
 	 * Sets a natural-language description of the object encoded as a single
 	 * JSON String containing HTML markup. Visual elements such as thumbnail
 	 * images MAY be included. An object MAY contain a content property.
@@ -79,6 +91,19 @@ public class ActivityStreamsObject
 	public void setContent(String content)
 	{
 		jsonObject.addProperty(CONTENT, content);
+	}
+	
+	/**
+	 * Gets a natural-language, human-readable and plain-text name for the
+	 * object. HTML markup MUST NOT be included. An object MAY contain a
+	 * displayName property. If the object does not specify an objectType
+	 * property, the object SHOULD specify a displayName.
+	 * 
+	 * @return displayName a JSON [RFC4627] String containing the display name. 
+	 */
+	public String getDisplayName(String displayName)
+	{
+		return getStringValue(DISPLAY_NAME);
 	}
 	
 	/**
@@ -125,6 +150,39 @@ public class ActivityStreamsObject
 		}
 		
 		jsonObject.addProperty(ID, id);
+	}
+	
+	/**
+	 * Gets the type of object. An object MAY contain an objectType property
+	 * whose value is a JSON String that is non-empty and matches either the
+	 * "isegment-nz-nc" or the "IRI" production in [RFC3987]. Note that the use
+	 * of a relative reference other than a simple name is not allowed. If no
+	 * objectType property is contained, the object has no specific type.
+	 * 
+	 * @return JSON [RFC4627] String.
+	 */
+	public String getObjectType()
+	{
+		return getStringValue(OBJECT_TYPE);
+	}
+	
+	/**
+	 * Gets the type of object. An object MAY contain an objectType property
+	 * whose value is a JSON String that is non-empty and matches either the
+	 * "isegment-nz-nc" or the "IRI" production in [RFC3987]. Note that the use
+	 * of a relative reference other than a simple name is not allowed. If no
+	 * objectType property is contained, the object has no specific type.
+
+	 * @param objectType JSON [RFC4627] String.
+	 */
+	public void setObjectType(String objectType)
+	{
+		if (null == objectType)
+		{
+			throw new IllegalArgumentException("objectType must not be null");
+		}
+		
+		jsonObject.addProperty(OBJECT_TYPE, objectType);
 	}
 	
 	/**
@@ -298,6 +356,7 @@ public class ActivityStreamsObject
 	protected static final String ID = "id";
 	protected static final String CONTENT = "content";
 	protected static final String DISPLAY_NAME = "displayName";
+	protected static final String OBJECT_TYPE = "objectType";
 	protected static final String PUBLISHED = "published";
 	protected static final String UPDATED = "updated";
 	protected static final String COLLABINATE = "collabinate";

@@ -1,9 +1,11 @@
 package com.collabinate.server.activitystreams;
 
+import java.util.ArrayList;
+import java.util.List;
+
+import com.google.common.collect.ImmutableList;
 import com.google.gson.JsonArray;
 import com.google.gson.JsonElement;
-import com.google.gson.JsonObject;
-import com.google.gson.JsonParseException;
 import com.google.gson.JsonParser;
 
 /**
@@ -13,21 +15,14 @@ import com.google.gson.JsonParser;
  * @author mafuba
  *
  */
-public class ActivityStreamsCollection
-{
-	/**
-	 * The internal representation of the object as JSON.
-	 */
-	protected JsonObject jsonObject;
-	
+public class ActivityStreamsCollection extends ActivityStreamsObject
+{	
 	/**
 	 * Default constructor. Creates the collection with an empty items array.
 	 */
 	public ActivityStreamsCollection()
 	{
-		jsonObject = new JsonObject();
-		
-		ensureDefaultFields();
+		super();
 	}
 	
 	/**
@@ -38,27 +33,18 @@ public class ActivityStreamsCollection
 	 * 
 	 * @param json The json representation of the collection to create.
 	 */
-	public ActivityStreamsCollection(String json)
+	public ActivityStreamsCollection(String content)
 	{
-		if (null != json)
-		{
-			JsonParser parser = new JsonParser();
-			try
-			{
-				JsonElement element = parser.parse(json);
-				if (element.isJsonObject())
-					jsonObject = element.getAsJsonObject();
-			}
-			catch (JsonParseException e) { }
-		}
-		
-		if (null == jsonObject)
-		{
-			jsonObject = new JsonObject();
-			jsonObject.addProperty(CONTENT, json);
-		}
-		
-		ensureDefaultFields();
+		super(content);
+	}
+	
+	/**
+	 * Creates a collection populated with the given items.
+	 * @param items
+	 */
+	public ActivityStreamsCollection(List<ActivityStreamsObject> items)
+	{
+		setItems(items);
 	}
 	
 	/**
@@ -74,6 +60,43 @@ public class ActivityStreamsCollection
 			jsonObject.add(ITEMS, items);
 		}
 	}
+	
+	/**
+	 * Returns an immutable copy of the current items collection.
+	 * 
+	 * @return An immutable list copy of the current items collection.
+	 */
+	public List<ActivityStreamsObject> getItems()
+	{
+		List<ActivityStreamsObject> items =
+				new ArrayList<ActivityStreamsObject>();
+		
+		for (JsonElement element : jsonObject.getAsJsonArray(ITEMS))
+		{
+			items.add(new ActivityStreamsObject(element.toString()));
+		}
+		
+		return ImmutableList.copyOf(items);
+	}
+	
+	/**
+	 * Creates or replaces the current items array with an array made up of the
+	 * given objects.
+	 * 
+	 * @param items The collection of ActivityStreamObjects used to populate the
+	 * items.
+	 */
+	protected void setItems(List<ActivityStreamsObject> items)
+	{
+		JsonArray array = new JsonArray();
+		
+		for (ActivityStreamsObject activityStreamsObject : items)
+		{
+			array.add(activityStreamsObject.jsonObject);
+		}
+		
+		jsonObject.add(ITEMS, array);
+	}
 
 	/**
 	 * Returns the activity contained at the given index in the items property
@@ -81,9 +104,9 @@ public class ActivityStreamsCollection
 	 * 
 	 * @return The activity at the given index.
 	 */
-	public Activity get(int index)
+	public ActivityStreamsObject get(int index)
 	{
-		return new Activity(jsonObject.getAsJsonArray(ITEMS)
+		return new ActivityStreamsObject(jsonObject.getAsJsonArray(ITEMS)
 				.get(index).toString());
 	}
 	
@@ -92,19 +115,12 @@ public class ActivityStreamsCollection
 	 * 
 	 * @param activity The activity to add.
 	 */
-	public void add(Activity activity)
+	public void add(ActivityStreamsObject activityStreamsObject)
 	{
 		JsonParser parser = new JsonParser();
 		jsonObject.getAsJsonArray(ITEMS)
-			.add(parser.parse(activity.toString()));
-	}
-	
-	@Override
-	public String toString()
-	{
-		return jsonObject.toString();
+			.add(parser.parse(activityStreamsObject.toString()));
 	}
 	
 	protected static final String ITEMS = "items";
-	protected static final String CONTENT = "content";
 }
