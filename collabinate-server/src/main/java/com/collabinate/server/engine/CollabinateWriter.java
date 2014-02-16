@@ -3,6 +3,7 @@ package com.collabinate.server.engine;
 import org.joda.time.DateTime;
 
 import com.collabinate.server.activitystreams.Activity;
+import com.collabinate.server.activitystreams.ActivityStreamsObject;
 
 /**
  * The interface for a Collabinate server that performs write (create, update,
@@ -63,4 +64,19 @@ public interface CollabinateWriter
 	 */
 	public DateTime unfollowEntity(String tenantId, String userId,
 			String entityId);
+	
+	/**
+	 * Adds a comment to an activity's comments, at the correct chronological
+	 * location, and optionally associates it with a user.
+	 * 
+	 * @param tenantId The tenant for the operation.
+	 * @param entityId The ID of the entity to which the activity belongs.
+	 * @param activityId The ID of the activity to which the comment will be
+	 * added.
+	 * @param userId The ID of the user with which the comment will be
+	 * associated.
+	 * @param comment The activity streams object representing the comment.
+	 */
+	public void addComment(String tenantId, String entityId, String activityId,
+			String userId, ActivityStreamsObject comment);
 }

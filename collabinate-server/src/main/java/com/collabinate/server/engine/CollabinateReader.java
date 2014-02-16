@@ -17,6 +17,17 @@ import com.collabinate.server.activitystreams.ActivityStreamsObject;
 public interface CollabinateReader
 {
 	/**
+	 * Retrieves a single activity, or null if no matching activity exists.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param entityId the ID of the entity for which to retrieve an activity.
+	 * @param activityId the ID of the activity to retrieve.
+	 * @return An activity that matches the given parameters, or null if no
+	 * matching activity exists.
+	 */
+	public Activity getActivity(String tenantId, String entityId,
+			String activityId);
+	/**
 	 * Retrieves a collection of activities for an entity, with paging ability. 
 	 * 
 	 * @param tenantId the tenant for which the request is processed.
@@ -80,4 +91,19 @@ public interface CollabinateReader
 	 */
 	public List<ActivityStreamsObject> getFollowers(String tenantId,
 			String entityId, long startIndex, int followersToReturn);
+	
+	/**
+	 * Retrieves the collection of comments on an activity.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param entityId The ID of the entity to which the activity belongs.
+	 * @param activityId The ID of the activity from which to retrieve the
+	 * comments.
+	 * @param startIndex The zero-based index of the first comment to retrieve.
+	 * @param commentsToReturn The maximum number of comments to retrieve.
+	 * @return A collection of comments on the given activity.
+	 */
+	public List<ActivityStreamsObject> getComments(String tenantId,
+			String entityId, String activityId, long startIndex,
+			int commentsToReturn);
 }

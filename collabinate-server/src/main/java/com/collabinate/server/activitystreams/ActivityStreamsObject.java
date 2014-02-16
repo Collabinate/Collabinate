@@ -128,6 +128,23 @@ public class ActivityStreamsObject
 	}
 	
 	/**
+	 * Gets the date by which the activity should be sorted. The updated date is
+	 * preferred, but if it is not available the published date is used.
+	 * 
+	 * @return The date by which the activity should be sorted.
+	 */
+	public DateTime getSortTime()
+	{
+		DateTime updated = getUpdated();
+		if (null != updated)
+		{
+			return updated;
+		}
+		
+		return getPublished();
+	}
+	
+	/**
 	 * Gets the date and time at which the object was published. An object MAY
 	 * contain a published property.
 	 * 

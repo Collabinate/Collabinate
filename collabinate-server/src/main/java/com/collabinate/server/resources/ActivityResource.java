@@ -27,12 +27,14 @@ public class ActivityResource extends ServerResource
 	public Representation getActivity()
 	{
 		// extract necessary information from the context
+		CollabinateReader reader = (CollabinateReader)getContext()
+				.getAttributes().get("collabinateReader");
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
 		String activityId = getAttribute("activityId");
 
-		Activity matchingActivity = 
-				findMatchingActivity(tenantId, entityId, activityId);
+		Activity matchingActivity =
+				reader.getActivity(tenantId, entityId, activityId);
 		
 		if (null != matchingActivity)
 		{
@@ -51,34 +53,7 @@ public class ActivityResource extends ServerResource
 			return null;
 		}
 	}
-	
-	/**
-	 * Finds an activity that matches the tenantId, entityId, and activityId in
-	 * the request.
-	 * @return
-	 */
-	private Activity findMatchingActivity(
-			String tenantId, String entityId, String activityId)
-	{
-		// extract necessary information from the context
-		CollabinateReader reader = (CollabinateReader)getContext()
-				.getAttributes().get("collabinateReader");
 		
-		Activity matchingActivity = null;
-		
-		// loop over all activities to find the desired entity
-		// TODO: this is highly inefficient for large feeds, it will be better
-		// to have a method on the server to query by ID
-		for (Activity activity : 
-			reader.getStream(tenantId, entityId, 0, Integer.MAX_VALUE))
-		{
-			if (activity.getId().equals(activityId))
-				matchingActivity = activity;
-		}
-		
-		return matchingActivity;
-	}
-	
 	@Put
 	public void putActivity(String activityContent)
 	{

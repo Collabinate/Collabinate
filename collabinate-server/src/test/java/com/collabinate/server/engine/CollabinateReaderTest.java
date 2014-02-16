@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.collabinate.server.activitystreams.Activity;
+import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 
@@ -726,5 +727,92 @@ public abstract class CollabinateReaderTest
 		//cleanup
 		writer.deleteActivity("test-029", "entity1", "test");
 		writer.unfollowEntity("test-029", "user", "entity1");
+	}
+	
+	@Test
+	public void adding_a_comment_should_allow_retrieval_of_the_comment()
+	{
+		writer.addActivity("test-030", "entity",
+				getActivity("activity", null, null));
+		ActivityStreamsObject comment = new ActivityStreamsObject("comment");
+		comment.setId("1");
+		comment.setPublished(DateTime.now());
+		writer.addComment("test-030", "entity", "activity", null, comment);
+		
+		List<ActivityStreamsObject> comments =
+				reader.getComments("test-030", "entity", "activity", 0, 1);
+		
+		assertThat(comments.get(0).toString(), containsString("comment"));
+		
+		//cleanup
+		writer.deleteActivity("test-030", "entity", "activity");
+	}
+	
+	@Test
+	public void adding_an_activity_should_allow_retrieval_of_the_single_activity()
+	{
+		final DateTime instant = DateTime.now();
+		writer.addActivity("test-031", "entity",
+				getActivity("1", instant, null));
+		final DateTime returnedTime =
+				reader.getActivity("test-031", "entity", "1").getSortTime();
+		
+		assertEquals(instant.getMillis(), returnedTime.getMillis());
+		
+		//cleanup
+		writer.deleteActivity("test-031", "entity", "1");
+	}
+	
+	@Test
+	public void retrieving_non_existent_activity_should_return_null()
+	{
+		assertNull(reader.getActivity("test-032", "entity", "1"));
+	}
+	
+	@Test
+	public void comments_should_be_returned_in_date_order()
+	{
+		final DateTime time1 = DateTime.now();
+		final DateTime time2 = DateTime.now().plus(1000);
+		writer.addActivity("test-033", "entity",
+				getActivity("activity", null, null));
+		ActivityStreamsObject comment1 = new ActivityStreamsObject("comment1");
+		comment1.setId("1");
+		comment1.setPublished(time1);
+		ActivityStreamsObject comment2 = new ActivityStreamsObject("comment2");
+		comment2.setId("2");
+		comment2.setPublished(time2);
+		writer.addComment("test-033", "entity", "activity", null, comment1);
+		writer.addComment("test-033", "entity", "activity", null, comment2);
+		
+		List<ActivityStreamsObject> comments =
+				reader.getComments("test-033", "entity", "activity", 0, 2);
+		
+		assertEquals(time2.getMillis(),
+				comments.get(0).getPublished().getMillis());
+		
+		//cleanup
+		writer.deleteActivity("test-033", "entity", "activity");
+	}
+	
+	@Test
+	public void deleting_activity_should_remove_all_comments()
+	{
+		writer.addActivity("test-034", "entity",
+				getActivity("activity", null, null));
+		ActivityStreamsObject comment = new ActivityStreamsObject("comment");
+		comment.setId("1");
+		comment.setPublished(DateTime.now());
+		writer.addComment("test-034", "entity", "activity", null, comment);
+		
+		writer.deleteActivity("test-034", "entity", "activity");
+		
+		writer.addActivity("test-034", "entity",
+				getActivity("activity", null, null));
+
+		writer.addComment("test-034", "entity", "activity", null, comment);
+		
+		//cleanup
+		writer.deleteActivity("test-034", "entity", "activity");
 	}
 }

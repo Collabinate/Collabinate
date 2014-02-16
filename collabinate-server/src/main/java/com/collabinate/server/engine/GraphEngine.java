@@ -86,6 +86,40 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		graph.commit();		
 	}
+	
+	@Override
+	public Activity getActivity(String tenantId, String entityId,
+			String activityId)
+	{
+		Activity activity = null;
+		
+		Vertex activityVertex =
+				getActivityVertex(tenantId, entityId, activityId);
+		
+		if (null != activityVertex)
+		{
+			activity = deserializeActivity(activityVertex);
+		}
+		
+		graph.commit();
+		
+		return activity;
+	}
+	
+	/**
+	 * Retrieves a single activity vertex that matches the given parameters, or
+	 * null if none match.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param entityId the ID of the entity for which to retrieve an activity.
+	 * @param activityId the ID of the activity to retrieve.
+	 * @return
+	 */
+	private Vertex getActivityVertex(String tenantId, String entityId,
+			String activityId)
+	{
+		return graph.getVertex(tenantId + "/" + entityId + "/" + activityId);
+	}
 
 	/**
 	 * Attempts to retrieve the vertex for the entity with the given ID. If a
@@ -138,6 +172,36 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	/**
+	 * Creates a new vertex representation of a given comment.
+	 * 
+	 * @param comment The comment to be represented.
+	 * @param tenantId The tenant for the comment.
+	 * @param entityId The entity to which the activity for the comment belongs.
+	 * @param activityId The activity to which the comment belongs.
+	 * @return A vertex that represents the given comment.
+	 */
+	private Vertex serializeComment(final ActivityStreamsObject comment,
+			final String tenantId, final String entityId,
+			final String activityId)
+	{
+		Vertex commentVertex = graph.addVertex(tenantId + "/" + entityId + "/"
+				+ activityId + "/" + comment.getId());
+		
+		commentVertex.setProperty(STRING_TENANT_ID, tenantId);
+		commentVertex.setProperty(STRING_ENTITY_ID, entityId);
+		commentVertex.setProperty(STRING_ACTIVITY_ID, activityId);
+		commentVertex.setProperty(STRING_COMMENT_ID, comment.getId());
+		commentVertex.setProperty(STRING_TYPE, STRING_COMMENT);
+		commentVertex.setProperty(STRING_SORTTIME, 
+				comment.getSortTime().toString());
+		commentVertex.setProperty(STRING_CREATED,
+				DateTime.now(DateTimeZone.UTC).toString());
+		commentVertex.setProperty(STRING_CONTENT, comment.toString());
+		
+		return commentVertex;
+	}
+	
+	/**
 	 * Adds an activity vertex at the correct chronological location among the
 	 * stream vertices of an entity.
 	 * 
@@ -186,12 +250,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		newEdge.setProperty(STRING_ENTITY_ID, entityId);
 		newEdge.setProperty(STRING_CREATED,
 				DateTime.now(DateTimeZone.UTC).toString());
-
 		
 		// if there are one or more activities that are older than the added
 		// one, add an edge between the added one and the next older one, and
-		// delete the edge between the that one and the previous (next newer)
-		// one.
+		// delete the edge between that one and the previous (next newer) one.
 		if (null != currentStreamEdge)
 		{
 			newEdge = addedActivity.addEdge(STRING_STREAM, currentActivity);
@@ -204,6 +266,71 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 		
 		return position == 0;
+	}
+	
+	/**
+	 * Adds a comment vertex at the correct chronological location among the
+	 * comment vertices of an activity.
+	 * 
+	 * @param activity The vertex representing the activity.
+	 * @param addedComment The comment to add to the activity.
+	 * @param userId The user to associate with the comment. May be null.
+	 */
+	private void insertComment(final Vertex activity,
+			final Vertex addedComment, final String userId)
+	{
+		Edge currentCommentEdge = getCommentEdge(activity);
+		Vertex currentComment = getNextComment(activity);
+		Vertex previousComment = activity;
+		
+		// advance along the comment path, comparing each comment to the new one
+		while (currentComment != null && activityDateComparator
+				.compare(addedComment, currentComment) > 0)
+		{
+			previousComment = currentComment;
+			currentCommentEdge = getCommentEdge(currentComment);
+			currentComment = getNextComment(currentComment);
+		}
+		
+		String tenantId = (String)activity.getProperty(STRING_TENANT_ID);
+		String entityId = (String)activity.getProperty(STRING_ENTITY_ID);
+		String activityId = (String)activity.getProperty(STRING_ACTIVITY_ID);
+		
+		// add a comment edge between the previous comment (the one that is
+		// newer than the added one, or the activity if there are none) and the
+		// new one.
+		Edge newEdge = previousComment.addEdge(STRING_COMMENTS, addedComment);
+		newEdge.setProperty(STRING_TENANT_ID, tenantId);
+		newEdge.setProperty(STRING_ENTITY_ID, entityId);
+		newEdge.setProperty(STRING_ACTIVITY_ID, activityId);
+		newEdge.setProperty(STRING_CREATED,
+				DateTime.now(DateTimeZone.UTC).toString());
+		
+		// if there are one or more comments that are older than the added one,
+		// add an edge between the added one and the next older one, and delete
+		// the edge between that one and the previous (next newer) one.
+		if (null != currentCommentEdge)
+		{
+			newEdge = addedComment.addEdge(STRING_COMMENTS, currentComment);
+			newEdge.setProperty(STRING_TENANT_ID, tenantId);
+			newEdge.setProperty(STRING_ENTITY_ID, entityId);
+			newEdge.setProperty(STRING_ACTIVITY_ID, activityId);
+			newEdge.setProperty(STRING_CREATED,
+					DateTime.now(DateTimeZone.UTC).toString());
+			
+			currentCommentEdge.remove();
+		}
+		
+		// if provided, create an edge relating the user to the comment
+		if (null != userId && !userId.equals(""))
+		{
+			newEdge = getOrCreateEntityVertex(tenantId, userId)
+				.addEdge(STRING_COMMENTED, addedComment);
+			newEdge.setProperty(STRING_TENANT_ID, tenantId);
+			newEdge.setProperty(STRING_ENTITY_ID, userId);
+			newEdge.setProperty(STRING_CREATED,
+					DateTime.now(DateTimeZone.UTC).toString());
+		}
 	}
 	
 	/**
@@ -230,6 +357,20 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private Edge getFeedEdge(Vertex node)
 	{
 		return getSingleOutgoingEdge(node, STRING_FEED);
+	}
+	
+	/**
+	 * Retrieves the edge to the next comment from the given vertex, whether
+	 * the given vertex is an activity or a comment.
+	 * 
+	 * @param node A comment or activity for which to find the next comment
+	 * edge.
+	 * @return The next comment edge in the comments containing or starting at
+	 * the given vertex.
+	 */
+	private Edge getCommentEdge(Vertex node)
+	{
+		return getSingleOutgoingEdge(node, STRING_COMMENTS);
 	}
 	
 	/**
@@ -366,66 +507,72 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (null == activityId)
 			throw new IllegalArgumentException("activityId must not be null");
 		
-		Vertex entityVertex = getOrCreateEntityVertex(tenantId, entityId);
-				
-		if (removeActivity(entityVertex, activityId))
-			// if the deleted activity was first in its stream, it may have
-			// changed the entity order for feed paths
-			updateFeedPaths(tenantId, entityId, entityVertex);
+		Vertex activityVertex = getActivityVertex(tenantId, entityId,
+				activityId);
+		
+		if (null != activityVertex)
+		{
+			Vertex entityVertex = getOrCreateEntityVertex(tenantId, entityId);
+			
+			boolean firstInStream = false;
+			if (activityId.equals((String)getNextActivity(entityVertex)
+				.getProperty(STRING_ACTIVITY_ID)))
+			{
+				firstInStream = true;
+			}
+			
+			removeComments(activityVertex);
+			
+			removeActivity(activityVertex);
+			
+			if (firstInStream)
+				// if the deleted activity was first in its stream, it may have
+				// changed the entity order for feed paths
+				updateFeedPaths(tenantId, entityId, entityVertex);
+		}
 		
 		graph.commit();
+	}
+	
+	/**
+	 * Removes all of the comments from the given activity.
+	 * 
+	 * @param activityVertex The activity for which to remove comments.
+	 */
+	private void removeComments(Vertex activityVertex)
+	{
+		for (Vertex comment : getCommentVertices(
+				activityVertex, 0, Integer.MAX_VALUE))
+		{
+			comment.remove();
+		}
 	}
 	
 	/**
 	 * Deletes the activity vertex that matches the given activityId within the
 	 * stream of the given entity.  The continuity of the stream is maintained.
 	 * 
-	 * @param entityVertex The vertex representing the entity.
-	 * @param activityId The ID of the activity to delete from the stream.
-	 * @return true if the deleted activity was the newest (first) in the
-	 * stream, otherwise false.
+	 * @param activityVertex The vertex representing the activity.
 	 */
-	private boolean removeActivity(Vertex entityVertex, String activityId)
+	private void removeActivity(Vertex activityVertex)
 	{
-		if (null == entityVertex)
-			throw new IllegalArgumentException("entityVertex must not be null");
+		Vertex followingActivity = getNextActivity(activityVertex);
+		Vertex previousActivity = getPreviousActivity(activityVertex);
+		activityVertex.remove();
 		
-		if (null == activityId)
-			throw new IllegalArgumentException("activityId must not be null");
-		
-		// TODO: improve performance by going directly to the activity
-		
-		Vertex currentActivity = getNextActivity(entityVertex);
-		Vertex previousActivity = entityVertex;
-		int position = 0;		
-		
-		// advance along the stream path, checking each activity for a match
-		while (currentActivity != null)
+		if (null != followingActivity)
 		{
-			// if a match is found, remove it and make a new edge from the
-			// previous activity to the following activity (if one exists)
-			if (currentActivity.getProperty(STRING_ACTIVITY_ID)
-					.equals(activityId))
-			{
-				Vertex followingActivity = getNextActivity(currentActivity);
-				currentActivity.remove();
-				if (null != followingActivity)
-					previousActivity.addEdge(STRING_STREAM,
-						followingActivity).setProperty(
-							STRING_TENANT_ID, previousActivity
-								.getProperty(STRING_ENTITY_ID));
-				currentActivity = null;
-			}
-			// if no match, proceed along the stream updating the pointers
-			else
-			{
-				previousActivity = currentActivity;
-				currentActivity = getNextActivity(currentActivity);
-				position++;
-			}
+			Edge newEdge = previousActivity.addEdge(
+					STRING_STREAM,followingActivity);
+			newEdge.setProperty(STRING_TENANT_ID, previousActivity
+					.getProperty(STRING_TENANT_ID));
+			newEdge.setProperty(STRING_ENTITY_ID, previousActivity
+					.getProperty(STRING_ENTITY_ID));
+			newEdge.setProperty(STRING_CREATED,
+					DateTime.now(DateTimeZone.UTC).toString());
 		}
 		
-		return position == 0;
+		activityVertex = null;
 	}
 
 	@Override
@@ -478,6 +625,29 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		return null == streamEdge ? null : streamEdge.getVertex(Direction.IN);
 	}
 
+	private Vertex getPreviousActivity(Vertex node)
+	{
+		if (null == node)
+			return null;
+		
+		Iterator<Vertex> vertices =
+				node.getVertices(Direction.IN, STRING_STREAM).iterator();
+		
+		Vertex activity = vertices.hasNext() ? vertices.next() : null;
+		
+		if (null != activity)
+		{
+			if (vertices.hasNext())
+			{
+				logger.error(
+						"Multiple previous activities for node with id: {}",
+						node.getId());
+			}
+		}
+		
+		return activity;
+	}
+	
 	/**
 	 * Turns a collection of activity vertices into a collection of activities.
 	 * 
@@ -513,7 +683,45 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		return new Activity(content);
 	}
-
+	
+	/**
+	 * Turns a collection of comment vertices into a collection of comments.
+	 * 
+	 * @param commentVertices The vertices to deserialize.
+	 * @return A collection of comments that were represented by the given
+	 * vertices.
+	 */
+	private List<ActivityStreamsObject> deserializeComments(
+			Collection<Vertex> commentVertices)
+	{
+		ArrayList<ActivityStreamsObject> comments =
+				new ArrayList<ActivityStreamsObject>();
+		
+		for (final Vertex vertex : commentVertices)
+		{
+			if (null != vertex)
+			{
+				comments.add(deserializeComment(vertex));
+			}
+		}
+		
+		return comments;
+	}
+	
+	/**
+	 * Deserializes a vertex representing an comment.
+	 * 
+	 * @param commentVertex The vertex to deserialize.
+	 * @return An activity streams object containing a comment that was
+	 * represented by the given vertex.
+	 */
+	private ActivityStreamsObject deserializeComment(final Vertex commentVertex)
+	{
+		String content = (String)commentVertex.getProperty(STRING_CONTENT);
+		
+		return new ActivityStreamsObject(content);
+	}
+	
 	@Override
 	public DateTime followEntity(String tenantId, String userId,
 			String entityId, DateTime followed)
@@ -911,6 +1119,117 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		return overlay;
 	}
+	
+	@Override
+	public void addComment(String tenantId, String entityId, String activityId,
+			String userId, ActivityStreamsObject comment)
+	{
+		if (null == tenantId)
+		{
+			throw new IllegalArgumentException("tenantId must not be null");
+		}
+		
+		if (null == entityId)
+		{
+			throw new IllegalArgumentException("entityId must not be null");
+		}
+		
+		if (null == activityId)
+		{
+			throw new IllegalArgumentException("activityId must not be null");
+		}
+		
+		if (null == comment)
+		{
+			throw new IllegalArgumentException("comment must not be null");
+		}
+		
+		Vertex activityVertex =
+				getActivityVertex(tenantId, entityId, activityId);
+		
+		if (null == activityVertex)
+		{
+			graph.commit();
+			return;
+		}
+		
+		Vertex commentVertex = 
+				serializeComment(comment, tenantId, entityId, activityId);
+		
+		insertComment(activityVertex, commentVertex, userId);
+		
+		graph.commit();
+	}
+	
+	/**
+	 * Retrieves the comment after the given node by following the outgoing
+	 * comments edge. The node can be an activity or a comment.
+	 * 
+	 * @param node The activity or comment for which to find the next comment.
+	 * @return The next comment after the given node, or null if one does not
+	 * exist.
+	 */
+	private Vertex getNextComment(Vertex node)
+	{
+		Edge commentEdge = getCommentEdge(node);
+		return null == commentEdge ? null : commentEdge.getVertex(Direction.IN);
+	}
+	
+	@Override
+	public List<ActivityStreamsObject> getComments(String tenantId,
+			String entityId, String activityId, long startIndex,
+			int commentsToReturn)
+	{
+
+		Vertex activityVertex = 
+				getActivityVertex(tenantId, entityId, activityId);
+		
+		List<ActivityStreamsObject> comments = 
+				deserializeComments(getCommentVertices(
+						activityVertex, startIndex, commentsToReturn));
+		
+		graph.commit();
+		
+		return comments;
+	}
+	
+	/**
+	 * Retrieves the collection of comment vertices for a given activity vertex.
+	 * 
+	 * @param activityVertex The vertex for which to retrieve comments.
+	 * @param startIndex The zero-based index of the first comment to retrieve.
+	 * @param commentsToReturn The maximum number of comments to retrieve.
+	 * @return A collection of comment vertices.
+	 */
+	private Collection<Vertex> getCommentVertices(Vertex activityVertex,
+			long startIndex, int commentsToReturn)
+	{
+		// since we need to advance from the beginning of the comments,
+		// this lets us keep track of where we are
+		int commentPosition = 0;
+		// once we reach the number of comments to return, we can stop
+		int foundCommentCount = 0;
+		
+		Vertex currentComment = getNextComment(activityVertex);
+		Collection<Vertex> commentVertices = new ArrayList<Vertex>();
+		
+		// advance along the comments, collecting vertices after we get to the
+		// start index, and stopping when we have enough to return or run out
+		// of comments
+		while (null != currentComment &&
+				foundCommentCount < commentsToReturn)
+		{
+			if (commentPosition >= startIndex)
+			{
+				commentVertices.add(currentComment);
+				foundCommentCount++;
+			}
+			currentComment = getNextComment(currentComment);
+			commentPosition++;
+		}
+		
+		return commentVertices;
+	}
 
 	/**
 	 * A comparator for activity vertices that orders by the sort time.
@@ -975,6 +1294,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private static final String STRING_ENTITY = "Entity";
 	private static final String STRING_ACTIVITY_ID = "ActivityID";
 	private static final String STRING_ACTIVITY = "Activity";
+	private static final String STRING_COMMENT_ID = "CommentID";
+	private static final String STRING_COMMENT = "Comment";
+	private static final String STRING_COMMENTS = "Comments";
+	private static final String STRING_COMMENTED = "Commented";
 	private static final String STRING_SORTTIME = "SortTime";
 	private static final String STRING_CONTENT = "Content";
 	private static final String STRING_FOLLOWS = "Follows";

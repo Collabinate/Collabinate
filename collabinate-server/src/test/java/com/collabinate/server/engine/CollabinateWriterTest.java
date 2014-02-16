@@ -8,6 +8,7 @@ import org.junit.Test;
 import org.junit.rules.ExpectedException;
 
 import com.collabinate.server.activitystreams.Activity;
+import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.collabinate.server.engine.CollabinateWriter;
 
 /**
@@ -158,5 +159,47 @@ public abstract class CollabinateWriterTest
 		exception.expect(IllegalArgumentException.class);
 		exception.expectMessage("entityId");
 		writer.unfollowEntity("c", "user", null);
-	}	
+	}
+	
+	@Test
+	public void add_comment_should_not_allow_null_tenant_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("tenantId");
+		writer.addComment(null, "entity", "activity", "user",
+				new ActivityStreamsObject());
+	}
+	
+	@Test
+	public void add_comment_should_not_allow_null_entity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entityId");
+		writer.addComment("c", null, "activity", "user",
+				new ActivityStreamsObject());
+	}
+	
+	@Test
+	public void add_comment_should_not_allow_null_activity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("activityId");
+		writer.addComment("c", "entity", null, "user",
+				new ActivityStreamsObject());
+	}
+
+	@Test
+	public void add_comment_should_not_allow_null_comment()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("comment");
+		writer.addComment("c", "entity", "activity", "user", null);
+	}
+	
+	@Test
+	public void add_comment_should_allow_null_user_ID()
+	{
+		writer.addComment("c", "entity", "activity", null,
+				new ActivityStreamsObject());
+	}
 }
