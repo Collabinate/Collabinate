@@ -106,21 +106,24 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		return activity;
 	}
 	
-	/**
-	 * Retrieves a single activity vertex that matches the given parameters, or
-	 * null if none match.
-	 * 
-	 * @param tenantId the tenant for which the request is processed.
-	 * @param entityId the ID of the entity for which to retrieve an activity.
-	 * @param activityId the ID of the activity to retrieve.
-	 * @return
-	 */
-	private Vertex getActivityVertex(String tenantId, String entityId,
-			String activityId)
+	public ActivityStreamsObject getComment(String tenantId, String entityId,
+			String activityId, String commentId)
 	{
-		return graph.getVertex(tenantId + "/" + entityId + "/" + activityId);
+		ActivityStreamsObject comment = null;
+		
+		Vertex commentVertex =
+				getCommentVertex(tenantId, entityId, activityId, commentId);
+		
+		if (null != commentVertex)
+		{
+			comment = deserializeComment(commentVertex);
+		}
+		
+		graph.commit();
+		
+		return comment;
 	}
-
+	
 	/**
 	 * Attempts to retrieve the vertex for the entity with the given ID. If a
 	 * matching entity cannot be found, the vertex is created.
@@ -146,6 +149,38 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		return entityVertex;
 	}
 	
+	/**
+	 * Retrieves a single activity vertex that matches the given parameters, or
+	 * null if none match.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param entityId the ID of the entity for which to retrieve an activity.
+	 * @param activityId the ID of the activity to retrieve.
+	 * @return A vertex for the given activity, or null.
+	 */
+	private Vertex getActivityVertex(String tenantId, String entityId,
+			String activityId)
+	{
+		return graph.getVertex(tenantId + "/" + entityId + "/" + activityId);
+	}
+
+	/**
+	 * Retrieves a single comment vertex that matches the given parameters, or
+	 * null if none match.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param entityId the ID of the entity for which to retrieve an comment.
+	 * @param activityId the ID of the activity for which to retrieve a comment.
+	 * @param commentId the ID of the comment to retrieve.
+	 * @return A vertex for the given comment, or null.
+	 */
+	private Vertex getCommentVertex(String tenantId, String entityId,
+			String activityId, String commentId)
+	{
+		return graph.getVertex(tenantId + "/" + entityId + "/" + activityId +
+				"/" + commentId);
+	}
+
 	/**
 	 * Creates a new vertex representation of a given activity.
 	 * 
@@ -549,8 +584,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	/**
-	 * Deletes the activity vertex that matches the given activityId within the
-	 * stream of the given entity.  The continuity of the stream is maintained.
+	 * Deletes the given activity vertex from its stream.  The continuity of the
+	 * stream is maintained.
 	 * 
 	 * @param activityVertex The vertex representing the activity.
 	 */
@@ -563,7 +598,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (null != followingActivity)
 		{
 			Edge newEdge = previousActivity.addEdge(
-					STRING_STREAM,followingActivity);
+					STRING_STREAM, followingActivity);
 			newEdge.setProperty(STRING_TENANT_ID, previousActivity
 					.getProperty(STRING_TENANT_ID));
 			newEdge.setProperty(STRING_ENTITY_ID, previousActivity
@@ -573,6 +608,35 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 		
 		activityVertex = null;
+	}
+
+	/**
+	 * Deletes the given comment vertex. The continuity of the comments is
+	 * maintained.
+	 * 
+	 * @param commentVertex The vertex representing the comment.
+	 */
+	private void removeComment(Vertex commentVertex)
+	{
+		Vertex followingComment = getNextComment(commentVertex);
+		Vertex previousComment = getPreviousComment(commentVertex);
+		commentVertex.remove();
+		
+		if (null != followingComment)
+		{
+			Edge newEdge = previousComment.addEdge(
+					STRING_COMMENTS, followingComment);
+			newEdge.setProperty(STRING_TENANT_ID, previousComment
+					.getProperty(STRING_TENANT_ID));
+			newEdge.setProperty(STRING_ENTITY_ID, previousComment
+					.getProperty(STRING_ENTITY_ID));
+			newEdge.setProperty(STRING_ACTIVITY_ID, previousComment
+					.getProperty(STRING_ACTIVITY_ID));
+			newEdge.setProperty(STRING_CREATED,
+					DateTime.now(DateTimeZone.UTC).toString());
+		}
+		
+		commentVertex = null;
 	}
 
 	@Override
@@ -1175,6 +1239,29 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		return null == commentEdge ? null : commentEdge.getVertex(Direction.IN);
 	}
 	
+	private Vertex getPreviousComment(Vertex node)
+	{
+		if (null == node)
+			return null;
+		
+		Iterator<Vertex> vertices =
+				node.getVertices(Direction.IN, STRING_COMMENTS).iterator();
+		
+		Vertex comment = vertices.hasNext() ? vertices.next() : null;
+		
+		if (null != comment)
+		{
+			if (vertices.hasNext())
+			{
+				logger.error(
+						"Multiple previous comments for node with id: {}",
+						node.getId());
+			}
+		}
+		
+		return comment;
+	}
+	
 	@Override
 	public List<ActivityStreamsObject> getComments(String tenantId,
 			String entityId, String activityId, long startIndex,
@@ -1253,6 +1340,33 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 
 			return new Long(t2).compareTo(t1);
 		}
+	}
+	
+	@Override
+	public void deleteComment(String tenantId, String entityId,
+			String activityId, String commentId)
+	{
+		if (null == tenantId)
+			throw new IllegalArgumentException("tenantId must not be null");
+		
+		if (null == entityId)
+			throw new IllegalArgumentException("entityId must not be null");
+		
+		if (null == activityId)
+			throw new IllegalArgumentException("activityId must not be null");
+		
+		if (null == commentId)
+			throw new IllegalArgumentException("commentId must not be null");
+		
+		Vertex commentVertex = getCommentVertex(tenantId, entityId,
+				activityId, commentId);
+		
+		if (null != commentVertex)
+		{
+			removeComment(commentVertex);
+		}
+		
+		graph.commit();
 	}
 	
 	/**

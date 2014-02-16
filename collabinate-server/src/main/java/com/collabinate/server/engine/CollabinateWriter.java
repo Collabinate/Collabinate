@@ -79,4 +79,16 @@ public interface CollabinateWriter
 	 */
 	public void addComment(String tenantId, String entityId, String activityId,
 			String userId, ActivityStreamsObject comment);
+	
+	/**
+	 * Deletes a comment from an activity's comments.
+	 * 
+	 * @param tenantId The tenant for the operation.
+	 * @param entityId The ID of the entity to which the activity belongs.
+	 * @param activityId The ID of the activity from which the comment will be
+	 * deleted.
+	 * @param commentId The ID of the comment to delete.
+	 */
+	public void deleteComment(String tenantId, String entityId,
+			String activityId, String commentId);
 }

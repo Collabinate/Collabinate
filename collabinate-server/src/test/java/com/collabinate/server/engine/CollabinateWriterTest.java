@@ -202,4 +202,36 @@ public abstract class CollabinateWriterTest
 		writer.addComment("c", "entity", "activity", null,
 				new ActivityStreamsObject());
 	}
+	
+	@Test
+	public void delete_comment_should_not_allow_null_tenant_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("tenantId");
+		writer.deleteComment(null, "entity", "activity", "1");
+	}
+	
+	@Test
+	public void delete_comment_should_not_allow_null_entity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entityId");
+		writer.deleteComment("c", null, "activity", "1");
+	}
+	
+	@Test
+	public void delete_comment_should_not_allow_null_activity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("activityId");
+		writer.deleteComment("c", "entity", null, "1");
+	}
+	
+	@Test
+	public void delete_comment_should_not_allow_null_comment_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("commentId");
+		writer.deleteComment("c", "entity", "activity", null);
+	}
 }

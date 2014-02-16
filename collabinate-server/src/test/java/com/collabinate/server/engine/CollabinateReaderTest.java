@@ -815,4 +815,39 @@ public abstract class CollabinateReaderTest
 		//cleanup
 		writer.deleteActivity("test-034", "entity", "activity");
 	}
+	
+	@Test
+	public void deleting_comment_should_maintain_comment_order()
+	{
+		final DateTime time1 = DateTime.now();
+		final DateTime time2 = DateTime.now().plus(1000);
+		final DateTime time3 = DateTime.now().plus(2000);
+		writer.addActivity("test-035", "entity",
+				getActivity("activity", null, null));
+		ActivityStreamsObject comment1 = new ActivityStreamsObject("comment1");
+		comment1.setId("1");
+		comment1.setPublished(time1);
+		ActivityStreamsObject comment2 = new ActivityStreamsObject("comment2");
+		comment2.setId("2");
+		comment2.setPublished(time2);
+		ActivityStreamsObject comment3 = new ActivityStreamsObject("comment3");
+		comment3.setId("3");
+		comment3.setPublished(time3);
+		writer.addComment("test-035", "entity", "activity", null, comment1);
+		writer.addComment("test-035", "entity", "activity", null, comment2);
+		writer.addComment("test-035", "entity", "activity", null, comment3);
+		
+		writer.deleteComment("test-035", "entity", "activity", "2");
+		
+		List<ActivityStreamsObject> comments =
+				reader.getComments("test-035", "entity", "activity", 0, 2);
+		
+		assertEquals(time3.getMillis(),
+				comments.get(0).getPublished().getMillis());
+		assertEquals(time1.getMillis(),
+				comments.get(1).getPublished().getMillis());
+		
+		//cleanup
+		writer.deleteActivity("test-035", "entity", "activity");		
+	}
 }
