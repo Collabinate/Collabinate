@@ -1069,6 +1069,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (userId.equals(likeEdge.getProperty(STRING_ENTITY_ID)))
 			{
 				toRemove = likeEdge;
+				break;
 			}
 		}
 		
@@ -1102,6 +1103,38 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 		
 		return false;
+	}
+	
+	@Override
+	public ActivityStreamsCollection getLikingUsers(String tenantId,
+			String entityId, String activityId, int startIndex,
+			int usersToReturn)
+	{
+		Vertex activityVertex =
+				getActivityVertex(tenantId, entityId, activityId);
+		
+		if (null == activityVertex)
+			return null;
+		
+		ActivityStreamsCollection likers = new ActivityStreamsCollection();
+		int currentPosition = 0;
+		
+		for(Edge likeEdge : activityVertex.getEdges(
+				Direction.IN, STRING_LIKES))
+		{
+			if (currentPosition >= startIndex)
+			{
+				ActivityStreamsObject liker = new ActivityStreamsObject();
+				liker.setId((String)likeEdge.getProperty(STRING_ENTITY_ID));
+				likers.add(liker);
+				if (likers.size() >= usersToReturn)
+					break;
+			}
+			
+			currentPosition++;
+		}
+		
+		return likers;
 	}
 
 	/**

@@ -879,6 +879,9 @@ public abstract class CollabinateReaderTest
 		writer.likeActivity("test-037", "user", "entity", "activity");
 		assertTrue(reader.userLikesActivity(
 				"test-037", "user", "entity", "activity"));
+		
+		//cleanup
+		writer.deleteActivity("test-037", "entity", "activity");
 	}
 	
 	@Test
@@ -890,5 +893,62 @@ public abstract class CollabinateReaderTest
 		writer.unlikeActivity("test-038", "user", "entity", "activity");
 		assertFalse(reader.userLikesActivity(
 				"test-038", "user", "entity", "activity"));
+		
+		//cleanup
+		writer.deleteActivity("test-038", "entity", "activity");
+	}
+	
+	@Test
+	public void get_likers_should_return_null_for_non_existent_activity()
+	{
+		assertNull(reader.getLikingUsers(
+				"test-039", "entity", "activity", 0, 0));
+	}
+	
+	@Test
+	public void get_likers_should_return_empty_for_activity_with_no_likes()
+	{
+		writer.addActivity("test-040", "entity",
+				getActivity("activity", null, null));
+		
+		assertTrue(reader.getLikingUsers(
+				"test-040", "entity", "activity", 0, 1).size() == 0);
+		
+		//cleanup
+		writer.deleteActivity("test-040", "entity", "activity");
+	}
+	
+	@Test
+	public void get_likers_should_return_user_for_liked_activity()
+	{
+		writer.addActivity("test-041", "entity",
+				getActivity("activity", null, null));
+		writer.likeActivity("test-041", "user", "entity", "activity");
+		
+		ActivityStreamsCollection likers =
+				reader.getLikingUsers("test-041", "entity", "activity", 0, 1);
+		
+		assertTrue(likers.get(0).getId().equals("user"));
+		
+		//cleanup
+		writer.deleteActivity("test-041", "entity", "activity");
+	}
+	
+	@Test
+	public void get_likers_should_all_users_for_liked_activity()
+	{
+		writer.addActivity("test-042", "entity",
+				getActivity("activity", null, null));
+		writer.likeActivity("test-042", "user1", "entity", "activity");
+		writer.likeActivity("test-042", "user2", "entity", "activity");
+		
+		ActivityStreamsCollection likers =
+				reader.getLikingUsers("test-042", "entity", "activity", 0, 2);
+		
+		assertThat(likers.toString(), containsString("user1"));
+		assertThat(likers.toString(), containsString("user2"));
+		
+		//cleanup
+		writer.deleteActivity("test-042", "entity", "activity");
 	}
 }

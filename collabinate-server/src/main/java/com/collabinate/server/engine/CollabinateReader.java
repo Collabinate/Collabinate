@@ -133,4 +133,21 @@ public interface CollabinateReader
 	 */
 	public boolean userLikesActivity(String tenantId, String userId,
 			String entityId, String activityId);
+	
+	/**
+	 * Retrieves the collection of users that like a given activity.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param entityId The ID of the entity to which the activity belongs.
+	 * @param activityId The ID of the activity for which to retrieve the liking
+	 * users.
+	 * @param startIndex The zero-based index of the first user to retrieve.
+	 * @param usersToReturn The maximum number of users to retrieve.
+	 * @return An ActivityStreamsCollection populated with
+	 * ActivityStreamsObjects representing the liking users, or null if the
+	 * activity does not exist.
+	 */
+	public ActivityStreamsCollection getLikingUsers(String tenantId,
+			String entityId, String activityId, int startIndex,
+			int usersToReturn);
 }
