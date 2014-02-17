@@ -1,35 +1,32 @@
 package com.collabinate.server.resources;
 
-import java.util.UUID;
-
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.restlet.data.MediaType;
-import org.restlet.data.Reference;
 import org.restlet.data.Status;
 import org.restlet.data.Tag;
 import org.restlet.representation.Representation;
 import org.restlet.representation.StringRepresentation;
+import org.restlet.resource.Delete;
 import org.restlet.resource.Get;
-import org.restlet.resource.Post;
+import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
 
-import com.collabinate.server.activitystreams.ActivityStreamsCollection;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.google.common.hash.Hashing;
 
 /**
- * Restful resource representing a collection of comments on an activity.
+ * Restful resource representing a comment on an activity.
  * 
  * @author mafuba
  *
  */
-public class CommentsResource extends ServerResource
+public class CommentResource extends ServerResource
 {
 	@Get("json")
-	public Representation getComments()
+	public Representation getComment()
 	{
 		// extract necessary information from the context
 		CollabinateReader reader = (CollabinateReader)getContext()
@@ -37,45 +34,43 @@ public class CommentsResource extends ServerResource
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
 		String activityId = getAttribute("activityId");
-		String startString = getQueryValue("start");
-		String countString = getQueryValue("count");
-		int start = null == startString ? 0 : Integer.parseInt(startString);
-		int count = null == countString ? DEFAULT_COUNT : 
-			Integer.parseInt(countString);
+		String commentId = getAttribute("commentId");
+
+		ActivityStreamsObject matchingComment =
+				reader.getComment(tenantId, entityId, activityId, commentId);
 		
-		ActivityStreamsCollection commentsCollection =
-			reader.getComments(tenantId, entityId, activityId, start, count);
-		
-		if (null != commentsCollection)
+		if (null != matchingComment)
 		{
-			String comments = commentsCollection.toString();
 			Representation representation = new StringRepresentation(
-					comments, MediaType.APPLICATION_JSON);
+					matchingComment.toString(), MediaType.APPLICATION_JSON);
 			representation.setTag(
 				new Tag(Hashing.murmur3_128().hashUnencodedChars(
-				comments+tenantId+entityId+activityId+startString+countString)
+				matchingComment.toString()
+				+tenantId+entityId+activityId+commentId)
 				.toString(), false));
 			
 			return representation;
 		}
 		else
 		{
+			// TODO: set error message
 			setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 			return null;
 		}
 	}
 	
-	@Post
-	public void addComment(String content)
+	@Put
+	public void putComment(String content)
 	{
 		// extract necessary information from the context
-		CollabinateWriter writer = (CollabinateWriter)getContext()
-				.getAttributes().get("collabinateWriter");
 		CollabinateReader reader = (CollabinateReader)getContext()
 				.getAttributes().get("collabinateReader");
+		CollabinateWriter writer = (CollabinateWriter)getContext()
+				.getAttributes().get("collabinateWriter");
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
 		String activityId = getAttribute("activityId");
+		String commentId = getAttribute("commentId");
 		String userId = getQueryValue("userId");
 		
 		// ensure the activity exists
@@ -86,17 +81,27 @@ public class CommentsResource extends ServerResource
 			return;
 		}
 		
+		// remove any existing comment
+		writer.deleteComment(tenantId, entityId, activityId, commentId);
+		
 		// create a comment from the given content
 		ActivityStreamsObject comment = new ActivityStreamsObject(content);
 		
-		// generate an id and relocate the original if necessary
-		String originalId = comment.getId();
-		String id = generateId();
-		comment.setId(id);
-		
-		if (null != originalId && !originalId.equals(""))
+		// ensure the comment has an id - set to given id if not
+		String id = comment.getId();
+		if (null == id || id.equals(""))
 		{
-			comment.setCollabinateValue(ORIGINAL_ID, originalId);
+			id = commentId;
+			comment.setId(id);
+		}
+		
+		// if the URL ID differs from the comment ID, the comment cannot be
+		// processed
+		if (!commentId.equals(id))
+		{
+			// TODO: set error message
+			setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
+			return;
 		}
 		
 		// set the object type to comment and relocate the original if necessary
@@ -127,25 +132,24 @@ public class CommentsResource extends ServerResource
 		getResponse().setEntity(comment.toString(),
 				MediaType.APPLICATION_JSON);
 		
-		//TODO: return relative reference location
-		setLocationRef(new Reference(getReference())
-			.addSegment(comment.getId()));
-		setStatus(Status.SUCCESS_CREATED);
+		setStatus(Status.SUCCESS_OK);
 	}
 	
-	/**
-	 * Generates an ID for an comment.
-	 * 
-	 * @return A globally unique URI acceptable for use in a comment ID.
-	 */
-	private String generateId()
+	@Delete
+	public void deleteComment()
 	{
-		// TODO: allow this to be configured
-		return "tag:collabinate.com:" + UUID.randomUUID().toString();
+		// extract necessary information from the context
+		CollabinateWriter writer = (CollabinateWriter)getContext()
+				.getAttributes().get("collabinateWriter");
+		String tenantId = getAttribute("tenantId");
+		String entityId = getAttribute("entityId");
+		String activityId = getAttribute("activityId");
+		String commentId = getAttribute("commentId");
+		
+		// remove any existing comment
+		writer.deleteComment(tenantId, entityId, activityId, commentId);
 	}
 	
-	private static final int DEFAULT_COUNT = 20;
-	private static final String ORIGINAL_ID = "originalId";
 	private static final String COMMENT = "comment";
 	private static final String ORIGINAL_OBJECT_TYPE = "originalObjectType";
 	private static final String USER_ID = "userId";

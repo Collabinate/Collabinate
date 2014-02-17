@@ -208,6 +208,18 @@ public class CommentsResourceTest extends GraphResourceTest
 	}
 	
 	@Test
+	public void posted_raw_text_should_have_id_in_comment_when_retrieved()
+	{
+		addActivity();
+		post("test", MediaType.TEXT_PLAIN);
+		
+		ActivityStreamsCollection comments =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertNotNull(comments.get(0).getId());
+	}
+		
+	@Test
 	public void comment_should_always_use_comment_object_type()
 	{
 		addActivity();
@@ -233,15 +245,15 @@ public class CommentsResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void posted_raw_text_should_have_id_in_comment_when_retrieved()
+	public void user_id_should_be_preserved()
 	{
 		addActivity();
-		post("test", MediaType.TEXT_PLAIN);
+		post();
 		
-		ActivityStreamsCollection comments =
+		ActivityStreamsCollection comments = 
 				new ActivityStreamsCollection(get().getEntityAsText());
-		
-		assertNotNull(comments.get(0).getId());
+
+		assertEquals("user", comments.get(0).getCollabinateValue("userId"));
 	}
 	
 	@Test

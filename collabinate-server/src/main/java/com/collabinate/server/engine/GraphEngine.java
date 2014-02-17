@@ -107,6 +107,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		return activity;
 	}
 	
+	@Override
 	public ActivityStreamsObject getComment(String tenantId, String entityId,
 			String activityId, String commentId)
 	{

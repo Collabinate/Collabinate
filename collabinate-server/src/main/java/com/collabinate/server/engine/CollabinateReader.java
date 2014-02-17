@@ -4,6 +4,7 @@ import org.joda.time.DateTime;
 
 import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.activitystreams.ActivityStreamsCollection;
+import com.collabinate.server.activitystreams.ActivityStreamsObject;
 
 /**
  * The interface for a Collabinate server that performs read (retrieval)
@@ -89,6 +90,20 @@ public interface CollabinateReader
 	 */
 	public ActivityStreamsCollection getFollowers(String tenantId,
 			String entityId, int startIndex, int followersToReturn);
+	
+	/**
+	 * Retrieves a single comment, or null if no matching comment exists.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param entityId The ID of the entity to which the activity belongs.
+	 * @param activityId The ID of the activity from which to retrieve the
+	 * comment.
+	 * @param commentId The ID of the comment to retrieve.
+	 * @return The ActivityStreamsObject representation of the comment matching
+	 * the parameters, or null if none exists.
+	 */
+	public ActivityStreamsObject getComment(String tenantId, String entityId,
+			String activityId, String commentId);
 	
 	/**
 	 * Retrieves the collection of comments on an activity.
