@@ -129,9 +129,10 @@ public interface CollabinateReader
 	 * @param entityId The ID of the entity to which the activity belongs.
 	 * @param activityId The ID of the activity to check for the like
 	 * relationship.
-	 * @return true if the user likes the activity, otherwise false.
+	 * @return The date the user liked the activity, or null if no like
+	 * relationship exists.
 	 */
-	public boolean userLikesActivity(String tenantId, String userId,
+	public DateTime userLikesActivity(String tenantId, String userId,
 			String entityId, String activityId);
 	
 	/**

@@ -65,10 +65,6 @@ public class ActivityResource extends ServerResource
 		CollabinateWriter writer = (CollabinateWriter)getContext()
 				.getAttributes().get("collabinateWriter");
 		
-		if (null == writer)
-			throw new IllegalStateException(
-					"Context does not contain a CollabinateWriter");
-		
 		// remove any existing activity
 		writer.deleteActivity(tenantId, entityId, activityId);
 		

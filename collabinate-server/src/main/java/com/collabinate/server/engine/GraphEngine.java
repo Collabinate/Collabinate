@@ -1083,14 +1083,14 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public boolean userLikesActivity(String tenantId, String userId,
+	public DateTime userLikesActivity(String tenantId, String userId,
 			String entityId, String activityId)
 	{
 		Vertex activityVertex =
 				getActivityVertex(tenantId, entityId, activityId);
 		
 		if (null == activityVertex)
-			return false;
+			return null;
 		
 		for (Edge likeEdge : activityVertex.getEdges(
 				Direction.IN, STRING_LIKES))
@@ -1098,11 +1098,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (userId.equals(likeEdge.getProperty(STRING_ENTITY_ID)))
 			{
 				graph.commit();
-				return true;
+				return DateTime.parse(
+						(String)likeEdge.getProperty(STRING_CREATED));
 			}
 		}
 		
-		return false;
+		return null;
 	}
 	
 	@Override

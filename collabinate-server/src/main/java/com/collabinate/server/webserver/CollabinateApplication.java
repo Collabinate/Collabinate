@@ -121,6 +121,8 @@ public class CollabinateApplication extends Application
 		resourceRouter.attach("/users/{userId}/following/{entityId}",
 				FollowingEntityResource.class);
 		resourceRouter.attach("/users/{userId}/feed", FeedResource.class);
+		resourceRouter.attach("/users/{userId}/likes/{entityId}/{activityId}",
+				LikeResource.class);
 		
 		// plugin resource paths skip the authenticator
 		addPlugins(primaryRouter, resourceRouter);
