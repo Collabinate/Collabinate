@@ -119,4 +119,18 @@ public interface CollabinateReader
 	public ActivityStreamsCollection getComments(String tenantId,
 			String entityId, String activityId, int startIndex,
 			int commentsToReturn);
+	
+	/**
+	 * Retrieves the status of a like relationship between a user and an
+	 * activity.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param userId The ID of the user to check for the like relationship.
+	 * @param entityId The ID of the entity to which the activity belongs.
+	 * @param activityId The ID of the activity to check for the like
+	 * relationship.
+	 * @return true if the user likes the activity, otherwise false.
+	 */
+	public boolean userLikesActivity(String tenantId, String userId,
+			String entityId, String activityId);
 }

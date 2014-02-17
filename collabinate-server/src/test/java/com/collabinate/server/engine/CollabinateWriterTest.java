@@ -234,4 +234,82 @@ public abstract class CollabinateWriterTest
 		exception.expectMessage("commentId");
 		writer.deleteComment("c", "entity", "activity", null);
 	}
+	
+	@Test
+	public void like_activity_should_not_allow_null_tenant_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("tenantId");
+		writer.likeActivity(null, "user", "entity", "activity");
+	}
+
+	@Test
+	public void like_activity_should_not_allow_null_user_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("userId");
+		writer.likeActivity("c", null, "entity", "activity");
+	}
+
+	@Test
+	public void like_activity_should_not_allow_null_entity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entityId");
+		writer.likeActivity("c", "user", null, "activity");
+	}
+
+	@Test
+	public void like_activity_should_not_allow_null_activity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("activityId");
+		writer.likeActivity("c", "user", "entity", null);
+	}
+	
+	@Test
+	public void liking_same_activity_multiple_times_should_succeed()
+	{
+		writer.likeActivity("c", "user", "entity", "activity");
+		writer.likeActivity("c", "user", "entity", "activity");
+	}
+	
+	@Test
+	public void unlike_activity_should_not_allow_null_tenant_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("tenantId");
+		writer.unlikeActivity(null, "user", "entity", "activity");
+	}
+
+	@Test
+	public void unlike_activity_should_not_allow_null_user_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("userId");
+		writer.unlikeActivity("c", null, "entity", "activity");
+	}
+
+	@Test
+	public void unlike_activity_should_not_allow_null_entity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entityId");
+		writer.unlikeActivity("c", "user", null, "activity");
+	}
+
+	@Test
+	public void unlike_activity_should_not_allow_null_activity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("activityId");
+		writer.unlikeActivity("c", "user", "entity", null);
+	}
+	
+	@Test
+	public void unliking_same_activity_multiple_times_should_succeed()
+	{
+		writer.unlikeActivity("c", "user", "entity", "activity");
+		writer.unlikeActivity("c", "user", "entity", "activity");
+	}
 }

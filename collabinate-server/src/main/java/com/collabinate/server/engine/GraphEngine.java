@@ -984,6 +984,125 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		return followers;
 	}
+	
+	@Override
+	public void likeActivity(String tenantId, String userId, String entityId,
+			String activityId)
+	{
+		if (null == tenantId)
+		{
+			throw new IllegalArgumentException("tenantId must not be null");
+		}
+		
+		if (null == userId)
+		{
+			throw new IllegalArgumentException("userId must not be null");
+		}
+		
+		if (null == entityId)
+		{
+			throw new IllegalArgumentException("entityId must not be null");
+		}
+		
+		if (null == activityId)
+		{
+			throw new IllegalArgumentException("activityId must not be null");
+		}
+		
+		Vertex activityVertex =
+				getActivityVertex(tenantId, entityId, activityId);
+		
+		if (null == activityVertex)
+			return;
+		
+		Vertex userVertex =
+				getOrCreateEntityVertex(tenantId, userId);
+		
+		if (userVertex.getVertices(Direction.OUT, STRING_LIKES)
+				.iterator().hasNext())
+			return;
+		
+		Edge likeEdge = userVertex.addEdge(STRING_LIKES, activityVertex);
+		likeEdge.setProperty(STRING_TENANT_ID, tenantId);
+		likeEdge.setProperty(STRING_ENTITY_ID, userId);
+		likeEdge.setProperty(STRING_CREATED,
+				DateTime.now(DateTimeZone.UTC).toString());
+		
+		graph.commit();
+	}
+
+	@Override
+	public void unlikeActivity(String tenantId, String userId, String entityId,
+			String activityId)
+	{
+		if (null == tenantId)
+		{
+			throw new IllegalArgumentException("tenantId must not be null");
+		}
+		
+		if (null == userId)
+		{
+			throw new IllegalArgumentException("userId must not be null");
+		}
+		
+		if (null == entityId)
+		{
+			throw new IllegalArgumentException("entityId must not be null");
+		}
+		
+		if (null == activityId)
+		{
+			throw new IllegalArgumentException("activityId must not be null");
+		}
+		
+		Vertex activityVertex =
+				getActivityVertex(tenantId, entityId, activityId);
+		
+		if (null == activityVertex)
+			return;
+		
+		Edge toRemove = null;
+		
+		for (Edge likeEdge : activityVertex.getEdges(
+				Direction.IN, STRING_LIKES))
+		{
+			if (userId.equals(likeEdge.getProperty(STRING_ENTITY_ID)))
+			{
+				toRemove = likeEdge;
+			}
+		}
+		
+		if (null != toRemove)
+		{
+			toRemove.remove();
+			toRemove = null;
+		}
+		
+		graph.commit();
+	}
+	
+	@Override
+	public boolean userLikesActivity(String tenantId, String userId,
+			String entityId, String activityId)
+	{
+		Vertex activityVertex =
+				getActivityVertex(tenantId, entityId, activityId);
+		
+		if (null == activityVertex)
+			return false;
+		
+		for (Edge likeEdge : activityVertex.getEdges(
+				Direction.IN, STRING_LIKES))
+		{
+			if (userId.equals(likeEdge.getProperty(STRING_ENTITY_ID)))
+			{
+				graph.commit();
+				return true;
+			}
+		}
+		
+		return false;
+	}
 
 	/**
 	 * Inserts an entity into the feed for a user.
@@ -1431,4 +1550,5 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private static final String STRING_OVERLAY = "Overlay";
 	private static final String STRING_TYPE = "Type";
 	private static final String STRING_CREATED = "Created";
+	private static final String STRING_LIKES = "Likes";
 }

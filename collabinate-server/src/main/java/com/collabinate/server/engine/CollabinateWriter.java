@@ -91,4 +91,26 @@ public interface CollabinateWriter
 	 */
 	public void deleteComment(String tenantId, String entityId,
 			String activityId, String commentId);
+	
+	/**
+	 * Adds a like relationship between the given user and the given activity.
+	 * 
+	 * @param tenantId The tenant for the operation.
+	 * @param userId The ID of the user that likes the entity.
+	 * @param entityId The ID of the entity to which the activity belongs.
+	 * @param activityId The ID of the liked activity.
+	 */
+	public void likeActivity(String tenantId, String userId, String entityId,
+			String activityId);
+	/**
+	 * Removes a like relationship between the given user and the given
+	 * activity.
+	 * 
+	 * @param tenantId The tenant for the operation.
+	 * @param userId The ID of the user that unlikes the entity.
+	 * @param entityId The ID of the entity to which the activity belongs.
+	 * @param activityId The ID of the unliked activity.
+	 */
+	public void unlikeActivity(String tenantId, String userId, String entityId,
+			String activityId);
 }

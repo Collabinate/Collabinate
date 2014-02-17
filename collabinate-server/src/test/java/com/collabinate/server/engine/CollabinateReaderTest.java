@@ -863,4 +863,32 @@ public abstract class CollabinateReaderTest
 		//cleanup
 		writer.deleteActivity("test-035", "entity", "activity");		
 	}
+	
+	@Test
+	public void user_likes_should_return_false_for_never_liked_activity()
+	{
+		assertFalse(reader.userLikesActivity(
+				"test-036", "user", "entity", "activity"));
+	}
+	
+	@Test
+	public void user_likes_should_return_true_for_liked_activity()
+	{
+		writer.addActivity("test-037", "entity",
+				getActivity("activity", null, null));
+		writer.likeActivity("test-037", "user", "entity", "activity");
+		assertTrue(reader.userLikesActivity(
+				"test-037", "user", "entity", "activity"));
+	}
+	
+	@Test
+	public void user_likes_should_return_false_for_unliked_activity()
+	{
+		writer.addActivity("test-038", "entity",
+				getActivity("activity", null, null));
+		writer.likeActivity("test-038", "user", "entity", "activity");
+		writer.unlikeActivity("test-038", "user", "entity", "activity");
+		assertFalse(reader.userLikesActivity(
+				"test-038", "user", "entity", "activity"));
+	}
 }
