@@ -1107,9 +1107,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	@Override
-	public ActivityStreamsCollection getLikingUsers(String tenantId,
+	public ActivityStreamsCollection getLikes(String tenantId,
 			String entityId, String activityId, int startIndex,
-			int usersToReturn)
+			int likesToReturn)
 	{
 		Vertex activityVertex =
 				getActivityVertex(tenantId, entityId, activityId);
@@ -1117,7 +1117,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (null == activityVertex)
 			return null;
 		
-		ActivityStreamsCollection likers = new ActivityStreamsCollection();
+		ActivityStreamsCollection likes = new ActivityStreamsCollection();
 		int currentPosition = 0;
 		
 		for(Edge likeEdge : activityVertex.getEdges(
@@ -1125,17 +1125,26 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			if (currentPosition >= startIndex)
 			{
-				ActivityStreamsObject liker = new ActivityStreamsObject();
-				liker.setId((String)likeEdge.getProperty(STRING_ENTITY_ID));
-				likers.add(liker);
-				if (likers.size() >= usersToReturn)
+				ActivityStreamsObject actor = new ActivityStreamsObject();
+				actor.setId((String)likeEdge.getProperty(STRING_ENTITY_ID));
+				ActivityStreamsObject activity = new ActivityStreamsObject();
+				activity.setId(activityId);
+				Activity like = new Activity();
+				like.setActor(actor);
+				like.setObject(activity);
+				like.setVerb(STRING_LIKE);
+				like.setPublished(DateTime.parse(
+						(String)likeEdge.getProperty(STRING_CREATED)));
+				
+				likes.add(like);
+				if (likes.size() >= likesToReturn)
 					break;
 			}
 			
 			currentPosition++;
 		}
 		
-		return likers;
+		return likes;
 	}
 
 	/**
@@ -1585,4 +1594,5 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private static final String STRING_TYPE = "Type";
 	private static final String STRING_CREATED = "Created";
 	private static final String STRING_LIKES = "Likes";
+	private static final String STRING_LIKE = "like";
 }

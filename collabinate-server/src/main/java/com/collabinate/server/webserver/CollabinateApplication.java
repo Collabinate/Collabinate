@@ -116,6 +116,9 @@ public class CollabinateApplication extends Application
 		resourceRouter.attach(
 				"/entities/{entityId}/stream/{activityId}/comments/{commentId}",
 				CommentResource.class);
+		resourceRouter.attach(
+				"/entities/{entityId}/stream/{activityId}/likes",
+				LikesResource.class);
 		resourceRouter.attach("/users/{userId}/following",
 				FollowingResource.class);
 		resourceRouter.attach("/users/{userId}/following/{entityId}",
