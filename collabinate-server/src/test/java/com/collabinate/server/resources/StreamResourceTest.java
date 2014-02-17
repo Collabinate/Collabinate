@@ -87,7 +87,7 @@ public class StreamResourceTest extends GraphResourceTest
 	
 	@Test
 	public void item_added_to_stream_should_create_and_return_child_location()
-	{		
+	{
 		assertEquals(
 				getRequest(Method.POST, null).getResourceRef().getPath() + "/",
 				post().getLocationRef().getParentRef().getPath());
@@ -220,7 +220,7 @@ public class StreamResourceTest extends GraphResourceTest
 				new ActivityStreamsCollection(get().getEntityAsText());
 		
 		assertEquals(dateTime1, stream.get(0).getPublished());
-}
+	}
 	
 	@Override
 	protected String getResourcePath()

@@ -910,8 +910,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			if (edge.getVertex(Direction.IN).getId().equals(entity.getId()))
 			{
+				DateTime followDate =
+					DateTime.parse((String)edge.getProperty(STRING_CREATED));
+				
 				graph.commit();
-				return DateTime.parse((String)edge.getProperty(STRING_CREATED));
+				
+				return followDate;
 			}
 		}
 		
@@ -1268,13 +1272,17 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			String entityId, String activityId, int startIndex,
 			int commentsToReturn)
 	{
-
+		ActivityStreamsCollection comments = null;
+		
 		Vertex activityVertex = 
 				getActivityVertex(tenantId, entityId, activityId);
 		
-		ActivityStreamsCollection comments = new ActivityStreamsCollection(
-				deserializeComments(getCommentVertices(
-						activityVertex, startIndex, commentsToReturn)));
+		if (null != activityVertex)
+		{
+			comments = new ActivityStreamsCollection(
+					deserializeComments(getCommentVertices(
+							activityVertex, startIndex, commentsToReturn)));
+		}
 		
 		graph.commit();
 		

@@ -49,6 +49,7 @@ public class ActivityResource extends ServerResource
 		}
 		else
 		{
+			// TODO: set error message
 			setStatus(Status.CLIENT_ERROR_NOT_FOUND);
 			return null;
 		}
@@ -86,6 +87,7 @@ public class ActivityResource extends ServerResource
 		// processed
 		if (!activityId.equals(id))
 		{
+			// TODO: set error message
 			setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 			return;
 		}
