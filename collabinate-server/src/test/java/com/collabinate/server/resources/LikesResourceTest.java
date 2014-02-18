@@ -92,6 +92,65 @@ public class LikesResourceTest extends GraphResourceTest
 		assertThat(get().getEntityAsText(), not(containsString("user1")));
 	}
 	
+	@Test
+	public void collection_should_include_total_items_property()
+	{
+		addActivity();
+		assertThat(get().getEntityAsText(), containsString("totalItems"));
+	}
+	
+	@Test
+	public void collection_should_include_zero_count_for_no_likes()
+	{
+		addActivity();
+		ActivityStreamsCollection likes =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(0, likes.getTotalItems());
+	}
+	
+	@Test
+	public void collection_should_include_count_that_matches_likes()
+	{
+		addActivity();
+		// make user user1 like activity
+		Request request = new Request(Method.PUT,
+			"riap://application/1/tenant/users/user1/likes/entity/activity");
+		component.handle(request);
+		// make user user2 like activity
+		request = new Request(Method.PUT,
+			"riap://application/1/tenant/users/user2/likes/entity/activity");
+		component.handle(request);
+
+		ActivityStreamsCollection likes =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(2, likes.getTotalItems());
+	}
+	
+	@Test
+	public void collection_count_should_account_for_unlikes()
+	{
+		addActivity();
+		// make user user1 like activity
+		Request request = new Request(Method.PUT,
+			"riap://application/1/tenant/users/user1/likes/entity/activity");
+		component.handle(request);
+		// make user user2 like activity
+		request = new Request(Method.PUT,
+			"riap://application/1/tenant/users/user2/likes/entity/activity");
+		component.handle(request);
+		// make user user1 unlike activity
+		request = new Request(Method.DELETE,
+			"riap://application/1/tenant/users/user1/likes/entity/activity");
+		component.handle(request);
+
+		ActivityStreamsCollection likes =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(1, likes.getTotalItems());
+	}
+	
 	/**
 	 * Prepares for like work by creating an activity.
 	 */

@@ -75,6 +75,41 @@ public class ActivityStreamsCollection extends ActivityStreamsObject
 	}
 	
 	/**
+	 * Gets a non-negative integer specifying the total number of objects
+	 * contained by the logical view of the collection. This number might not
+	 * reflect the actual number of items serialized within the Collection
+	 * object instance.
+	 * 
+	 * @return A non-negative integer representing the total count.
+	 */
+	public int getTotalItems()
+	{
+		int totalItems = 0;
+		
+		JsonElement totalItemsElement = jsonObject.get(TOTAL_ITEMS);
+		
+		if (null != totalItemsElement)
+		{
+			totalItems = totalItemsElement.getAsInt();
+		}
+		
+		return totalItems;
+	}
+	
+	/**
+	 * Sets a non-negative integer specifying the total number of objects
+	 * contained by the logical view of the collection. This number might not
+	 * reflect the actual number of items serialized within the Collection
+	 * object instance.
+	 * 
+	 * @param totalItems A non-negative integer representing the total count.
+	 */
+	public void setTotalItems(int totalItems)
+	{
+		jsonObject.addProperty(TOTAL_ITEMS, totalItems);
+	}
+	
+	/**
 	 * Returns an immutable copy of the current items collection.
 	 * 
 	 * @return An immutable list copy of the current items collection.
@@ -136,4 +171,5 @@ public class ActivityStreamsCollection extends ActivityStreamsObject
 	}
 	
 	protected static final String ITEMS = "items";
+	protected static final String TOTAL_ITEMS = "totalItems";
 }

@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
 import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.activitystreams.ActivityStreamsCollection;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
+import com.google.common.base.Joiner;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Vertex;
@@ -80,10 +81,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		Vertex entityVertex = getOrCreateEntityVertex(tenantId, entityId);
 		Vertex activityVertex = serializeActivity(activity, tenantId, entityId);
 		
-		if (insertActivity(entityVertex, activityVertex))
-			// if the inserted activity is first in its stream, it may have
-			// changed the entity order for feed paths
-			updateFeedPaths(tenantId, entityId, entityVertex);
+		// if the inserted activity is first in its stream, it may have
+		// changed the entity order for feed paths
+		boolean updateOrder = insertActivity(entityVertex, activityVertex);
+		adjustNumericProperty(entityVertex, STRING_STREAM_COUNT, 1);
+		updateFeed(tenantId, entityId, entityVertex, 1, updateOrder);		
 		
 		graph.commit();		
 	}
@@ -99,7 +101,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		if (null != activityVertex)
 		{
-			activity = deserializeActivity(activityVertex);
+			activity = new Activity(
+					(String)activityVertex.getProperty(STRING_CONTENT));
 		}
 		
 		graph.commit();
@@ -118,7 +121,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		if (null != commentVertex)
 		{
-			comment = deserializeComment(commentVertex);
+			comment = new ActivityStreamsObject(
+					(String)commentVertex.getProperty(STRING_CONTENT));
 		}
 		
 		graph.commit();
@@ -146,6 +150,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			entityVertex.setProperty(STRING_TYPE, STRING_ENTITY);
 			entityVertex.setProperty(STRING_CREATED,
 					DateTime.now(DateTimeZone.UTC).toString());
+			entityVertex.setProperty(STRING_STREAM_COUNT, 0);
+			entityVertex.setProperty(STRING_FEED_COUNT, 0);
+			entityVertex.setProperty(STRING_FOLLOWING_COUNT, 0);
+			entityVertex.setProperty(STRING_FOLLOWER_COUNT, 0);
 			graph.commit();
 		}
 		return entityVertex;
@@ -205,6 +213,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		activityVertex.setProperty(STRING_CREATED,
 				DateTime.now(DateTimeZone.UTC).toString());
 		activityVertex.setProperty(STRING_CONTENT, activity.toString());
+		activityVertex.setProperty(STRING_COMMENT_COUNT, 0);
+		activityVertex.setProperty(STRING_LIKE_COUNT, 0);
 		return activityVertex;
 	}
 	
@@ -496,39 +506,64 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	/**
-	 * Puts an entity into the correct chronological order in the feed paths
-	 * of all the users that follow it.  This is used for changes to the first
-	 * activity of an entity, which potentially changes its feed order.
+	 * Adjusts the feed count for each following user. Also, if updateOrder is
+	 * true, puts an entity into the correct chronological order in the feed
+	 * paths of all the users that follow it. The is used when the first
+	 * activity of an entity changes, which potentially changes its feed order. 
 	 * 
 	 * @param tenantId The ID of the tenant.
 	 * @param entityId The raw ID of the entity.
 	 * @param entity The entity for which followers are updated.
+	 * @param activityChange The number of activities that were added or removed
+	 * from the stream of the entity.
+	 * @param 
 	 */
-	private void updateFeedPaths(String tenantId, String entityId,
-			Vertex entity)
+	private void updateFeed(String tenantId, String entityId, Vertex entity,
+			int activityChange, boolean updateOrder)
 	{
 		// get all the users that follow the entity
 		Iterable<Vertex> usersInGraph =
 				entity.getVertices(Direction.IN, STRING_FOLLOWS);
 		
 		// copy the users to a separate list to prevent the collection
-		// underlying the iterable getting modified during processing
+		// underlying the iterable getting modified during processing,
+		// and adjust the feed counts while copying
 		ArrayList<Vertex> users = new ArrayList<Vertex>();
 		for (Vertex user : usersInGraph)
 		{
 			users.add(user);
+			adjustNumericProperty(user, STRING_FEED_COUNT, activityChange);
 		}
 		
-		// loop over each user and move the entity to the correct
-		// feed position by un-following and re-following
-		// TODO: is this the best way to do this?
-		String userId;
-		for (Vertex user : users)
+		if (updateOrder)
 		{
-			userId = user.getProperty(STRING_ENTITY_ID);
-			DateTime followed = unfollowEntity(tenantId, userId, entityId);
-			followEntity(tenantId, userId, entityId, followed);
+			// loop over each user and move the entity to the correct
+			// feed position by un-following and re-following
+			// TODO: is this the best way to do this?
+			String userId;
+			for (Vertex user : users)
+			{
+				userId = user.getProperty(STRING_ENTITY_ID);
+				DateTime followed = unfollowEntity(tenantId, userId, entityId);
+				followEntity(tenantId, userId, entityId, followed);
+			}
 		}
+	}
+	
+	/**
+	 * Increments or decrements the given numeric property of the given vertex
+	 * by the given amount.
+	 * 
+	 * @param vertex
+	 * @param property
+	 * @param amount
+	 */
+	private void adjustNumericProperty(Vertex vertex, String property,
+			int amount)
+	{
+		int value = (int)vertex.getProperty(property);
+		value = value + amount;
+		vertex.setProperty(property, value);
 	}
 	
 	@Override
@@ -555,6 +590,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			if (activityId.equals((String)getNextActivity(entityVertex)
 				.getProperty(STRING_ACTIVITY_ID)))
 			{
+				// if the deleted activity was first in its stream, it may have
+				// changed the entity order for feed paths
 				firstInStream = true;
 			}
 			
@@ -562,10 +599,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			
 			removeActivity(activityVertex);
 			
-			if (firstInStream)
-				// if the deleted activity was first in its stream, it may have
-				// changed the entity order for feed paths
-				updateFeedPaths(tenantId, entityId, entityVertex);
+			adjustNumericProperty(entityVertex, STRING_STREAM_COUNT, -1);
+
+			updateFeed(tenantId, entityId, entityVertex, -1, firstInStream);
 		}
 		
 		graph.commit();
@@ -653,8 +689,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		List<Vertex> activityVertices = new ArrayList<Vertex>();
 		
-		Vertex currentActivity = getNextActivity(
-				getOrCreateEntityVertex(tenantId, entityId));
+		Vertex entityVertex = getOrCreateEntityVertex(tenantId, entityId);
+		
+		Vertex currentActivity = getNextActivity(entityVertex);
 		
 		// advance along the stream, collecting vertices after we get to the
 		// start index, and stopping when we have enough to return or run out
@@ -674,8 +711,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		graph.commit();
 		
 		// we only have the vertices, the actual activities need to be created
-		return new ActivityStreamsCollection(
-				deserializeActivities(activityVertices));
+		return createCollection(activityVertices,
+				(int)entityVertex.getProperty(STRING_STREAM_COUNT));
 	}
 	
 	/**
@@ -716,78 +753,43 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	}
 	
 	/**
-	 * Turns a collection of activity vertices into a collection of activities.
+	 * Turns a collection of activity streams object containing vertices into an
+	 * ActivityStreamsCollection.
 	 * 
 	 * @param activityVertices The vertices to deserialize.
-	 * @return A collection of activities that were represented by the given
-	 * vertices.
+	 * @param totalItems The total logical number of items for the collection,
+	 * which may be more than the number of vertices passed.
+	 * @return An ActivityStreamsCollection that contains the objects in the
+	 * given vertices.
 	 */
-	private List<ActivityStreamsObject> deserializeActivities(
-			Collection<Vertex> activityVertices)
+	private ActivityStreamsCollection createCollection(
+			Collection<Vertex> vertices, int totalItems)
 	{
-		ArrayList<ActivityStreamsObject> activities =
-				new ArrayList<ActivityStreamsObject>();
+		StringBuilder sb = new StringBuilder("{\"totalItems\":");
+		sb.append(totalItems);
+		sb.append(",\"items\":[");
+		sb.append(Joiner.on(",").join(getActivityStreamsContent(vertices)));
+		sb.append("]}");
 		
-		for (final Vertex vertex : activityVertices)
+		return new ActivityStreamsCollection(sb.toString());
+	}
+	
+	/**
+	 * Extracts the Activity Streams formatted content from a set of vertices.
+	 * 
+	 * @param vertices The vertices from which to extract the content.
+	 * @return A collection of the string contents of the activities.
+	 */
+	private List<String> getActivityStreamsContent(Collection<Vertex> vertices)
+	{
+		List<String> content = new ArrayList<String>();
+		
+		for (Vertex vertex : vertices)
 		{
-			if (null != vertex)
-			{
-				activities.add(deserializeActivity(vertex));
-			}
+			content.add((String)vertex.getProperty(STRING_CONTENT));
 		}
 		
-		return activities;
-	}
-	
-	/**
-	 * Deserializes a vertex representing an activity.
-	 * 
-	 * @param activityVertex The vertex to deserialize.
-	 * @return An activity that was represented by the given vertex.
-	 */
-	private Activity deserializeActivity(final Vertex activityVertex)
-	{
-		String content = (String)activityVertex.getProperty(STRING_CONTENT);
-		
-		return new Activity(content);
-	}
-	
-	/**
-	 * Turns a collection of comment vertices into a collection of comments.
-	 * 
-	 * @param commentVertices The vertices to deserialize.
-	 * @return A collection of comments that were represented by the given
-	 * vertices.
-	 */
-	private List<ActivityStreamsObject> deserializeComments(
-			Collection<Vertex> commentVertices)
-	{
-		ArrayList<ActivityStreamsObject> comments =
-				new ArrayList<ActivityStreamsObject>();
-		
-		for (final Vertex vertex : commentVertices)
-		{
-			if (null != vertex)
-			{
-				comments.add(deserializeComment(vertex));
-			}
-		}
-		
-		return comments;
-	}
-	
-	/**
-	 * Deserializes a vertex representing an comment.
-	 * 
-	 * @param commentVertex The vertex to deserialize.
-	 * @return An activity streams object containing a comment that was
-	 * represented by the given vertex.
-	 */
-	private ActivityStreamsObject deserializeComment(final Vertex commentVertex)
-	{
-		String content = (String)commentVertex.getProperty(STRING_CONTENT);
-		
-		return new ActivityStreamsObject(content);
+		return content;
 	}
 	
 	@Override
@@ -837,6 +839,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		followEdge.setProperty(STRING_CREATED, followed.toString());
 		
 		insertFeedEntity(user, entity, tenantId);
+		
+		adjustNumericProperty(user, STRING_FEED_COUNT,
+				(int)entity.getProperty(STRING_STREAM_COUNT));
+		adjustNumericProperty(user, STRING_FOLLOWING_COUNT, 1);
+		adjustNumericProperty(entity, STRING_FOLLOWER_COUNT, 1);
 		
 		graph.commit();
 		
@@ -894,6 +901,11 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 				newEdge.setProperty(STRING_CREATED,
 						DateTime.now(DateTimeZone.UTC).toString());
 			}
+			
+			adjustNumericProperty(user, STRING_FEED_COUNT,
+					-(int)entity.getProperty(STRING_STREAM_COUNT));
+			adjustNumericProperty(user, STRING_FOLLOWING_COUNT, -1);
+			adjustNumericProperty(entity, STRING_FOLLOWER_COUNT, -1);			
 		}
 		
 		graph.commit();
@@ -949,6 +961,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			}
 			currentPosition++;
 		}
+		
+		following.setTotalItems((int)user.getProperty(STRING_FOLLOWING_COUNT));
 
 		graph.commit();
 		
@@ -979,6 +993,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			}
 			currentPosition++;
 		}
+		
+		followers.setTotalItems((int)entity.getProperty(STRING_FOLLOWER_COUNT));
 
 		graph.commit();
 		
@@ -1027,6 +1043,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		likeEdge.setProperty(STRING_ENTITY_ID, userId);
 		likeEdge.setProperty(STRING_CREATED,
 				DateTime.now(DateTimeZone.UTC).toString());
+		
+		adjustNumericProperty(activityVertex, STRING_LIKE_COUNT, 1);
 		
 		graph.commit();
 	}
@@ -1077,6 +1095,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		{
 			toRemove.remove();
 			toRemove = null;
+			adjustNumericProperty(activityVertex, STRING_LIKE_COUNT, -1);
 		}
 		
 		graph.commit();
@@ -1143,6 +1162,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			
 			currentPosition++;
 		}
+		
+		likes.setTotalItems((int)activityVertex.getProperty(STRING_LIKE_COUNT));
 		
 		return likes;
 	}
@@ -1313,7 +1334,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		graph.commit();
 		
-		return new ActivityStreamsCollection(deserializeActivities(activities));
+		return createCollection(activities,
+				(int)user.getProperty(STRING_FEED_COUNT));
 	}
 
 	/**
@@ -1390,6 +1412,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		insertComment(activityVertex, commentVertex, userId);
 		
+		adjustNumericProperty(activityVertex, STRING_COMMENT_COUNT, 1);
+		
 		graph.commit();
 	}
 	
@@ -1442,9 +1466,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		if (null != activityVertex)
 		{
-			comments = new ActivityStreamsCollection(
-					deserializeComments(getCommentVertices(
-							activityVertex, startIndex, commentsToReturn)));
+			comments = createCollection(getCommentVertices(
+					activityVertex, startIndex, commentsToReturn),
+					(int)activityVertex.getProperty(STRING_COMMENT_COUNT));
 		}
 		
 		graph.commit();
@@ -1536,6 +1560,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (null != commentVertex)
 		{
 			removeComment(commentVertex);
+			adjustNumericProperty(getActivityVertex(
+					tenantId, entityId, activityId), STRING_COMMENT_COUNT, -1);
 		}
 		
 		graph.commit();
@@ -1582,17 +1608,23 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private static final String STRING_ACTIVITY = "Activity";
 	private static final String STRING_COMMENT_ID = "CommentID";
 	private static final String STRING_COMMENT = "Comment";
+	private static final String STRING_COMMENT_COUNT = "CommentCount";
 	private static final String STRING_COMMENTS = "Comments";
 	private static final String STRING_COMMENTED = "Commented";
 	private static final String STRING_SORTTIME = "SortTime";
 	private static final String STRING_CONTENT = "Content";
 	private static final String STRING_FOLLOWS = "Follows";
+	private static final String STRING_FOLLOWING_COUNT = "FollowingCount";
+	private static final String STRING_FOLLOWER_COUNT = "FollowerCount";
 	private static final String STRING_STREAM = "Stream";
+	private static final String STRING_STREAM_COUNT = "StreamCount";
 	private static final String STRING_FEED = "Feed";
 	private static final String STRING_FEED_ENTITY = "FeedEntity";
+	private static final String STRING_FEED_COUNT = "FeedCount";
 	private static final String STRING_OVERLAY = "Overlay";
 	private static final String STRING_TYPE = "Type";
 	private static final String STRING_CREATED = "Created";
 	private static final String STRING_LIKES = "Likes";
 	private static final String STRING_LIKE = "like";
+	private static final String STRING_LIKE_COUNT = "LikeCount";
 }

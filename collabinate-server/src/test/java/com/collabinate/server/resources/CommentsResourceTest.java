@@ -18,6 +18,7 @@ import org.restlet.data.Method;
 import org.restlet.data.Status;
 import org.restlet.data.Tag;
 
+import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.activitystreams.ActivityStreamsCollection;
 import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.google.gson.JsonParser;
@@ -179,22 +180,23 @@ public class CommentsResourceTest extends GraphResourceTest
 		assertNotEquals("TEST", comments.get(0).getId());
 	}
 	
-//	@Test
-//	public void individual_comment_should_be_retrievable_via_generated_id()
-//	{
-//		String entityBody = "{\"id\":\"test\",\"content\":\"TEST\"}";
-//		Activity posted = new Activity(
-//				post(entityBody, MediaType.TEXT_PLAIN).getEntityAsText());
-//		
-//		Request request = new Request(Method.GET,
-//			 "riap://application/1/tenant/entities/entity"
-//				+ "/stream/activity/comments/"
-//				+ posted.getId());
-//		ActivityStreamsObject comment = new ActivityStreamsObject(
-//				component.handle(request).getEntityAsText());
-//
-//		assertEquals("TEST", comment.getContent());
-//	}
+	@Test
+	public void individual_comment_should_be_retrievable_via_generated_id()
+	{
+		addActivity();
+		String entityBody = "{\"id\":\"test\",\"content\":\"TEST\"}";
+		Activity posted = new Activity(
+				post(entityBody, MediaType.TEXT_PLAIN).getEntityAsText());
+		
+		Request request = new Request(Method.GET,
+			 "riap://application/1/tenant/entities/entity"
+				+ "/stream/activity/comments/"
+				+ posted.getId());
+		ActivityStreamsObject comment = new ActivityStreamsObject(
+				component.handle(request).getEntityAsText());
+
+		assertEquals("TEST", comment.getContent());
+	}
 	
 	@Test
 	public void original_id_should_be_preserved()
@@ -292,6 +294,57 @@ public class CommentsResourceTest extends GraphResourceTest
 				new ActivityStreamsCollection(get().getEntityAsText());
 		
 		assertEquals(dateTime1, comments.get(0).getPublished());
+	}
+	
+	@Test
+	public void collection_should_include_total_items_property()
+	{
+		addActivity();
+		assertThat(get().getEntityAsText(), containsString("totalItems"));
+	}
+	
+	@Test
+	public void collection_should_include_zero_count_for_empty_comments()
+	{
+		addActivity();
+		ActivityStreamsCollection comments =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(0, comments.getTotalItems());
+	}
+	
+	@Test
+	public void collection_should_include_count_that_matches_comments()
+	{
+		addActivity();
+		post();
+		post();
+
+		ActivityStreamsCollection comments =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(2, comments.getTotalItems());
+	}
+	
+	@Test
+	public void collection_count_should_account_for_deleted_comments()
+	{
+		addActivity();
+		post();
+		post();
+		
+		ActivityStreamsObject deleted =
+				new ActivityStreamsObject(post().getEntityAsText());
+		Request request = new Request(Method.DELETE,
+			"riap://application/1/tenant/entities/entity/"
+			+ "stream/activity/comments/"
+			+ deleted.getId());
+		component.handle(request);
+
+		ActivityStreamsCollection comments =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(2, comments.getTotalItems());
 	}
 	
 	/**

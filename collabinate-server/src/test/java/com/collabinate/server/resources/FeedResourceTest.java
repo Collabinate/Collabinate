@@ -11,6 +11,8 @@ import org.restlet.data.Method;
 import org.restlet.data.Status;
 import org.restlet.data.Tag;
 
+import com.collabinate.server.activitystreams.Activity;
+import com.collabinate.server.activitystreams.ActivityStreamsCollection;
 import com.google.gson.JsonParser;
 
 /**
@@ -133,6 +135,122 @@ public class FeedResourceTest extends GraphResourceTest
 		
 		assertThat(responseText, containsString(entityBody1));		
 		assertThat(responseText, containsString(entityBody2));		
+	}
+	
+	@Test
+	public void collection_should_include_total_items_property()
+	{
+		assertThat(get().getEntityAsText(), containsString("totalItems"));
+	}
+	
+	@Test
+	public void collection_should_include_zero_count_for_empty_feed()
+	{
+		ActivityStreamsCollection feed =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(0, feed.getTotalItems());
+	}
+	
+	@Test
+	public void collection_should_include_count_that_matches_feed()
+	{
+		// add activity TEST-A to the stream of entity 1
+		Request request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity1/stream");
+		String entityBody1 = "TEST-A";
+		request.setEntity(entityBody1, MediaType.TEXT_PLAIN);
+		component.handle(request);
+		
+		// add activity TEST-B to the stream of entity 2
+		request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity2/stream");
+		String entityBody2 = "TEST-B";
+		request.setEntity(entityBody2, MediaType.TEXT_PLAIN);
+		component.handle(request);
+		
+		// follow the entities
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity1");
+		component.handle(request);
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity2");
+		component.handle(request);
+		
+
+		ActivityStreamsCollection feed =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(2, feed.getTotalItems());
+	}
+	
+	@Test
+	public void collection_count_should_account_for_deleted_activities()
+	{
+		// add activity to the stream of entity 1
+		Request request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity1/stream");
+		String deleteId = (new Activity(component.handle(request)
+				.getEntityAsText())).getId();
+		component.handle(request);
+		
+		// add activity to the stream of entity 2
+		request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity2/stream");
+		component.handle(request);
+		component.handle(request);
+		component.handle(request);
+		
+		// follow the entities
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity1");
+		component.handle(request);
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity2");
+		component.handle(request);
+		
+		request = new Request(Method.DELETE,
+			"riap://application/1/tenant/entities/entity1/stream/" + deleteId);
+		component.handle(request);
+
+		ActivityStreamsCollection feed =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(4, feed.getTotalItems());
+	}
+	
+	@Test
+	public void collection_count_should_account_for_unfollowed_entities()
+	{
+		// add activity to the stream of entity 1
+		Request request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity1/stream");
+		component.handle(request);
+		component.handle(request);
+		
+		// add activity to the stream of entity 2
+		request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity2/stream");
+		component.handle(request);
+		component.handle(request);
+		component.handle(request);
+		
+		// follow the entities
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity1");
+		component.handle(request);
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity2");
+		component.handle(request);
+		
+		request = new Request(Method.DELETE,
+			"riap://application/1/tenant/users/user/following/entity1");
+		component.handle(request);
+
+		ActivityStreamsCollection feed =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(3, feed.getTotalItems());
 	}
 	
 	@Override

@@ -222,6 +222,51 @@ public class StreamResourceTest extends GraphResourceTest
 		assertEquals(dateTime1, stream.get(0).getPublished());
 	}
 	
+	@Test
+	public void collection_should_include_total_items_property()
+	{
+		assertThat(get().getEntityAsText(), containsString("totalItems"));
+	}
+	
+	@Test
+	public void collection_should_include_zero_count_for_empty_stream()
+	{
+		ActivityStreamsCollection stream =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(0, stream.getTotalItems());
+	}
+	
+	@Test
+	public void collection_should_include_count_that_matches_stream()
+	{
+		post();
+		post();
+
+		ActivityStreamsCollection stream =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(2, stream.getTotalItems());
+	}
+	
+	@Test
+	public void collection_count_should_account_for_deleted_activities()
+	{
+		post();
+		post();
+		
+		Activity deleted = new Activity(post().getEntityAsText());
+		Request request = new Request(Method.DELETE,
+				"riap://application/1/tenant/entities/entity/stream/"
+				+ deleted.getId());
+		component.handle(request);
+
+		ActivityStreamsCollection stream =
+				new ActivityStreamsCollection(get().getEntityAsText());
+		
+		assertEquals(2, stream.getTotalItems());
+	}
+	
 	@Override
 	protected String getResourcePath()
 	{
