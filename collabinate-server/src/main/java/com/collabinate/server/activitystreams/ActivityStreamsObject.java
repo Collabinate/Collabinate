@@ -281,6 +281,66 @@ public class ActivityStreamsObject
 				ISODateTimeFormat.dateTime().withZoneUTC()));
 	}
 	
+	/**
+	 * Gets information about the set of objects that can be considered to be
+	 * replies to the containing object.
+	 * 
+	 * @return An ActivityStreamsCollection representation of the replies
+	 * property.
+	 */
+	public ActivityStreamsCollection getReplies()
+	{
+		JsonElement replies = jsonObject.get(REPLIES);
+		
+		if (null != replies)
+		{
+			return new ActivityStreamsCollection(replies.toString());
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Sets information about the set of objects that can be considered to be
+	 * replies to the containing object.
+	 * 
+	 * @param replies An ActivityStreamsCollection containing the replies.
+	 */
+	public void setReplies(ActivityStreamsCollection replies)
+	{
+		jsonObject.add(REPLIES, replies.jsonObject);
+	}
+	
+	/**
+	 * Gets information about the set of objects that can be considered to be
+	 * likes of the containing object.
+	 * 
+	 * @return An ActivityStreamsCollection representation of the likes
+	 * property.
+	 */
+	public ActivityStreamsCollection getLikes()
+	{
+		JsonElement likes = jsonObject.get(LIKES);
+		
+		if (null != likes)
+		{
+			return new ActivityStreamsCollection(likes.toString());
+		}
+		
+		return null;
+	}
+	
+	/**
+	 * Sets information about the set of objects that can be considered to be
+	 * likes of the containing object.
+	 * 
+	 * @param replies An ActivityStreamsCollection containing the likes.
+	 */
+	public void setLikes(ActivityStreamsCollection likes)
+	{
+		jsonObject.add(LIKES, likes.jsonObject);
+	}
+	
 	@Override
 	public String toString()
 	{
@@ -359,5 +419,7 @@ public class ActivityStreamsObject
 	protected static final String OBJECT_TYPE = "objectType";
 	protected static final String PUBLISHED = "published";
 	protected static final String UPDATED = "updated";
+	protected static final String REPLIES = "replies";
+	protected static final String LIKES = "likes";
 	protected static final String COLLABINATE = "collabinate";
 }

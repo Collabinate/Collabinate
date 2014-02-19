@@ -54,6 +54,8 @@ public class ActivityStreamsCollection extends ActivityStreamsObject
 	 */
 	protected void ensureDefaultFields()
 	{
+		super.ensureDefaultFields();
+		
 		if (!jsonObject.has(ITEMS) || !jsonObject.get(ITEMS).isJsonArray())
 		{
 			JsonArray items = new JsonArray();
@@ -134,7 +136,7 @@ public class ActivityStreamsCollection extends ActivityStreamsObject
 	 * @param items The collection of ActivityStreamObjects used to populate the
 	 * items.
 	 */
-	protected void setItems(List<ActivityStreamsObject> items)
+	public void setItems(List<ActivityStreamsObject> items)
 	{
 		JsonArray array = new JsonArray();
 		

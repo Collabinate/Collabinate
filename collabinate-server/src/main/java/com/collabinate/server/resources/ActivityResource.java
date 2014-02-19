@@ -1,5 +1,7 @@
 package com.collabinate.server.resources;
 
+import java.util.UUID;
+
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
 import org.restlet.data.Tag;
@@ -11,6 +13,8 @@ import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
 
 import com.collabinate.server.activitystreams.Activity;
+import com.collabinate.server.activitystreams.ActivityStreamsCollection;
+import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
 import com.google.common.hash.Hashing;
@@ -32,12 +36,28 @@ public class ActivityResource extends ServerResource
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
 		String activityId = getAttribute("activityId");
+		String commentsString = getQueryValue("comments");
+		String likesString = getQueryValue("likes");
 
 		Activity matchingActivity =
 				reader.getActivity(tenantId, entityId, activityId);
 		
 		if (null != matchingActivity)
 		{
+			if (null != commentsString)
+			{
+				matchingActivity.setReplies(
+						reader.getComments(tenantId, entityId, activityId, 0,
+								Integer.parseInt(commentsString)));
+			}
+			
+			if (null != likesString)
+			{
+				matchingActivity.setLikes(
+						reader.getLikes(tenantId, entityId, activityId, 0,
+								Integer.parseInt(likesString)));
+			}
+			
 			Representation representation = new StringRepresentation(
 					matchingActivity.toString(), MediaType.APPLICATION_JSON);
 			representation.setTag(
@@ -59,11 +79,13 @@ public class ActivityResource extends ServerResource
 	public void putActivity(String activityContent)
 	{
 		// extract necessary information from the context
+		CollabinateWriter writer = (CollabinateWriter)getContext()
+				.getAttributes().get("collabinateWriter");
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
 		String activityId = getAttribute("activityId");
-		CollabinateWriter writer = (CollabinateWriter)getContext()
-				.getAttributes().get("collabinateWriter");
+		String ignoreCommentsString = getQueryValue("ignoreComments");
+		String ignoreLikesString = getQueryValue("ignoreLikes");
 		
 		// remove any existing activity
 		writer.deleteActivity(tenantId, entityId, activityId);
@@ -88,7 +110,58 @@ public class ActivityResource extends ServerResource
 			return;
 		}
 		
+		// keep track of the entityID in the activity
+		activity.setCollabinateValue("entityId", entityId);
+		
 		writer.addActivity(tenantId, entityId, activity);
+		
+		// if the activity has comments and we're not ignoring them,
+		// add them to the database properly
+		boolean ignoreComments = null != ignoreCommentsString &&
+				!ignoreCommentsString.equalsIgnoreCase("false");
+		
+		ActivityStreamsCollection replies = activity.getReplies();
+		
+		if (!ignoreComments && null != replies && replies.size() > 0)
+		{
+			for (ActivityStreamsObject comment : replies.getItems())
+			{
+				// ensure the comment has an id - set to generated id if not
+				String commentId = comment.getId();
+				if (null == commentId || commentId.equals(""))
+				{
+					commentId = generateCommentId();
+					comment.setId(commentId);
+				}
+				writer.addComment(tenantId, entityId, activityId, null,
+						comment);
+			}
+		}
+		
+		// if the activity has likes and we're not ignoring them,
+		// add them to the database properly
+		boolean ignoreLikes = null != ignoreLikesString &&
+				!ignoreLikesString.equalsIgnoreCase("false");
+		
+		ActivityStreamsCollection likes = activity.getLikes();
+		
+		if (!ignoreLikes && null != likes && likes.size() > 0)
+		{
+			for (ActivityStreamsObject likeObject : likes.getItems())
+			{
+				Activity like = new Activity(likeObject.toString());
+				ActivityStreamsObject actor = like.getActor();
+				if (null != actor)
+				{
+					String userId = actor.getId();
+					if (null != userId && !userId.equals(""))
+					{
+						writer.likeActivity(tenantId, userId, entityId,
+								activityId);
+					}
+				}
+			}
+		}
 		
 		// return the activity in the response body
 		getResponse().setEntity(activity.toString(),
@@ -113,5 +186,16 @@ public class ActivityResource extends ServerResource
 		
 		// remove any existing activity
 		writer.deleteActivity(tenantId, entityId, activityId);
+	}
+	
+	/**
+	 * Generates an ID for an comment.
+	 * 
+	 * @return A globally unique URI acceptable for use in a comment ID.
+	 */
+	private String generateCommentId()
+	{
+		// TODO: allow this to be configured
+		return "tag:collabinate.com:" + UUID.randomUUID().toString();
 	}
 }

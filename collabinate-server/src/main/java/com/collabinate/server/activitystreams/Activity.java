@@ -38,6 +38,8 @@ public class Activity extends ActivityStreamsObject
 	@Override
 	protected void ensureDefaultFields()
 	{
+		super.ensureDefaultFields();
+		
 		// test for published
 		if (null == getPublished())
 		{
