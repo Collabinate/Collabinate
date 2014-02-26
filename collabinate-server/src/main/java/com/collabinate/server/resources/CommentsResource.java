@@ -37,14 +37,14 @@ public class CommentsResource extends ServerResource
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
 		String activityId = getAttribute("activityId");
-		String startString = getQueryValue("start");
-		String countString = getQueryValue("count");
-		int start = null == startString ? 0 : Integer.parseInt(startString);
-		int count = null == countString ? DEFAULT_COUNT : 
-			Integer.parseInt(countString);
+		String skipString = getQueryValue("skip");
+		String takeString = getQueryValue("take");
+		int skip = null == skipString ? 0 : Integer.parseInt(skipString);
+		int take = null == takeString ? DEFAULT_COUNT : 
+			Integer.parseInt(takeString);
 		
 		ActivityStreamsCollection commentsCollection =
-			reader.getComments(tenantId, entityId, activityId, start, count);
+			reader.getComments(tenantId, entityId, activityId, skip, take);
 		
 		if (null != commentsCollection)
 		{
@@ -53,7 +53,7 @@ public class CommentsResource extends ServerResource
 					comments, MediaType.APPLICATION_JSON);
 			representation.setTag(
 				new Tag(Hashing.murmur3_128().hashUnencodedChars(
-				comments+tenantId+entityId+activityId+startString+countString)
+				comments+tenantId+entityId+activityId+skipString+takeString)
 				.toString(), false));
 			
 			return representation;
@@ -120,6 +120,10 @@ public class CommentsResource extends ServerResource
 		{
 			comment.setCollabinateValue(USER_ID, userId);
 		}
+		
+		// keep track of the entityID and activityID in the comment
+		comment.setCollabinateValue("entityId", entityId);
+		comment.setCollabinateValue("activityId", activityId);
 		
 		writer.addComment(tenantId, entityId, activityId, userId, comment);
 		

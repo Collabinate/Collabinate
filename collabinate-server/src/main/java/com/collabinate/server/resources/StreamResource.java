@@ -37,14 +37,14 @@ public class StreamResource extends ServerResource
 				.getAttributes().get("collabinateReader");
 		String tenantId = getAttribute("tenantId");
 		String entityId = getAttribute("entityId");
-		String startString = getQueryValue("start");
-		String countString = getQueryValue("count");
-		int start = null == startString ? 0 : Integer.parseInt(startString);
-		int count = null == countString ? DEFAULT_COUNT : 
-			Integer.parseInt(countString);
+		String skipString = getQueryValue("skip");
+		String takeString = getQueryValue("take");
+		int skip = null == skipString ? 0 : Integer.parseInt(skipString);
+		int take = null == takeString ? DEFAULT_COUNT : 
+			Integer.parseInt(takeString);
 		
 		ActivityStreamsCollection activitiesCollection =
-				reader.getStream(tenantId, entityId, start, count);
+				reader.getStream(tenantId, entityId, skip, take);
 		
 		appendCollections(activitiesCollection, reader, tenantId, entityId);
 		
@@ -53,7 +53,7 @@ public class StreamResource extends ServerResource
 		Representation representation = new StringRepresentation(
 				result, MediaType.APPLICATION_JSON);
 		representation.setTag(new Tag(Hashing.murmur3_128().hashUnencodedChars(
-				result+tenantId+entityId+startString+countString)
+				result+tenantId+entityId+skipString+takeString)
 				.toString(), false));
 		
 		return representation;

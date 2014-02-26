@@ -4,6 +4,8 @@ import org.restlet.resource.Get;
 import org.restlet.resource.Options;
 import org.restlet.resource.ServerResource;
 
+import com.collabinate.server.Collabinate;
+
 /**
  * Resource for tracing and displaying request information.
  * 
@@ -24,7 +26,10 @@ public class TraceResource extends ServerResource
 				+ "\nAgent name   : "
 				+ getRequest().getClientInfo().getAgentName()
 				+ "\nAgent version: "
-				+ getRequest().getClientInfo().getAgentVersion();
+				+ getRequest().getClientInfo().getAgentVersion()
+				+ "\nCollabinate version: "
+				+ Collabinate.getConfiguration()
+					.getString("collabinate.version", "Unknown");
 		return entity;
 	}
 }

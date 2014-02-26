@@ -952,4 +952,21 @@ public abstract class CollabinateReaderTest
 		//cleanup
 		writer.deleteActivity("test-042", "entity", "activity");
 	}
+	
+	@Test
+	public void get_likes_with_zero_count_should_return_empty_items()
+	{
+		writer.addActivity("test-043", "entity",
+				getActivity("activity", null, null));
+		writer.likeActivity("test-043", "user1", "entity", "activity");
+		writer.likeActivity("test-043", "user2", "entity", "activity");
+		
+		ActivityStreamsCollection likes =
+				reader.getLikes("test-043", "entity", "activity", 0, 0);
+		
+		assertEquals(0, likes.size());
+
+		//cleanup
+		writer.deleteActivity("test-043", "entity", "activity");
+	}
 }

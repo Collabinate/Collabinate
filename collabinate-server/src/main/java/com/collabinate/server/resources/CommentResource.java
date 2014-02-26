@@ -126,6 +126,10 @@ public class CommentResource extends ServerResource
 			comment.setCollabinateValue(USER_ID, userId);
 		}
 		
+		// keep track of the entityID and activityID in the comment
+		comment.setCollabinateValue("entityId", entityId);
+		comment.setCollabinateValue("activityId", activityId);
+		
 		writer.addComment(tenantId, entityId, activityId, userId, comment);
 		
 		// return the comment in the response body

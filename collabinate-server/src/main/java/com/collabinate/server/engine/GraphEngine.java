@@ -1142,6 +1142,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		for(Edge likeEdge : activityVertex.getEdges(
 				Direction.IN, STRING_LIKES))
 		{
+			if (likes.size() >= likesToReturn)
+				break;
+			
 			if (currentPosition >= startIndex)
 			{
 				ActivityStreamsObject actor = new ActivityStreamsObject();
@@ -1156,8 +1159,6 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 						(String)likeEdge.getProperty(STRING_CREATED)));
 				
 				likes.add(like);
-				if (likes.size() >= likesToReturn)
-					break;
 			}
 			
 			currentPosition++;
