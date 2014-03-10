@@ -969,4 +969,28 @@ public abstract class CollabinateReaderTest
 		//cleanup
 		writer.deleteActivity("test-043", "entity", "activity");
 	}
+	
+	@Test
+	public void liking_multiple_activities_should_succeed()
+	{
+		writer.addActivity("test-044", "entity",
+				getActivity("activity1", null, null));
+		writer.addActivity("test-044", "entity",
+				getActivity("activity2", null, null));
+		writer.likeActivity("test-044", "user", "entity", "activity1");
+		writer.likeActivity("test-044", "user", "entity", "activity2");
+		
+		ActivityStreamsCollection likes1 =
+				reader.getLikes("test-044", "entity", "activity1", 0, 1);
+		ActivityStreamsCollection likes2 =
+				reader.getLikes("test-044", "entity", "activity2", 0, 1);
+		
+		assertEquals(1, likes1.size());
+		assertEquals(1, likes2.size());
+
+		//cleanup
+		writer.deleteActivity("test-044", "entity", "activity1");
+		writer.deleteActivity("test-044", "entity", "activity2");
+	}
+	
 }

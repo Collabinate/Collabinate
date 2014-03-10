@@ -1031,13 +1031,14 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		if (null == activityVertex)
 			return;
 		
-		Vertex userVertex =
-				getOrCreateEntityVertex(tenantId, userId);
-		
-		if (userVertex.getVertices(Direction.OUT, STRING_LIKES)
-				.iterator().hasNext())
+		// already done if there is an incoming like edge matching the user ID
+		if (activityVertex.query().direction(Direction.IN).labels(STRING_LIKES)
+				.has(STRING_ENTITY_ID, userId).count() > 0)
 			return;
 		
+		Vertex userVertex =
+				getOrCreateEntityVertex(tenantId, userId);
+						
 		Edge likeEdge = userVertex.addEdge(STRING_LIKES, activityVertex);
 		likeEdge.setProperty(STRING_TENANT_ID, tenantId);
 		likeEdge.setProperty(STRING_ENTITY_ID, userId);
