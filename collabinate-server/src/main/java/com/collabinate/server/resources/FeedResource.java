@@ -3,6 +3,7 @@ package com.collabinate.server.resources;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.joda.time.DateTime;
 import org.restlet.data.MediaType;
 import org.restlet.data.Tag;
 import org.restlet.representation.Representation;
@@ -41,7 +42,7 @@ public class FeedResource extends ServerResource
 		ActivityStreamsCollection activitiesCollection =
 				reader.getFeed(tenantId, userId, skip, take);
 		
-		appendCollections(activitiesCollection, reader, tenantId);
+		appendCollections(activitiesCollection, reader, tenantId, userId);
 		
 		String result = activitiesCollection.toString();
 		
@@ -67,15 +68,19 @@ public class FeedResource extends ServerResource
 	 */
 	private void appendCollections(
 			ActivityStreamsCollection activitiesCollection,
-			CollabinateReader reader, String tenantId)
+			CollabinateReader reader, String tenantId, String userId)
 	{
 		String commentsString = getQueryValue("comments");
 		String likesString = getQueryValue("likes");
+		String userLikedString = getQueryValue("userLiked");
 		
-		if (null != commentsString || null != likesString)
+		if (null != commentsString || 
+			null != likesString || 
+			null != userLikedString)
 		{
 			boolean processComments = null != commentsString;
 			boolean processLikes = null != likesString;
+			boolean processUserLiked = null != userLikedString;
 			int comments = processComments ? 
 					Integer.parseInt(commentsString) : 0;
 			int likes = processLikes ?
@@ -98,6 +103,17 @@ public class FeedResource extends ServerResource
 				{
 					activity.setLikes(reader.getLikes(tenantId, entityId,
 						activity.getId(), 0, likes));
+				}
+				if (processUserLiked)
+				{
+					DateTime likedDate = reader.userLikesActivity(
+							tenantId, userId, entityId, activity.getId());
+					
+					if (null != likedDate)
+					{
+						activity.setCollabinateValue("likedByUser",
+								likedDate.toString());
+					}
 				}
 				
 				updatedActivities.add(activity);

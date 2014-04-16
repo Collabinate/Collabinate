@@ -253,9 +253,67 @@ public class FeedResourceTest extends GraphResourceTest
 		assertEquals(3, feed.getTotalItems());
 	}
 	
+	@Test
+	public void liked_item_in_feed_should_contain_user_like_indication()
+	{
+		// add activity to the stream of entity
+		Request request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity/stream");
+		String activityId = (new Activity(component.handle(request)
+				.getEntityAsText())).getId();
+		
+		// follow the entity
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity");
+		component.handle(request);
+		
+		// like the entity
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/likes/entity/"
+				+ activityId);
+		component.handle(request);
+		
+		ActivityStreamsCollection feed =
+				new ActivityStreamsCollection(get().getEntityAsText());
+
+		assertNotNull(feed.get(0).getCollabinateValue("likedByUser"));
+	}
+
+	@Test
+	public void unliked_item_in_feed_should_not_contain_user_like_indication()
+	{
+		// add activity to the stream of entity
+		Request request = new Request(Method.POST,
+				"riap://application/1/tenant/entities/entity/stream");
+		String activityId = (new Activity(component.handle(request)
+				.getEntityAsText())).getId();
+		
+		// follow the entity
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/following/entity");
+		component.handle(request);
+		
+		// like the entity
+		request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/likes/entity/"
+				+ activityId);
+		component.handle(request);
+		
+		// unlike the entity
+		request = new Request(Method.DELETE,
+				"riap://application/1/tenant/users/user/likes/entity/"
+				+ activityId);
+		component.handle(request);
+		
+		ActivityStreamsCollection feed =
+				new ActivityStreamsCollection(get().getEntityAsText());
+
+		assertNull(feed.get(0).getCollabinateValue("likedByUser"));
+	}
+
 	@Override
 	protected String getResourcePath()
 	{
-		return "/1/tenant/users/user/feed";
+		return "/1/tenant/users/user/feed?userLiked=true";
 	}
 }
