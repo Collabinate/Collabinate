@@ -85,7 +85,10 @@ public class CollabinateApplication extends Application
 		if (null != admin)
 			getContext().getAttributes().put("collabinateAdmin", admin);
 		
-		// primary router is the in-bound root - the first router
+		// global filter is the in-bound root - the first restlet
+		Filter globalFilter = new GlobalFilter(getContext());
+		
+		// primary router coordinates all routing - the first router
 		Router primaryRouter = new Router(getContext());
 		
 		// admin resources are handled specially
@@ -133,6 +136,7 @@ public class CollabinateApplication extends Application
 		// normal resource paths go through the authenticator
 		primaryRouter.attach("/{apiVersion}/{tenantId}", authenticator)
 			.setMatchingMode(Template.MODE_STARTS_WITH);
+		authenticator.setNext(resourceRouter);
 		
 		// trace resource for client debugging
 		primaryRouter.attach("/trace", TraceResource.class);
@@ -140,9 +144,10 @@ public class CollabinateApplication extends Application
 		// directory resource for static content
 		primaryRouter.attach("/", getStaticDirectoryResource());
 		
-		authenticator.setNext(resourceRouter);
+		// attach the primary router to the global filter
+		globalFilter.setNext(primaryRouter);
 		
-		return primaryRouter;
+		return globalFilter;
 	}
 	
 	/**
