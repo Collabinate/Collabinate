@@ -100,6 +100,7 @@ public class CollabinateApplication extends Application
 				TenantKeyResource.class);
 		adminRouter.attach("/tenants/{tenantId}/keys",
 				TenantKeysResource.class);
+		adminRouter.attach("/service/resetrequest", ResetRequestResource.class);
 		adminAuthenticator.setNext(adminRouter);
 		
 		// resource router handles the routing for post-authentication resources

@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
+import org.joda.time.DateTime;
 import org.restlet.data.MediaType;
 import org.restlet.data.Reference;
 import org.restlet.data.Status;
@@ -77,15 +78,21 @@ public class StreamResource extends ServerResource
 	{
 		String commentsString = getQueryValue("comments");
 		String likesString = getQueryValue("likes");
+		String userLikedString = getQueryValue("userLiked");
 		
-		if (null != commentsString || null != likesString)
+		if (null != commentsString || 
+			null != likesString ||
+			null != userLikedString)
 		{
 			boolean processComments = null != commentsString;
 			boolean processLikes = null != likesString;
+			boolean processUserLiked = null != userLikedString;
 			int comments = processComments ? 
 					Integer.parseInt(commentsString) : 0;
 			int likes = processLikes ?
 					Integer.parseInt(likesString) : 0;
+			String likingUser = processUserLiked ?
+					userLikedString : null;
 			List<ActivityStreamsObject> activities =
 					activitiesCollection.getItems();
 			List<ActivityStreamsObject> updatedActivities =
@@ -102,6 +109,17 @@ public class StreamResource extends ServerResource
 				{
 					activity.setLikes(reader.getLikes(tenantId, entityId,
 						activity.getId(), 0, likes));
+				}
+				if (processUserLiked)
+				{
+					DateTime likedDate = reader.userLikesActivity(
+							tenantId, likingUser, entityId, activity.getId());
+					
+					if (null != likedDate)
+					{
+						activity.setCollabinateValue("likedByUser",
+								likedDate.toString());
+					}
 				}
 				
 				updatedActivities.add(activity);

@@ -267,9 +267,52 @@ public class StreamResourceTest extends GraphResourceTest
 		assertEquals(2, stream.getTotalItems());
 	}
 	
+	
+	@Test
+	public void liked_item_in_stream_should_contain_user_like_indication()
+	{
+		// add activity to the stream of entity and get the ID
+		String activityId = (new Activity(post().getEntityAsText())).getId();
+		
+		// like the entity
+		Request request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/likes/entity/"
+				+ activityId);
+		component.handle(request);
+		
+		ActivityStreamsCollection stream =
+				new ActivityStreamsCollection(get().getEntityAsText());
+
+		assertNotNull(stream.get(0).getCollabinateValue("likedByUser"));
+	}
+
+	@Test
+	public void unliked_item_in_stream_should_not_contain_user_like_indication()
+	{
+		// add activity to the stream of entity and get the ID
+		String activityId = (new Activity(post().getEntityAsText())).getId();
+		
+		// like the entity
+		Request request = new Request(Method.PUT,
+				"riap://application/1/tenant/users/user/likes/entity/"
+				+ activityId);
+		component.handle(request);
+		
+		// unlike the entity
+		request = new Request(Method.DELETE,
+				"riap://application/1/tenant/users/user/likes/entity/"
+				+ activityId);
+		component.handle(request);
+		
+		ActivityStreamsCollection stream =
+				new ActivityStreamsCollection(get().getEntityAsText());
+
+		assertNull(stream.get(0).getCollabinateValue("likedByUser"));
+	}
+
 	@Override
 	protected String getResourcePath()
 	{
-		return "/1/tenant/entities/entity/stream";
+		return "/1/tenant/entities/entity/stream?userLiked=user";
 	}
 }

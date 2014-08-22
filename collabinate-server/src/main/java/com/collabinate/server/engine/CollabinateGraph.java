@@ -3,6 +3,7 @@ package com.collabinate.server.engine;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.Set;
 
@@ -132,6 +133,24 @@ public class CollabinateGraph implements KeyIndexableGraph
 			writer.outputGraph(file);
 			file.flush();
 			file.close();
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+		}
+	}
+	
+	/**
+	 * Outputs the graph to a stream.
+	 * 
+	 * @param stream The stream to which the data will be written.
+	 */
+	public void exportGraph(OutputStream stream)
+	{
+		try
+		{
+			GraphMLWriter.outputGraph(baseGraph, stream);
+			com.tinkerpop.blueprints.util.io.graphml.GraphMLReader reader;
 		}
 		catch (IOException e)
 		{

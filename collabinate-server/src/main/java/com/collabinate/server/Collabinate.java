@@ -31,9 +31,11 @@ import com.tinkerpop.blueprints.KeyIndexableGraph;
 public class Collabinate
 {
 	private static Configuration configuration;
+	private static CollabinateGraph graph;
 	private static CollabinateReader reader;
 	private static CollabinateWriter writer;
 	private static CollabinateAdmin admin;
+	private static Restlet webServer;
 	
 	static
 	{
@@ -69,19 +71,88 @@ public class Collabinate
 				version, build.equals("") ? "" : ("+" + build));
 		
 		// connect to the data store
+		connectGraphDatabase();
+		registerShutdownHook();
+		
+		// set up the back end engine
+		createEngine();
+		
+		// start the web server that handles service requests
+		initializeWeb();
+		
+		// output server startup time
+		long totalStartTime = System.currentTimeMillis() - startTime;
+		logger.info(String.format(
+				"Collabinate Server started in %1$d milliseconds",
+				totalStartTime));
+		
+		enableConsoleQuit();
+	}
+	
+	/**
+	 * Performs a complete recycle of the system, including shutdown and
+	 * recreation of the web server and the database reference. This is included
+	 * as a stopgap for unknown leaks or infrastructure issues.
+	 */
+	public static void resetService() throws Exception
+	{
+		logger.info("Service resetting...");
+		
+		// stop and destroy the web server, engine, and graph
+		webServer.stop();
+		webServer = null;
+		reader = null;
+		writer = null;
+		admin = null;
+		graph.shutdown();
+		graph = null;
+		
+		// recreate and restart the graph, engine, and web server
+		connectGraphDatabase();
+		createEngine();
+		initializeWeb();
+		
+		logger.info("Service reset.");
+	}
+	
+	/**
+	 * Opens a connection to the configured graph database.
+	 */
+	private static void connectGraphDatabase()
+	{
+		if (null != graph)
+			throw new IllegalStateException("Graph already connected");
+		
 		Graph configuredGraph = GraphFactory.open("graph.properties");
+		
 		if (!(configuredGraph instanceof KeyIndexableGraph))
 			throw new IllegalStateException(
 					"Configured graph is not a KeyIndexableGraph");
-		CollabinateGraph graph = new CollabinateGraph(
-				(KeyIndexableGraph)configuredGraph);
-		registerShutdownHook(graph);
 		
-		// create the engine
+		graph = new CollabinateGraph(
+				(KeyIndexableGraph)configuredGraph);
+	}
+	
+	/**
+	 * Creates the Collabinate engine for data handling.
+	 */
+	private static void createEngine()
+	{
 		GraphEngine engine = new GraphEngine(graph);
 		reader = engine;
 		writer = engine;
-		admin = new GraphAdmin(graph);
+		admin = new GraphAdmin(graph);		
+	}
+	
+	/**
+	 * Sets up the Restlet service that is the Collabinate front end.
+	 * 
+	 * @throws Exception
+	 */
+	private static void initializeWeb() throws Exception
+	{
+		if (null != webServer && webServer.isStarted())
+			throw new IllegalStateException("Web server is already started");
 		
 		// create the authenticator
 		ChallengeAuthenticator authenticator = new ChallengeAuthenticator(
@@ -92,19 +163,18 @@ public class Collabinate
 				new CollabinateVerifier(admin));
 		
 		// create the Restlet component and start it
-		CollabinateComponent server = new CollabinateComponent(reader, writer,
+		webServer = new CollabinateComponent(reader, writer,
 				admin, authenticator);
-		server.start();	
 		
-		// output server startup time
-		long totalStartTime = System.currentTimeMillis() - startTime;
-		logger.info(String.format(
-				"Collabinate Server started in %1$d milliseconds",
-				totalStartTime));
-		quit(server);
+		webServer.start();	
 	}
 
-	private static void quit(Restlet server) throws Exception
+	/**
+	 * Sets up the service for console termination, if a console is available.
+	 * 
+	 * @throws Exception
+	 */
+	private static void enableConsoleQuit() throws Exception
 	{
 		Console console = System.console();
 		if (null != console)
@@ -113,7 +183,7 @@ public class Collabinate
 			System.out.println("Press Enter to quit");
 			System.console().readLine();
 			logger.info("Collabinate Server shutting down...");
-			server.stop();
+			webServer.stop();
 		}
 		else
 		{
@@ -155,7 +225,7 @@ public class Collabinate
 	 * 
 	 * @param graph The graph that needs clean shutdown upon system shutdown.
 	 */
-	private static void registerShutdownHook(final Graph graph)
+	private static void registerShutdownHook()
 	{
 		Runtime.getRuntime().addShutdownHook(new Thread()
 		{
