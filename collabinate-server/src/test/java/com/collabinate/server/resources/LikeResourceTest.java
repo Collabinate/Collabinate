@@ -39,10 +39,10 @@ public class LikeResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void put_like_for_existing_activity_should_return_200()
+	public void put_like_for_existing_activity_should_return_204()
 	{
 		addActivity();
-		assertEquals(Status.SUCCESS_OK, put().getStatus());
+		assertEquals(Status.SUCCESS_NO_CONTENT, put().getStatus());
 	}
 
 	@Test
@@ -101,10 +101,10 @@ public class LikeResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void delete_like_for_existing_activity_should_return_200()
+	public void delete_like_for_existing_activity_should_return_204()
 	{
 		addActivity();
-		assertEquals(Status.SUCCESS_OK, delete().getStatus());
+		assertEquals(Status.SUCCESS_NO_CONTENT, delete().getStatus());
 	}
 	
 	@Test

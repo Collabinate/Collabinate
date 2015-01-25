@@ -3,8 +3,6 @@ package com.collabinate.server.resources;
 import org.restlet.data.Status;
 import org.restlet.resource.Post;
 import org.restlet.resource.ServerResource;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import com.collabinate.server.Collabinate;
 

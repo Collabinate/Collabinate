@@ -58,6 +58,9 @@ public class CollabinateComponentTest
 			component.stop();
 		}
 		graph.shutdown();
+		component.setContext(null);
+		component = null;
+		graph = null;
 	}
 	
 	@Test

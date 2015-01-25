@@ -80,6 +80,13 @@ public abstract class GraphResourceTest
 		}
 		
 		graph.clear();
+
+		component.setContext(null);
+		component = null;
+		admin = null;
+		server = null;
+		collabinateGraph = null;
+		graph = null;
 	}
 	
 	/**

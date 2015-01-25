@@ -140,9 +140,9 @@ public class CommentResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void delete_nonexistent_comment_should_return_200()
+	public void delete_nonexistent_comment_should_return_204()
 	{
-		assertEquals(Status.SUCCESS_OK, delete().getStatus());
+		assertEquals(Status.SUCCESS_NO_CONTENT, delete().getStatus());
 	}
 	
 	@Test

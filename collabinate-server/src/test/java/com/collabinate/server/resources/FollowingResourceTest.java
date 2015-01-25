@@ -125,16 +125,16 @@ public class FollowingResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void empty_post_should_return_200()
+	public void empty_post_should_return_204()
 	{
-		assertEquals(Status.SUCCESS_OK, post().getStatus());
+		assertEquals(Status.SUCCESS_NO_CONTENT, post().getStatus());
 	}
 	
 	@Test
-	public void post_of_empty_collection_should_return_200()
+	public void post_of_empty_collection_should_return_204()
 	{
 		ActivityStreamsCollection collection = new ActivityStreamsCollection();
-		assertEquals(Status.SUCCESS_OK,
+		assertEquals(Status.SUCCESS_NO_CONTENT,
 				post(collection.toString(), MediaType.APPLICATION_JSON)
 				.getStatus());
 	}

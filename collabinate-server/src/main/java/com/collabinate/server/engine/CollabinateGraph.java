@@ -150,7 +150,6 @@ public class CollabinateGraph implements KeyIndexableGraph
 		try
 		{
 			GraphMLWriter.outputGraph(baseGraph, stream);
-			com.tinkerpop.blueprints.util.io.graphml.GraphMLReader reader;
 		}
 		catch (IOException e)
 		{

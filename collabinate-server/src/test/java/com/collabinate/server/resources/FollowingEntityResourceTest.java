@@ -30,6 +30,14 @@ public class FollowingEntityResourceTest extends GraphResourceTest
 	public void following_entity_subsequent_times_should_return_200()
 	{
 		put();
+		
+		//TODO: deal with test issues caused by restlet
+		try {
+			Thread.sleep(1);
+		} catch (InterruptedException e) {
+			Thread.currentThread().interrupt();
+		}
+		
 		assertEquals(Status.SUCCESS_OK, put().getStatus());		
 	}
 	

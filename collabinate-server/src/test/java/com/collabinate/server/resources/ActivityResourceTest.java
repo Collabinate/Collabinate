@@ -136,9 +136,9 @@ public class ActivityResourceTest extends GraphResourceTest
 	}
 	
 	@Test
-	public void delete_nonexistent_activity_should_return_200()
+	public void delete_nonexistent_activity_should_return_204()
 	{
-		assertEquals(Status.SUCCESS_OK, delete().getStatus());
+		assertEquals(Status.SUCCESS_NO_CONTENT, delete().getStatus());
 	}
 	
 	@Test
