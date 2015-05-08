@@ -16,6 +16,7 @@ import org.restlet.engine.Engine;
 import org.restlet.security.Authenticator;
 
 import com.collabinate.server.engine.CollabinateGraph;
+import com.collabinate.server.engine.GraphAdmin;
 import com.collabinate.server.engine.GraphEngine;
 import com.collabinate.server.webserver.CollabinateComponent;
 import com.tinkerpop.blueprints.GraphFactory;
@@ -37,10 +38,11 @@ public class CollabinateComponentTest
 	{
 		graph = (KeyIndexableGraph)GraphFactory.open(
 				"src/test/resources/graph.properties");
-		GraphEngine server = new GraphEngine(
-				new CollabinateGraph(graph));
+		CollabinateGraph collabGraph = new CollabinateGraph(graph);
+		GraphEngine server = new GraphEngine(collabGraph);
+		GraphAdmin admin = new GraphAdmin(collabGraph);
 		Engine.setRestletLogLevel(Level.WARNING);
-		component = new CollabinateComponent(server, server, null,
+		component = new CollabinateComponent(server, server, admin,
 			new Authenticator(null) {
 				@Override
 				protected boolean authenticate(Request request, Response response)

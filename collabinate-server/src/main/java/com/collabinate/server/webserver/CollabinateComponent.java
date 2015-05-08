@@ -36,6 +36,9 @@ public class CollabinateComponent extends Component
 		if (null == writer)
 			throw new IllegalArgumentException("writer must not be null");
 		
+		if (null == admin)
+			throw new IllegalArgumentException("admin must not be null");
+		
 		if (null == authenticator)
 			throw new IllegalArgumentException(
 					"authenticator must not be null");
