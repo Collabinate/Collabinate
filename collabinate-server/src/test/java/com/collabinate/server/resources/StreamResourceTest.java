@@ -281,7 +281,7 @@ public class StreamResourceTest extends GraphResourceTest
 		component.handle(request);
 		
 		ActivityStreamsCollection stream =
-				new ActivityStreamsCollection(get().getEntityAsText());
+				new ActivityStreamsCollection(get("?userLiked=user").getEntityAsText());
 
 		assertNotNull(stream.get(0).getCollabinateValue("likedByUser"));
 	}
@@ -305,7 +305,7 @@ public class StreamResourceTest extends GraphResourceTest
 		component.handle(request);
 		
 		ActivityStreamsCollection stream =
-				new ActivityStreamsCollection(get().getEntityAsText());
+				new ActivityStreamsCollection(get("?userLiked=user").getEntityAsText());
 
 		assertNull(stream.get(0).getCollabinateValue("likedByUser"));
 	}
@@ -313,6 +313,6 @@ public class StreamResourceTest extends GraphResourceTest
 	@Override
 	protected String getResourcePath()
 	{
-		return "/1/tenant/entities/entity/stream?userLiked=user";
+		return "/1/tenant/entities/entity/stream";
 	}
 }
