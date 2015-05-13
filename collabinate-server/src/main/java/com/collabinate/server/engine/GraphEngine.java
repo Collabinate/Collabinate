@@ -231,6 +231,17 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			final String tenantId, final String entityId,
 			final String activityId)
 	{
+		DateTime currentDate = DateTime.now(DateTimeZone.UTC);
+		if (null == comment.getSortTime())
+		{
+			comment.setPublished(currentDate);
+		}
+		
+		if (comment.getId() == null || comment.getId().trim().isEmpty())
+		{
+			comment.setId(ActivityStreamsObject.generateUuidUrn());
+		}
+		
 		Vertex commentVertex = graph.addVertex(tenantId + "/" + entityId + "/"
 				+ activityId + "/" + comment.getId());
 		
@@ -241,8 +252,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		commentVertex.setProperty(STRING_TYPE, STRING_COMMENT);
 		commentVertex.setProperty(STRING_SORTTIME, 
 				comment.getSortTime().toString());
-		commentVertex.setProperty(STRING_CREATED,
-				DateTime.now(DateTimeZone.UTC).toString());
+		commentVertex.setProperty(STRING_CREATED, currentDate.toString());
 		commentVertex.setProperty(STRING_CONTENT, comment.toString());
 		
 		return commentVertex;

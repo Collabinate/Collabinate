@@ -1,5 +1,7 @@
 package com.collabinate.server.activitystreams;
 
+import java.util.UUID;
+
 import org.joda.time.DateTime;
 import org.joda.time.format.ISODateTimeFormat;
 
@@ -412,6 +414,17 @@ public class ActivityStreamsObject
 		
 		jsonObject.getAsJsonObject(COLLABINATE).addProperty(key, value);
 	}
+	
+	/**
+	 * Returns a new, randomly generated UUID URN.
+	 * 
+	 * @return a new randomly generated UUID URN.ß
+	 */
+	public static String generateUuidUrn()
+	{
+		return UUID_URN_PREFIX + UUID.randomUUID().toString();
+	}
+	
 
 	protected static final String ID = "id";
 	protected static final String CONTENT = "content";
@@ -422,4 +435,5 @@ public class ActivityStreamsObject
 	protected static final String REPLIES = "replies";
 	protected static final String LIKES = "likes";
 	protected static final String COLLABINATE = "collabinate";
+	protected static final String UUID_URN_PREFIX = "urn:uuid:";
 }

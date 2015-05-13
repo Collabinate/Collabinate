@@ -16,6 +16,7 @@ import org.restlet.data.Tag;
 
 import com.collabinate.server.activitystreams.Activity;
 import com.collabinate.server.activitystreams.ActivityStreamsCollection;
+import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.google.gson.JsonParser;
 
 /**
@@ -281,7 +282,8 @@ public class StreamResourceTest extends GraphResourceTest
 		component.handle(request);
 		
 		ActivityStreamsCollection stream =
-				new ActivityStreamsCollection(get("?userLiked=user").getEntityAsText());
+				new ActivityStreamsCollection(get("?userLiked=user")
+						.getEntityAsText());
 
 		assertNotNull(stream.get(0).getCollabinateValue("likedByUser"));
 	}
@@ -305,9 +307,194 @@ public class StreamResourceTest extends GraphResourceTest
 		component.handle(request);
 		
 		ActivityStreamsCollection stream =
-				new ActivityStreamsCollection(get("?userLiked=user").getEntityAsText());
+				new ActivityStreamsCollection(get("?userLiked=user")
+						.getEntityAsText());
 
 		assertNull(stream.get(0).getCollabinateValue("likedByUser"));
+	}
+	
+	@Test
+	public void comments_param_should_return_the_correct_comments()
+	{
+		// create an activity that has comments
+		ActivityStreamsCollection comments = new ActivityStreamsCollection();
+		comments.add(new ActivityStreamsObject("comment1"));
+		comments.add(new ActivityStreamsObject("comment2"));
+		comments.add(new ActivityStreamsObject("comment3"));
+		Activity activity = new Activity();
+		activity.setReplies(comments);
+		
+		// post the activity to the stream
+		post(activity.toString(), MediaType.TEXT_PLAIN);
+		
+		// ensure comments param works as intended
+		ActivityStreamsCollection activities = 
+				new ActivityStreamsCollection(
+						get("?comments=2").getEntityAsText());
+		activity = new Activity(activities.get(0).toString());
+		
+		assertEquals(3, activity.getReplies().getTotalItems());
+		assertEquals(2, activity.getReplies().getItems().size());
+		assertEquals("comment3", activity.getReplies().get(0).getContent());
+		assertEquals("comment2", activity.getReplies().get(1).getContent());
+	}
+	
+	@Test
+	public void likes_param_should_return_the_correct_likes()
+	{
+		// create an activity that has likes in it
+		ActivityStreamsObject actor1 = new ActivityStreamsObject();
+		actor1.setId("user1");
+		Activity like1 = new Activity();
+		like1.setActor(actor1);
+		ActivityStreamsObject actor2 = new ActivityStreamsObject();
+		actor2.setId("user2");
+		Activity like2 = new Activity();
+		like2.setActor(actor2);
+		ActivityStreamsObject actor3 = new ActivityStreamsObject();
+		actor3.setId("user3");
+		Activity like3 = new Activity();
+		like3.setActor(actor3);
+		ActivityStreamsCollection likes = new ActivityStreamsCollection();
+		likes.add(like1);
+		likes.add(like2);
+		likes.add(like3);
+		Activity activity = new Activity();
+		activity.setLikes(likes);
+		
+		// post the activity to the stream
+		post(activity.toString(), MediaType.TEXT_PLAIN);
+		
+		// ensure likes param works as intended
+		ActivityStreamsCollection activities = 
+				new ActivityStreamsCollection(
+						get("?likes=2").getEntityAsText());
+		activity = new Activity(activities.get(0).toString());
+		
+		assertEquals(3, activity.getLikes().getTotalItems());
+		assertEquals(2, activity.getLikes().getItems().size());
+		assertThat(activity.getLikes().get(0).toString(),
+				containsString("user"));
+	}
+	
+	@Test
+	public void existing_comments_on_activity_should_be_added_to_its_comments()
+	{
+		// create an activity that has a comment
+		String commentContent = "random test comment";
+		ActivityStreamsObject comment = 
+				new ActivityStreamsObject(commentContent);
+		ActivityStreamsCollection comments = new ActivityStreamsCollection();
+		comments.add(comment);
+		Activity activity = new Activity();
+		activity.setReplies(comments);
+		
+		// post the activity to the stream
+		Activity posted = new Activity(
+				post(activity.toString(), MediaType.TEXT_PLAIN)
+				.getEntityAsText());
+		String postedId = posted.getId();
+		
+		// ensure comment exists as addressable item
+		Request request = new Request(Method.GET,
+				"riap://application/1/tenant/entities/entity/stream/"
+				+ postedId + "/comments");
+		comments = new ActivityStreamsCollection(
+				component.handle(request).getEntityAsText());
+		
+		assertEquals(commentContent, comments.get(0).getContent());
+		assertNotNull(comments.get(0).getId());
+	}
+	
+	@Test
+	public void ignore_comments_param_should_prevent_existing_comment_addition()
+	{
+		// create an activity that has a comment
+		String commentContent = "random test comment";
+		ActivityStreamsObject comment = 
+				new ActivityStreamsObject(commentContent);
+		ActivityStreamsCollection comments = new ActivityStreamsCollection();
+		comments.add(comment);
+		Activity activity = new Activity();
+		activity.setReplies(comments);
+		
+		// post the activity to the stream using ignore comments param
+		Activity posted = new Activity(
+				post(activity.toString(),
+						MediaType.TEXT_PLAIN,
+						"?ignoreComments=true")
+				.getEntityAsText());
+		String postedId = posted.getId();
+		
+		// ensure comment was not added
+		Request request = new Request(Method.GET,
+				"riap://application/1/tenant/entities/entity/stream/"
+				+ postedId + "/comments");
+		comments = new ActivityStreamsCollection(
+				component.handle(request).getEntityAsText());
+		
+		assertEquals(0, comments.getTotalItems());;	
+	}
+	
+	@Test
+	public void existing_likes_on_activity_should_be_added_to_its_likes()
+	{
+		// create an activity that has a like in it by a particular user
+		ActivityStreamsObject actor = new ActivityStreamsObject();
+		actor.setId("user");
+		Activity like = new Activity();
+		like.setActor(actor);
+		ActivityStreamsCollection likes = new ActivityStreamsCollection();
+		likes.add(like);
+		Activity activity = new Activity();
+		activity.setLikes(likes);
+		
+		// post the activity to the stream
+		Activity posted = new Activity(
+				post(activity.toString(), MediaType.TEXT_PLAIN)
+				.getEntityAsText());
+		String postedId = posted.getId();
+		
+		// ensure like exists as addressable item
+		Request request = new Request(Method.GET,
+				"riap://application/1/tenant/entities/entity/stream/"
+				+ postedId + "/likes");
+		likes = new ActivityStreamsCollection(
+				component.handle(request).getEntityAsText());
+		like = new Activity(likes.get(0).toString());
+		
+		assertEquals(actor.getId(), like.getActor().getId());
+	}
+	
+	@Test
+	public void ignore_likes_param_should_prevent_existing_like_addition()
+	{
+		// create an activity that has a like in it by a particular user
+		ActivityStreamsObject actor = new ActivityStreamsObject();
+		actor.setId("user");
+		Activity like = new Activity();
+		like.setActor(actor);
+		ActivityStreamsCollection likes = new ActivityStreamsCollection();
+		likes.add(like);
+		Activity activity = new Activity();
+		activity.setLikes(likes);
+		
+		// post the activity to the stream using ignore likes param
+		Activity posted = new Activity(
+				post(activity.toString(),
+						MediaType.TEXT_PLAIN,
+						"?ignoreLikes=true")
+				.getEntityAsText());
+		String postedId = posted.getId();
+		
+		// ensure like was not added
+		Request request = new Request(Method.GET,
+				"riap://application/1/tenant/entities/entity/stream/"
+				+ postedId + "/likes");
+		likes = new ActivityStreamsCollection(
+				component.handle(request).getEntityAsText());
+		
+		assertEquals(0, likes.getTotalItems());
 	}
 
 	@Override

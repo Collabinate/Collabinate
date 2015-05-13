@@ -67,7 +67,9 @@ public interface CollabinateWriter
 	
 	/**
 	 * Adds a comment to an activity's comments, at the correct chronological
-	 * location, and optionally associates it with a user.
+	 * location, and optionally associates it with a user. If the comment does
+	 * not have an ID, an ID will be generated for it. If the comment does not
+	 * have a date, the current date will be used.
 	 * 
 	 * @param tenantId The tenant for the operation.
 	 * @param entityId The ID of the entity to which the activity belongs.

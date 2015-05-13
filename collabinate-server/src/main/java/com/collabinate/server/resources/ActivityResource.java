@@ -1,7 +1,5 @@
 package com.collabinate.server.resources;
 
-import java.util.UUID;
-
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
 import org.restlet.data.Tag;
@@ -130,7 +128,7 @@ public class ActivityResource extends ServerResource
 				String commentId = comment.getId();
 				if (null == commentId || commentId.equals(""))
 				{
-					commentId = generateCommentId();
+					commentId = ActivityStreamsObject.generateUuidUrn();
 					comment.setId(commentId);
 				}
 				writer.addComment(tenantId, entityId, activityId, null,
@@ -186,16 +184,5 @@ public class ActivityResource extends ServerResource
 		
 		// remove any existing activity
 		writer.deleteActivity(tenantId, entityId, activityId);
-	}
-	
-	/**
-	 * Generates an ID for an comment.
-	 * 
-	 * @return A globally unique URI acceptable for use in a comment ID.
-	 */
-	private String generateCommentId()
-	{
-		// TODO: allow this to be configured
-		return "tag:collabinate.com:" + UUID.randomUUID().toString();
 	}
 }

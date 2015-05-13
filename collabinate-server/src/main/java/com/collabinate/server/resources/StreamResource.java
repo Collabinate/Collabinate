@@ -2,7 +2,6 @@ package com.collabinate.server.resources;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.restlet.data.MediaType;
@@ -149,7 +148,7 @@ public class StreamResource extends ServerResource
 		
 		// generate an id and relocate the original if necessary
 		String originalId = activity.getId();
-		String activityId = generateId();
+		String activityId = ActivityStreamsObject.generateUuidUrn();
 		activity.setId(activityId);
 		
 		if (null != originalId && !originalId.equals(""))
@@ -177,9 +176,13 @@ public class StreamResource extends ServerResource
 				String commentId = comment.getId();
 				if (null == commentId || commentId.equals(""))
 				{
-					commentId = generateId();
+					commentId = ActivityStreamsObject.generateUuidUrn();
 					comment.setId(commentId);
 				}
+				
+				// we leave the userId as null because determining the user
+				// from previously populated comments can be done in multiple
+				// ways, and may not work with the way we handle IDs
 				writer.addComment(tenantId, entityId, activityId, null,
 						comment);
 			}
@@ -218,18 +221,6 @@ public class StreamResource extends ServerResource
 		setLocationRef(new Reference(getReference())
 			.addSegment(activity.getId()));
 		setStatus(Status.SUCCESS_CREATED);
-	}
-	
-	/**
-	 * Generates an ID for an activity streams object.
-	 * 
-	 * @return A globally unique URI acceptable for use in an activity streams
-	 * object ID.
-	 */
-	private String generateId()
-	{
-		// TODO: allow this to be configured
-		return "tag:collabinate.com:" + UUID.randomUUID().toString();
 	}
 	
 	private static final int DEFAULT_COUNT = 20;

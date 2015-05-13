@@ -1,7 +1,5 @@
 package com.collabinate.server.resources;
 
-import java.util.UUID;
-
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 import org.restlet.data.MediaType;
@@ -91,7 +89,7 @@ public class CommentsResource extends ServerResource
 		
 		// generate an id and relocate the original if necessary
 		String originalId = comment.getId();
-		String id = generateId();
+		String id = ActivityStreamsObject.generateUuidUrn();
 		comment.setId(id);
 		
 		if (null != originalId && !originalId.equals(""))
@@ -135,17 +133,6 @@ public class CommentsResource extends ServerResource
 		setLocationRef(new Reference(getReference())
 			.addSegment(comment.getId()));
 		setStatus(Status.SUCCESS_CREATED);
-	}
-	
-	/**
-	 * Generates an ID for an comment.
-	 * 
-	 * @return A globally unique URI acceptable for use in a comment ID.
-	 */
-	private String generateId()
-	{
-		// TODO: allow this to be configured
-		return "tag:collabinate.com:" + UUID.randomUUID().toString();
 	}
 	
 	private static final int DEFAULT_COUNT = 20;

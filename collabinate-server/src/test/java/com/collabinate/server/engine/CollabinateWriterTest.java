@@ -2,6 +2,7 @@ package com.collabinate.server.engine;
 
 import static org.junit.Assert.*;
 
+import org.joda.time.DateTime;
 import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
@@ -199,8 +200,26 @@ public abstract class CollabinateWriterTest
 	@Test
 	public void add_comment_should_allow_null_user_ID()
 	{
-		writer.addComment("c", "entity", "activity", null,
-				new ActivityStreamsObject());
+		ActivityStreamsObject comment = new ActivityStreamsObject("comment");
+		comment.setId(ActivityStreamsObject.generateUuidUrn());
+		comment.setPublished(DateTime.now());
+		writer.addComment("c", "entity", "activity", null, comment);
+	}
+	
+	@Test
+	public void add_comment_should_allow_comment_with_no_ID()
+	{
+		ActivityStreamsObject comment = new ActivityStreamsObject("comment");
+		comment.setPublished(DateTime.now());
+		writer.addComment("c", "entity", "activity", null, comment);
+	}
+	
+	@Test
+	public void add_comment_should_allow_comment_with_no_date()
+	{
+		ActivityStreamsObject comment = new ActivityStreamsObject("comment");
+		comment.setId(ActivityStreamsObject.generateUuidUrn());
+		writer.addComment("c", "entity", "activity", null, comment);		
 	}
 	
 	@Test

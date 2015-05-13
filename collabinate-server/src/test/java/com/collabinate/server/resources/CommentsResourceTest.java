@@ -250,7 +250,7 @@ public class CommentsResourceTest extends GraphResourceTest
 	public void user_id_should_be_preserved()
 	{
 		addActivity();
-		post();
+		post("?userId=user");
 		
 		ActivityStreamsCollection comments = 
 				new ActivityStreamsCollection(get().getEntityAsText());
@@ -359,7 +359,7 @@ public class CommentsResourceTest extends GraphResourceTest
 	@Override
 	protected String getResourcePath()
 	{
-		return "/1/tenant/entities/entity/stream/activity/comments?userId=user";
+		return "/1/tenant/entities/entity/stream/activity/comments";
 	}
 
 }

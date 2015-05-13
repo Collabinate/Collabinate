@@ -219,7 +219,22 @@ public abstract class GraphResourceTest
 	 */
 	protected Response post(String value, MediaType mediaType)
 	{
-		Request request = getRequest(Method.POST, null);
+		return post(value, mediaType, null);
+	}
+	
+	/**
+	 * Sends a POST request to the test resource with the given entity body and
+	 * request parameters, and returns the response.
+	 * 
+	 * @param value The string entity body to send to the resource.
+	 * @param mediaType The media type of the entity to send to the resource.
+	 * @param params Any request parameters to send to the resource in the
+	 * format "?param1=foo&param2=bar". May be null.
+	 * @return The response from the test resource to the POST request.
+	 */
+	protected Response post(String value, MediaType mediaType, String params)
+	{
+		Request request = getRequest(Method.POST, params);
 		request.setEntity(value, mediaType);
 		return getResponse(request);
 	}

@@ -5,7 +5,6 @@ import static org.junit.Assert.*;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.UUID;
 
 import org.joda.time.DateTime;
 import org.junit.Before;
@@ -49,7 +48,7 @@ public abstract class CollabinateReaderTest
 		
 		if (null == id || id.equals(""))
 		{
-			id = UUID.randomUUID().toString();
+			id = ActivityStreamsObject.generateUuidUrn();
 		}
 		activity.setId(id);
 		
