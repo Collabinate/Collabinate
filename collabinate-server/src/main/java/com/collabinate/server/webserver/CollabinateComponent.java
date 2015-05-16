@@ -1,6 +1,8 @@
 package com.collabinate.server.webserver;
 
 import org.restlet.Component;
+import org.restlet.Context;
+import org.restlet.Server;
 import org.restlet.data.Protocol;
 import org.restlet.security.Authenticator;
 
@@ -28,7 +30,8 @@ public class CollabinateComponent extends Component
 	{
 		this.getClients().add(Protocol.FILE);
 		
-		this.getServers().add(getProtocol(), getPort());
+		this.getServers().add(
+				new Server(getSslContext(), getProtocol(), getPort()));
 		
 		if (null == reader)
 			throw new IllegalArgumentException("reader must not be null");
@@ -51,6 +54,34 @@ public class CollabinateComponent extends Component
 		getDefaultHost().attachDefault(
 				new CollabinateApplication(reader, writer, admin,
 						authenticator));
+	}
+	
+	/**
+	 * Get the context populated with values for SSL (if the protocol is HTTPS).
+	 * 
+	 * @return the current context, with added parameters if necessary.
+	 */
+	private Context getSslContext()
+	{
+		Context context = getContext().createChildContext();
+		
+		if (Protocol.HTTPS.equals(getProtocol()))
+		{
+			context.getParameters().add("keystorePath", 
+					Collabinate.getConfiguration().getString(
+						"collabinate.server.webserver.keystorePath"));
+			context.getParameters().add("keystorePassword", 
+					Collabinate.getConfiguration().getString(
+						"collabinate.server.webserver.keystorePassword"));
+			context.getParameters().add("keystoreType", 
+					Collabinate.getConfiguration().getString(
+						"collabinate.server.webserver.keystoreType"));
+			context.getParameters().add("keyPassword", 
+					Collabinate.getConfiguration().getString(
+						"collabinate.server.webserver.keyPassword"));
+		}
+		
+		return context;
 	}
 	
 	/**
