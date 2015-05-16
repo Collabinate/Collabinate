@@ -1,4 +1,4 @@
-package com.collabinate.server.resources;
+package com.collabinate.server.adminresources;
 
 import org.restlet.data.Status;
 import org.restlet.resource.Delete;

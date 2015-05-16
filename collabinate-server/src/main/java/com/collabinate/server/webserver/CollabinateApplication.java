@@ -25,6 +25,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import com.collabinate.server.Collabinate;
+import com.collabinate.server.adminresources.*;
 import com.collabinate.server.engine.CollabinateAdmin;
 import com.collabinate.server.engine.CollabinateReader;
 import com.collabinate.server.engine.CollabinateWriter;
