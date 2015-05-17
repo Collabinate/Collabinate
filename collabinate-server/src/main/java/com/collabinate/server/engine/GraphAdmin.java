@@ -5,7 +5,9 @@ import org.joda.time.DateTimeZone;
 
 import com.collabinate.server.Tenant;
 import com.google.gson.Gson;
+import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.util.wrappers.partition.PartitionGraph;
 
 /**
  * An implementation of Administration against a graph database.
@@ -70,11 +72,50 @@ public class GraphAdmin implements CollabinateAdmin
 	}
 	
 	@Override
+	public void deleteTenant(String tenantId)
+	{
+		for (Vertex vertex : graph.getVertices(STRING_TENANT_ID, tenantId))
+		{
+			vertex.remove();
+		}
+	}
+
+	@Override
 	public String exportDatabase()
 	{
-		return graph.exportGraph();
+		return CollabinateGraph.exportGraph(graph);
 	}
 	
+	@Override
+	public void importDatabase(String data)
+	{
+		graph.importGraph(data);
+	}
+
+	@Override
+	public String exportTenantData(String tenantId)
+	{
+		PartitionGraph<KeyIndexableGraph> tenantGraph =
+				new PartitionGraph<KeyIndexableGraph>(
+						graph, STRING_TENANT_ID, tenantId);
+		
+		return CollabinateGraph.exportGraph(tenantGraph);
+	}
+
+	@Override
+	public void importTenantData(String tenantId, String data)
+	{
+		if (null != getTenant(tenantId))
+		{
+			throw new IllegalStateException(
+					"Cannot import data for tenant with ID: '" 
+					+ tenantId
+					+ "', tenant already exists.");
+		}
+		
+		graph.importGraph(data);
+	}
+
 	private String getTenantVertexId(String tenantId)
 	{
 		return STRING_TENANT_PREFIX + tenantId;

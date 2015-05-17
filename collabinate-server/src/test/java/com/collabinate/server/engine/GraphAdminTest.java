@@ -5,6 +5,7 @@ import org.junit.Test;
 
 import com.tinkerpop.blueprints.GraphFactory;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
+import com.tinkerpop.blueprints.impls.tg.TinkerGraphFactory;
 
 /**
  * Test class for the graph implementation of CollabinateAdmin.
@@ -24,6 +25,13 @@ public class GraphAdminTest extends CollabinateAdminTest
 				"src/test/resources/graph.properties"));
 		graph.setAllowCommits(false);
 		return new GraphAdmin(graph);
+	}
+	
+	@Override
+	CollabinateAdmin getNewAdmin()
+	{
+		return new GraphAdmin(
+				new CollabinateGraph(TinkerGraphFactory.createTinkerGraph()));
 	}
 
 	@After

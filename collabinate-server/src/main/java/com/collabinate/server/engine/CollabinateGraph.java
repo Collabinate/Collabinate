@@ -1,5 +1,6 @@
 package com.collabinate.server.engine;
 
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -10,11 +11,13 @@ import java.util.Set;
 import com.tinkerpop.blueprints.Edge;
 import com.tinkerpop.blueprints.Element;
 import com.tinkerpop.blueprints.Features;
+import com.tinkerpop.blueprints.Graph;
 import com.tinkerpop.blueprints.GraphQuery;
 import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.Parameter;
 import com.tinkerpop.blueprints.TransactionalGraph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.util.io.graphml.GraphMLReader;
 import com.tinkerpop.blueprints.util.io.graphml.GraphMLWriter;
 import com.tinkerpop.blueprints.util.wrappers.id.IdGraph;
 
@@ -101,14 +104,15 @@ public class CollabinateGraph implements KeyIndexableGraph
 	/**
 	 * Outputs the graph to GraphML.
 	 * 
+	 * @param graph The graph to export.
 	 * @return A String containing the GraphML for the database.
 	 */
-	public String exportGraph()
+	public static String exportGraph(Graph graph)
 	{
 		ByteArrayOutputStream stream = new ByteArrayOutputStream();
 		try
 		{
-			GraphMLWriter.outputGraph(baseGraph, stream);
+			GraphMLWriter.outputGraph(graph, stream);
 			return stream.toString(StandardCharsets.UTF_8.name());
 		}
 		catch (Exception e)
@@ -157,6 +161,27 @@ public class CollabinateGraph implements KeyIndexableGraph
 		}
 	}
 
+	/**
+	 * Inputs a graph from GraphML.
+	 * 
+	 * @param data A String containing the GraphML for the database.
+	 */
+	public void importGraph(String data)
+	{
+		ByteArrayInputStream stream = 
+				new ByteArrayInputStream(data.getBytes(StandardCharsets.UTF_8));
+		
+		try
+		{
+			GraphMLReader.inputGraph(graph, stream);
+		}
+		catch (IOException e)
+		{
+			e.printStackTrace();
+			return;
+		}
+	}
+	
 	@Override
 	public Features getFeatures()
 	{
