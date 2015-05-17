@@ -331,4 +331,20 @@ public abstract class CollabinateWriterTest
 		writer.unlikeActivity("c", "user", "entity", "activity");
 		writer.unlikeActivity("c", "user", "entity", "activity");
 	}
+	
+	@Test
+	public void deleting_entity_should_not_allow_null_tenant_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("tenantId");
+		writer.deleteEntity(null, "entity");
+	}
+	
+	@Test
+	public void deleting_entity_should_not_allow_null_entity_ID()
+	{
+		exception.expect(IllegalArgumentException.class);
+		exception.expectMessage("entityId");
+		writer.deleteEntity("c", null);
+	}
 }

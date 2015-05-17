@@ -18,7 +18,9 @@ import com.collabinate.server.activitystreams.ActivityStreamsObject;
 import com.google.common.base.Joiner;
 import com.tinkerpop.blueprints.Direction;
 import com.tinkerpop.blueprints.Edge;
+import com.tinkerpop.blueprints.KeyIndexableGraph;
 import com.tinkerpop.blueprints.Vertex;
+import com.tinkerpop.blueprints.util.wrappers.partition.PartitionGraph;
 
 /**
  * An implementation of both reader and writer backed by a graph database.
@@ -1531,7 +1533,48 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		
 		return commentVertices;
 	}
-
+	
+	@Override
+	public ActivityStreamsObject getEntity(String tenantId, String entityId)
+	{
+		Vertex entityVertex = getOrCreateEntityVertex(tenantId, entityId);
+		
+		ActivityStreamsObject entity = new ActivityStreamsObject();
+		
+		entity.setId(entityId);
+		entity.setPublished(DateTime.parse(
+				(String)entityVertex.getProperty(STRING_CREATED)));
+		entity.setCollabinateValue(STRING_FOLLOWER_COUNT, Integer.toString(
+				entityVertex.getProperty(STRING_FOLLOWER_COUNT)));
+		entity.setCollabinateValue(STRING_FOLLOWING_COUNT, Integer.toString(
+				entityVertex.getProperty(STRING_FOLLOWING_COUNT)));
+		entity.setCollabinateValue(STRING_STREAM_COUNT, Integer.toString(
+				entityVertex.getProperty(STRING_STREAM_COUNT)));
+		entity.setCollabinateValue(STRING_FEED_COUNT, Integer.toString(
+				entityVertex.getProperty(STRING_FEED_COUNT)));
+		
+		return entity;
+	}
+	
+	@Override
+	public void deleteEntity(String tenantId, String entityId)
+	{
+		if (null == tenantId)
+			throw new IllegalArgumentException("tenantId must not be null");
+		if (null == entityId)
+			throw new IllegalArgumentException("entityId must not be null");
+		
+		PartitionGraph<KeyIndexableGraph> tenantGraph =
+				new PartitionGraph<KeyIndexableGraph>(
+						graph, STRING_TENANT_ID, tenantId);
+		
+		for (Vertex entityVertex : 
+			tenantGraph.getVertices(STRING_ENTITY_ID, entityId))
+		{
+			entityVertex.remove();
+		}
+	}
+	
 	/**
 	 * A comparator for activity vertices that orders by the sort time.
 	 * 

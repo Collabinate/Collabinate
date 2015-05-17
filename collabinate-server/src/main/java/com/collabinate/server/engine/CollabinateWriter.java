@@ -115,4 +115,13 @@ public interface CollabinateWriter
 	 */
 	public void unlikeActivity(String tenantId, String userId, String entityId,
 			String activityId);
+	
+	/**
+	 * Deletes an entity and all its associated data and relationships.
+	 * NOTE: Use with caution!
+	 * 
+	 * @param tenantId The tenant for the operation.
+	 * @param entityId The ID of the entity to remove.
+	 */
+	public void deleteEntity(String tenantId, String entityId);
 }

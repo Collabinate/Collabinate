@@ -149,4 +149,13 @@ public interface CollabinateReader
 	public ActivityStreamsCollection getLikes(String tenantId,
 			String entityId, String activityId, int startIndex,
 			int likesToReturn);
+	
+	/**
+	 * Retrieves an ActivityStreamsObject representation of a given entity.
+	 * 
+	 * @param tenantId the tenant for which the request is processed.
+	 * @param entityId The ID of the entity to retrieve.
+	 * @return An ActivityStreamsObject representation of the given entity.
+	 */
+	public ActivityStreamsObject getEntity(String tenantId, String entityId);
 }

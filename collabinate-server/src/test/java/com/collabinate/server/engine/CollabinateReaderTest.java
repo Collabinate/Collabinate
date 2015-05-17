@@ -992,4 +992,40 @@ public abstract class CollabinateReaderTest
 		writer.deleteActivity("test-044", "entity", "activity2");
 	}
 	
+	@Test
+	public void get_entity_should_have_matching_id()
+	{
+		writer.addActivity("test-045", "entity",
+				getActivity("activity1", null, null));
+		
+		ActivityStreamsObject entity = reader.getEntity("test-045", "entity");
+		
+		assertEquals("entity", entity.getId());
+	}
+	
+	@Test
+	public void delete_entity_should_remove_entity_data()
+	{
+		writer.addActivity("test-046", "entity",
+				getActivity("activity1", null, null));
+		
+		writer.deleteEntity("test-046", "entity");
+		
+		assertNull(reader.getActivity("test-046", "entity", "activity1"));
+	}
+	
+	@Test
+	public void delete_entity_should_only_delete_entity_of_matching_tenant()
+	{
+		writer.addActivity("test-047", "test-047-entity",
+				getActivity("activity1", null, null));
+		writer.addActivity("test-047-other", "test-047-entity",
+				getActivity("activity1", null, null));
+		
+		writer.deleteEntity("test-047", "test-047-entity");
+		
+		assertNotNull(reader.getActivity(
+				"test-047-other", "test-047-entity", "activity1"));
+	}
+	
 }
