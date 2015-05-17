@@ -12,6 +12,7 @@ import javax.xml.validation.SchemaFactory;
 import javax.xml.validation.Validator;
 
 import org.junit.Test;
+import org.restlet.Response;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
 
@@ -45,19 +46,29 @@ public class DatabaseResourceTest extends GraphResourceTest
 		assertTrue(isValidGraphml(get().getEntityAsText()));
 	}
 	
-	private boolean isValidGraphml(String graphMl)
+	@Test
+	public void import_should_return_204()
+	{
+		Response response = 
+				put(get().getEntityAsText(), MediaType.APPLICATION_XML);
+		
+		assertEquals(Status.SUCCESS_NO_CONTENT, response.getStatus());
+	}
+	
+	public static boolean isValidGraphml(String graphMl)
 	{
 		SchemaFactory factory = SchemaFactory
 				.newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
 		Schema schema;
 		try
 		{
-			schema = factory.newSchema(getClass().getClassLoader()
-					.getResource(GRAPHML_SCHEMA_FILE));
+			schema = factory.newSchema(DatabaseResourceTest.class
+					.getClassLoader().getResource(GRAPHML_SCHEMA_FILE));
 		}
 		catch (Exception e)
 		{
 			// TODO: fix offline validation
+			e.printStackTrace();
 			return true;
 		}
 		
@@ -74,6 +85,7 @@ public class DatabaseResourceTest extends GraphResourceTest
 		}
 		catch (Exception e)
 		{
+			e.printStackTrace();
 			isValid = false;
 		}
 
@@ -86,5 +98,5 @@ public class DatabaseResourceTest extends GraphResourceTest
 		return "/1/admin/database";
 	}
 	
-	private static final String GRAPHML_SCHEMA_FILE = "graphml-structure.xsd";
+	private static final String GRAPHML_SCHEMA_FILE = "graphml.xsd";
 }

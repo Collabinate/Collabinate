@@ -1,6 +1,7 @@
 package com.collabinate.server.adminresources;
 
 import org.restlet.resource.Get;
+import org.restlet.resource.Put;
 import org.restlet.resource.ServerResource;
 
 import com.collabinate.server.engine.CollabinateAdmin;
@@ -22,5 +23,17 @@ public class DatabaseResource extends ServerResource
 				.getAttributes().get("collabinateAdmin");
 		
 		return admin.exportDatabase();
+	}
+	
+	@Put("xml")
+	public void importDatabase(String data)
+	{
+		// extract necessary information from the context
+		CollabinateAdmin admin = (CollabinateAdmin)getContext()
+				.getAttributes().get("collabinateAdmin");
+		
+		admin.importDatabase(data);
+		
+		//TODO: Error handling (non-valid GraphML, etc.)
 	}
 }
