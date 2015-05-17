@@ -1,4 +1,4 @@
-package com.collabinate.server.resources;
+package com.collabinate.server.adminresources;
 
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.junit.Assert.assertEquals;
@@ -8,6 +8,8 @@ import org.junit.Test;
 import org.restlet.Request;
 import org.restlet.data.Method;
 import org.restlet.data.Status;
+
+import com.collabinate.server.resources.GraphResourceTest;
 
 /**
  * Tests for the Tenant Resource.

@@ -1,4 +1,4 @@
-package com.collabinate.server.resources;
+package com.collabinate.server.adminresources;
 
 import static org.junit.Assert.*;
 
@@ -14,6 +14,8 @@ import javax.xml.validation.Validator;
 import org.junit.Test;
 import org.restlet.data.MediaType;
 import org.restlet.data.Status;
+
+import com.collabinate.server.resources.GraphResourceTest;
 
 /**
  * Tests for the Database Export Resource.
