@@ -1,5 +1,8 @@
 package com.collabinate.server.engine;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.joda.time.DateTime;
 import org.joda.time.DateTimeZone;
 
@@ -40,6 +43,7 @@ public class GraphAdmin implements CollabinateAdmin
 			tenantVertex = graph.addVertex(getTenantVertexId(tenant.getId()));
 		}
 		
+		tenantVertex.setProperty(STRING_TYPE, STRING_TENANT);
 		tenantVertex.setProperty(STRING_TENANT_ID, tenant.getId());
 		tenantVertex.setProperty(STRING_NAME, tenant.getName());
 		tenantVertex.setProperty(STRING_CREATED,
@@ -78,6 +82,19 @@ public class GraphAdmin implements CollabinateAdmin
 		{
 			vertex.remove();
 		}
+	}
+
+	@Override
+	public List<Tenant> getAllTenants()
+	{
+		List<Tenant> tenants = new ArrayList<Tenant>();
+		
+		for (Vertex vertex : graph.getVertices(STRING_TYPE, STRING_TENANT))
+		{
+			tenants.add(getTenant(vertex.getProperty(STRING_TENANT_ID)));
+		}
+		
+		return tenants;
 	}
 
 	@Override
@@ -126,4 +143,6 @@ public class GraphAdmin implements CollabinateAdmin
 	private static final String STRING_TENANT_ID = "TenantID";
 	private static final String STRING_NAME = "Name";
 	private static final String STRING_CREATED = "Created";
+	private static final String STRING_TYPE = "Type";
+	private static final String STRING_TENANT = "Tenant";
 }

@@ -1,5 +1,7 @@
 package com.collabinate.server.engine;
 
+import java.util.List;
+
 import com.collabinate.server.Tenant;
 
 /**
@@ -32,6 +34,13 @@ public interface CollabinateAdmin
 	 * @param tenantId the ID of the tenant that will be eradicated.
 	 */
 	public void deleteTenant(String tenantId);
+	
+	/**
+	 * Gets a list of all tenants in the system.
+	 * 
+	 * @return A list of all the tenants in the system.
+	 */
+	public List<Tenant> getAllTenants();
 	
 	/**
 	 * Gets the underlying data store as a string.

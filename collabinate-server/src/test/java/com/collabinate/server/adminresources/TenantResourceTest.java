@@ -28,7 +28,7 @@ public class TenantResourceTest extends GraphResourceTest
 	@Test
 	public void created_tenant_should_have_specified_key()
 	{
-		put();
+		put("?name=Tenant&key=abcd");
 		
 		Request request = new Request(Method.GET,
 				"riap://application/1/admin/tenants/tenant/keys");
@@ -40,6 +40,6 @@ public class TenantResourceTest extends GraphResourceTest
 	@Override
 	protected String getResourcePath()
 	{
-		return "/1/admin/tenants/tenant?name=Tenant&key=abcd";
+		return "/1/admin/tenants/tenant";
 	}
 }
