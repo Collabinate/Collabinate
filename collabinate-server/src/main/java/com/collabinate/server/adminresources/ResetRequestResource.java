@@ -26,6 +26,7 @@ public class ResetRequestResource extends ServerResource
 			{
 				try
 				{
+					Thread.sleep(1000);
 					Collabinate.resetService();
 				}
 				catch (Exception e)
