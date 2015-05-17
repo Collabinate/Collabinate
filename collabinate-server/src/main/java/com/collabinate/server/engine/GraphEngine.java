@@ -141,10 +141,12 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private synchronized Vertex getOrCreateEntityVertex(final String tenantId,
 			final String entityId)
 	{
-		Vertex entityVertex = graph.getVertex(tenantId + "/" + entityId);
+		Vertex entityVertex = graph.getVertex(
+				tenantId + STRING_ID_SEPARATOR + entityId);
 		if (null == entityVertex)
 		{
-			entityVertex = graph.addVertex(tenantId + "/" + entityId);
+			entityVertex = graph.addVertex(
+					tenantId + STRING_ID_SEPARATOR + entityId);
 			entityVertex.setProperty(STRING_TENANT_ID, tenantId);
 			entityVertex.setProperty(STRING_ENTITY_ID, entityId);
 			entityVertex.setProperty(STRING_TYPE, STRING_ENTITY);
@@ -171,7 +173,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private Vertex getActivityVertex(String tenantId, String entityId,
 			String activityId)
 	{
-		return graph.getVertex(tenantId + "/" + entityId + "/" + activityId);
+		return graph.getVertex(tenantId + STRING_ID_SEPARATOR + entityId
+				+ STRING_ID_SEPARATOR + activityId);
 	}
 
 	/**
@@ -187,8 +190,9 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private Vertex getCommentVertex(String tenantId, String entityId,
 			String activityId, String commentId)
 	{
-		return graph.getVertex(tenantId + "/" + entityId + "/" + activityId +
-				"/" + commentId);
+		return graph.getVertex(tenantId + STRING_ID_SEPARATOR + entityId
+				+ STRING_ID_SEPARATOR + activityId
+				+ STRING_ID_SEPARATOR + commentId);
 	}
 
 	/**
@@ -202,8 +206,8 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 	private Vertex serializeActivity(final Activity activity,
 			final String tenantId, final String entityId)
 	{
-		Vertex activityVertex = graph.addVertex(tenantId + "/" + entityId + "/"
-				+ activity.getId());
+		Vertex activityVertex = graph.addVertex(tenantId + STRING_ID_SEPARATOR
+				+ entityId + STRING_ID_SEPARATOR + activity.getId());
 		activityVertex.setProperty(STRING_TENANT_ID, tenantId);
 		activityVertex.setProperty(STRING_ENTITY_ID, entityId);
 		activityVertex.setProperty(STRING_ACTIVITY_ID, activity.getId());
@@ -242,8 +246,10 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 			comment.setId(ActivityStreamsObject.generateUuidUrn());
 		}
 		
-		Vertex commentVertex = graph.addVertex(tenantId + "/" + entityId + "/"
-				+ activityId + "/" + comment.getId());
+		Vertex commentVertex = graph.addVertex(tenantId + STRING_ID_SEPARATOR
+				+ entityId + STRING_ID_SEPARATOR
+				+ activityId + STRING_ID_SEPARATOR
+				+ comment.getId());
 		
 		commentVertex.setProperty(STRING_TENANT_ID, tenantId);
 		commentVertex.setProperty(STRING_ENTITY_ID, entityId);
@@ -1613,6 +1619,7 @@ public class GraphEngine implements CollabinateReader, CollabinateWriter
 		}
 	}
 	
+	private static final String STRING_ID_SEPARATOR = ".";
 	private static final String STRING_TENANT_ID = "TenantID";
 	private static final String STRING_ENTITY_ID = "EntityID";
 	private static final String STRING_ENTITY = "Entity";

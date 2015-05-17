@@ -121,7 +121,7 @@ public class GraphAdmin implements CollabinateAdmin
 		return STRING_TENANT_PREFIX + tenantId;
 	}
 	
-	private static final String STRING_TENANT_PREFIX = "collabinate/tenant/";
+	private static final String STRING_TENANT_PREFIX = "collabinate.tenant.";
 	private static final String STRING_CONTENT = "Content";
 	private static final String STRING_TENANT_ID = "TenantID";
 	private static final String STRING_NAME = "Name";

@@ -56,8 +56,8 @@ public class TenantDataResourceTest extends GraphResourceTest
 				"riap://application/1/admin/tenants/tenant");
 		component.handle(request);
 		
-//		assertTrue(DatabaseResourceTest.isValidGraphml(
-//				get().getEntityAsText()));
+		assertTrue(DatabaseResourceTest.isValidGraphml(
+				get().getEntityAsText()));
 	}
 	
 	@Test
