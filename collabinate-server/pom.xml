@@ -4,7 +4,7 @@
 	<groupId>collabinate</groupId>
 	<artifactId>collabinate-server</artifactId>
 	<packaging>jar</packaging>
-	<version>1.0.3-SNAPSHOT</version>
+	<version>1.0.3</version>
 	<name>collabinate-server</name>
 	<url>https://github.com/Collabinate/Collabinate</url>
 	<inceptionYear>2012</inceptionYear>
