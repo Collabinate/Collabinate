@@ -12,7 +12,7 @@ import com.collabinate.server.engine.CollabinateAdmin;
  * @author mafuba
  *
  */
-public class DatabaseExportResource extends ServerResource
+public class DatabaseResource extends ServerResource
 {
 	@Get("xml")
 	public String exportDatabase()

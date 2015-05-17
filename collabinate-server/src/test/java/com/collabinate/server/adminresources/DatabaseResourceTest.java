@@ -23,7 +23,7 @@ import com.collabinate.server.resources.GraphResourceTest;
  * @author mafuba
  *
  */
-public class DatabaseExportResourceTest extends GraphResourceTest
+public class DatabaseResourceTest extends GraphResourceTest
 {
 
 	@Test
@@ -83,7 +83,7 @@ public class DatabaseExportResourceTest extends GraphResourceTest
 	@Override
 	protected String getResourcePath()
 	{
-		return "/1/admin/database/export";
+		return "/1/admin/database";
 	}
 	
 	private static final String GRAPHML_SCHEMA_FILE = "graphml-structure.xsd";

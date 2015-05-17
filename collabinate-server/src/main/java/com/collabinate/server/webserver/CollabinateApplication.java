@@ -95,7 +95,7 @@ public class CollabinateApplication extends Application
 			.setMatchingMode(Template.MODE_STARTS_WITH);
 		
 		Router adminRouter = new Router(getContext());
-		adminRouter.attach("/database/export", DatabaseExportResource.class);
+		adminRouter.attach("/database", DatabaseResource.class);
 		adminRouter.attach("/tenants/{tenantId}", TenantResource.class);
 		adminRouter.attach("/tenants/{tenantId}/keys/{key}",
 				TenantKeyResource.class);
